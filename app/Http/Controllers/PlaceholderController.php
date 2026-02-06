@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\Authorization;
 use App\Models\CharityClaim;
+use App\Models\CharityEntity;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\InsuranceClaim;
+use App\Models\InsuranceCompany;
 use App\Models\Invoice;
 use App\Models\Patient;
 use App\Models\Payment;
@@ -20,6 +22,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\UserCredentialsMail;
 use Spatie\Permission\Models\Role;
 
 class PlaceholderController extends Controller
@@ -387,6 +391,16 @@ class PlaceholderController extends Controller
             // Assign role
             $user->assignRole($request->input('role'));
             ActivityLogger::log('user_created', User::class, $user->id, __('Employee created') . ': ' . $user->username, null, ['username' => $user->username, 'name' => $user->employee->name ?? $user->name]);
+
+            // Send credentials email
+            if ($user->email) {
+                try {
+                    Mail::to($user->email)->send(new UserCredentialsMail($request->input('username'), $request->input('password')));
+                } catch (\Exception $e) {
+                    // Log error but don't fail transaction
+                    \Log::error('Failed to send credentials email: ' . $e->getMessage());
+                }
+            }
         });
 
         return redirect()->route('users.index')->with('success', __('Employee created successfully.'));
@@ -587,5 +601,199 @@ class PlaceholderController extends Controller
             ->orderByDesc('created_at')
             ->paginate(50);
         return view('activity.index', compact('logs'));
+    }
+
+    // ——— Insurance Companies ———
+    public function insuranceCompaniesIndex()
+    {
+        Gate::authorize('insurance_companies.manage');
+        $companies = InsuranceCompany::withCount('patients')->orderBy('name')->paginate(15);
+        return view('insurance-companies.index', compact('companies'));
+    }
+
+    public function insuranceCompaniesCreate()
+    {
+        Gate::authorize('insurance_companies.manage');
+        return view('insurance-companies.create');
+    }
+
+    public function insuranceCompaniesStore(Request $request)
+    {
+        Gate::authorize('insurance_companies.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'fax' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+        $company = InsuranceCompany::create([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: null,
+            'contact_person' => $request->input('contact_person') ?: null,
+            'phone' => $request->input('phone') ?: null,
+            'email' => $request->input('email') ?: null,
+            'fax' => $request->input('fax') ?: null,
+            'address' => $request->input('address') ?: null,
+            'notes' => $request->input('notes') ?: null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        ActivityLogger::log('insurance_company_created', InsuranceCompany::class, $company->id, __('Insurance company created') . ': ' . $company->name, null, $company->toArray());
+        return redirect()->route('insurance-companies.index')->with('success', __('Insurance company created successfully.'));
+    }
+
+    public function insuranceCompaniesShow(InsuranceCompany $insurance_company)
+    {
+        Gate::authorize('insurance_companies.manage');
+        $insurance_company->loadCount('patients');
+        return view('insurance-companies.show', compact('insurance_company'));
+    }
+
+    public function insuranceCompaniesEdit(InsuranceCompany $insurance_company)
+    {
+        Gate::authorize('insurance_companies.manage');
+        return view('insurance-companies.edit', compact('insurance_company'));
+    }
+
+    public function insuranceCompaniesUpdate(Request $request, InsuranceCompany $insurance_company)
+    {
+        Gate::authorize('insurance_companies.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'fax' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+        $old = $insurance_company->toArray();
+        $insurance_company->update([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: null,
+            'contact_person' => $request->input('contact_person') ?: null,
+            'phone' => $request->input('phone') ?: null,
+            'email' => $request->input('email') ?: null,
+            'fax' => $request->input('fax') ?: null,
+            'address' => $request->input('address') ?: null,
+            'notes' => $request->input('notes') ?: null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        ActivityLogger::log('insurance_company_updated', InsuranceCompany::class, $insurance_company->id, __('Insurance company updated') . ': ' . $insurance_company->name, $old, $insurance_company->toArray());
+        return redirect()->route('insurance-companies.index')->with('success', __('Insurance company updated successfully.'));
+    }
+
+    public function insuranceCompaniesDestroy(InsuranceCompany $insurance_company)
+    {
+        Gate::authorize('insurance_companies.manage');
+        $old = $insurance_company->toArray();
+        $name = $insurance_company->name;
+        $id = $insurance_company->id;
+        $insurance_company->delete();
+        ActivityLogger::log('insurance_company_deleted', InsuranceCompany::class, $id, __('Insurance company deleted') . ': ' . $name, $old, null);
+        return redirect()->route('insurance-companies.index')->with('success', __('Insurance company deleted successfully.'));
+    }
+
+    // ——— Charity Entities ———
+    public function charityEntitiesIndex()
+    {
+        Gate::authorize('charity_entities.manage');
+        $entities = CharityEntity::withCount('patients')->orderBy('name')->paginate(15);
+        return view('charity-entities.index', compact('entities'));
+    }
+
+    public function charityEntitiesCreate()
+    {
+        Gate::authorize('charity_entities.manage');
+        return view('charity-entities.create');
+    }
+
+    public function charityEntitiesStore(Request $request)
+    {
+        Gate::authorize('charity_entities.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'fax' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+        $entity = CharityEntity::create([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: null,
+            'contact_person' => $request->input('contact_person') ?: null,
+            'phone' => $request->input('phone') ?: null,
+            'email' => $request->input('email') ?: null,
+            'fax' => $request->input('fax') ?: null,
+            'address' => $request->input('address') ?: null,
+            'notes' => $request->input('notes') ?: null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        ActivityLogger::log('charity_entity_created', CharityEntity::class, $entity->id, __('Charity entity created') . ': ' . $entity->name, null, $entity->toArray());
+        return redirect()->route('charity-entities.index')->with('success', __('Charity entity created successfully.'));
+    }
+
+    public function charityEntitiesShow(CharityEntity $charity_entity)
+    {
+        Gate::authorize('charity_entities.manage');
+        $charity_entity->loadCount('patients');
+        return view('charity-entities.show', compact('charity_entity'));
+    }
+
+    public function charityEntitiesEdit(CharityEntity $charity_entity)
+    {
+        Gate::authorize('charity_entities.manage');
+        return view('charity-entities.edit', compact('charity_entity'));
+    }
+
+    public function charityEntitiesUpdate(Request $request, CharityEntity $charity_entity)
+    {
+        Gate::authorize('charity_entities.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'fax' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+        $old = $charity_entity->toArray();
+        $charity_entity->update([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: null,
+            'contact_person' => $request->input('contact_person') ?: null,
+            'phone' => $request->input('phone') ?: null,
+            'email' => $request->input('email') ?: null,
+            'fax' => $request->input('fax') ?: null,
+            'address' => $request->input('address') ?: null,
+            'notes' => $request->input('notes') ?: null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        ActivityLogger::log('charity_entity_updated', CharityEntity::class, $charity_entity->id, __('Charity entity updated') . ': ' . $charity_entity->name, $old, $charity_entity->toArray());
+        return redirect()->route('charity-entities.index')->with('success', __('Charity entity updated successfully.'));
+    }
+
+    public function charityEntitiesDestroy(CharityEntity $charity_entity)
+    {
+        Gate::authorize('charity_entities.manage');
+        $old = $charity_entity->toArray();
+        $name = $charity_entity->name;
+        $id = $charity_entity->id;
+        $charity_entity->delete();
+        ActivityLogger::log('charity_entity_deleted', CharityEntity::class, $id, __('Charity entity deleted') . ': ' . $name, $old, null);
+        return redirect()->route('charity-entities.index')->with('success', __('Charity entity deleted successfully.'));
     }
 }

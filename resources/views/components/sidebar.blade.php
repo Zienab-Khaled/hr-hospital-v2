@@ -102,6 +102,8 @@
                 @foreach ([
                     ['departments.*', 'departments.index', '🏢', __('Departments')],
                     ['services.*', 'services.index', '🩺', __('Services')],
+                    ['insurance-companies.*', 'insurance-companies.index', '🏥', app()->getLocale() === 'ar' ? 'شركات التأمين' : 'Insurance Companies'],
+                    ['charity-entities.*', 'charity-entities.index', '🤝', app()->getLocale() === 'ar' ? 'الجمعيات الخيرية' : 'Charity Entities'],
                     ['users.*', 'users.index', '👥', __('Users')],
                     ['settings.*', 'settings.index', '⚙️', __('Settings')],
                     ['codes.*', 'codes.upload', '📤', __('Upload Official Codes')],

@@ -26,6 +26,7 @@ class RoleAndPermissionSeeder extends Seeder
             'claims.view', 'claims.create', 'claims.edit', 'claims.notes', 'claims.send',
             // إدارة (سوبر أدمن فقط)
             'departments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
+            'insurance_companies.manage', 'charity_entities.manage',
             // تقارير
             'reports.view', 'reports.export', 'reports.upload_cluster', 'activity.view',
         ];
@@ -52,6 +53,7 @@ class RoleAndPermissionSeeder extends Seeder
             'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
             'reports.view', 'reports.export', 'reports.upload_cluster', 'activity.view',
             'departments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
+            'insurance_companies.manage', 'charity_entities.manage',
         ]);
 
         // موظف (مكتب الدخول / إدخال بيانات): مرضى، خدمات، إجراءات إدارية

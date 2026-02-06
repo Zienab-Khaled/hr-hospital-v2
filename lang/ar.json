@@ -47,5 +47,17 @@
 "Employee updated": "تم تحديث الموظف",
 "Employee deleted": "تم حذف الموظف",
 "Settings updated": "تم تحديث الإعدادات",
-"Upload official codes": "رفع الكود الرسمي"
+"Upload official codes": "رفع الكود الرسمي",
+"Insurance company created successfully.": "تم إنشاء شركة التأمين بنجاح.",
+"Insurance company updated successfully.": "تم تحديث شركة التأمين بنجاح.",
+"Insurance company deleted successfully.": "تم حذف شركة التأمين بنجاح.",
+"Insurance company created": "تم إنشاء شركة التأمين",
+"Insurance company updated": "تم تحديث شركة التأمين",
+"Insurance company deleted": "تم حذف شركة التأمين",
+"Charity entity created successfully.": "تم إنشاء الجمعية الخيرية بنجاح.",
+"Charity entity updated successfully.": "تم تحديث الجمعية الخيرية بنجاح.",
+"Charity entity deleted successfully.": "تم حذف الجمعية الخيرية بنجاح.",
+"Charity entity created": "تم إنشاء الجمعية الخيرية",
+"Charity entity updated": "تم تحديث الجمعية الخيرية",
+"Charity entity deleted": "تم حذف الجمعية الخيرية"
 }

@@ -47,5 +47,17 @@
 "Employee updated": "Employee updated",
 "Employee deleted": "Employee deleted",
 "Settings updated": "Settings updated",
-"Upload official codes": "Upload official codes"
+"Upload official codes": "Upload official codes",
+"Insurance company created successfully.": "Insurance company created successfully.",
+"Insurance company updated successfully.": "Insurance company updated successfully.",
+"Insurance company deleted successfully.": "Insurance company deleted successfully.",
+"Insurance company created": "Insurance company created",
+"Insurance company updated": "Insurance company updated",
+"Insurance company deleted": "Insurance company deleted",
+"Charity entity created successfully.": "Charity entity created successfully.",
+"Charity entity updated successfully.": "Charity entity updated successfully.",
+"Charity entity deleted successfully.": "Charity entity deleted successfully.",
+"Charity entity created": "Charity entity created",
+"Charity entity updated": "Charity entity updated",
+"Charity entity deleted": "Charity entity deleted"
 }

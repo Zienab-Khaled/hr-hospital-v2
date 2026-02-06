@@ -20,13 +20,13 @@
     <form action="{{ route('users.update', $user) }}" method="POST" class="bg-white rounded-lg shadow p-6 max-w-2xl">
         @csrf
         @method('PUT')
-        
+
         {{-- Employee Information Section --}}
         <div class="mb-6">
             <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
                 {{ app()->getLocale() === 'ar' ? 'معلومات الموظف' : 'Employee Information' }}
             </h3>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }} <span class="text-red-500">*</span></label>
@@ -81,29 +81,18 @@
             <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
                 {{ app()->getLocale() === 'ar' ? 'حساب المستخدم' : 'User Account' }}
             </h3>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم المستخدم' : 'Username' }} <span class="text-red-500">*</span></label>
-                    <input type="text" name="username" value="{{ old('username', $user->username) }}" required class="w-full rounded border border-slate-300 px-3 py-2 @error('username') border-red-500 @enderror">
-                    @error('username')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم المستخدم' : 'Username' }}</label>
+                    <input type="text" value="{{ $user->username }}" readonly disabled class="w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500 cursor-not-allowed">
+                    <input type="hidden" name="username" value="{{ $user->username }}">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
                     <input type="email" name="email" value="{{ old('email', $user->email) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('email') border-red-500 @enderror">
                     @error('email')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'كلمة المرور الجديدة' : 'New Password' }} <span class="text-slate-500 text-xs">({{ app()->getLocale() === 'ar' ? 'اتركه فارغًا إذا لم ترغب في التغيير' : 'Leave blank if you don\'t want to change' }})</span></label>
-                    <input type="password" name="password" class="w-full rounded border border-slate-300 px-3 py-2 @error('password') border-red-500 @enderror">
-                    @error('password')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password' }}</label>
-                    <input type="password" name="password_confirmation" class="w-full rounded border border-slate-300 px-3 py-2">
                 </div>
 
                 <div class="md:col-span-2">

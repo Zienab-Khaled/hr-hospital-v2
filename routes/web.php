@@ -84,4 +84,20 @@ Route::middleware('auth')->group(function () {
     Route::get('codes/upload', [PlaceholderController::class, 'codesUpload'])->name('codes.upload');
     Route::post('codes/upload', [PlaceholderController::class, 'codesUploadStore'])->name('codes.upload.store');
     Route::get('activity', [PlaceholderController::class, 'activityIndex'])->name('activity.index');
+
+    Route::get('insurance-companies', [PlaceholderController::class, 'insuranceCompaniesIndex'])->name('insurance-companies.index');
+    Route::get('insurance-companies/create', [PlaceholderController::class, 'insuranceCompaniesCreate'])->name('insurance-companies.create');
+    Route::post('insurance-companies', [PlaceholderController::class, 'insuranceCompaniesStore'])->name('insurance-companies.store');
+    Route::get('insurance-companies/{insurance_company}/edit', [PlaceholderController::class, 'insuranceCompaniesEdit'])->name('insurance-companies.edit');
+    Route::put('insurance-companies/{insurance_company}', [PlaceholderController::class, 'insuranceCompaniesUpdate'])->name('insurance-companies.update');
+    Route::delete('insurance-companies/{insurance_company}', [PlaceholderController::class, 'insuranceCompaniesDestroy'])->name('insurance-companies.destroy');
+    Route::get('insurance-companies/{insurance_company}', [PlaceholderController::class, 'insuranceCompaniesShow'])->name('insurance-companies.show');
+
+    Route::get('charity-entities', [PlaceholderController::class, 'charityEntitiesIndex'])->name('charity-entities.index');
+    Route::get('charity-entities/create', [PlaceholderController::class, 'charityEntitiesCreate'])->name('charity-entities.create');
+    Route::post('charity-entities', [PlaceholderController::class, 'charityEntitiesStore'])->name('charity-entities.store');
+    Route::get('charity-entities/{charity_entity}/edit', [PlaceholderController::class, 'charityEntitiesEdit'])->name('charity-entities.edit');
+    Route::put('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesUpdate'])->name('charity-entities.update');
+    Route::delete('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesDestroy'])->name('charity-entities.destroy');
+    Route::get('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesShow'])->name('charity-entities.show');
 });
