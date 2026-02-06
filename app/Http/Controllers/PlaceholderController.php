@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Authorization;
 use App\Models\CharityClaim;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\InsuranceClaim;
 use App\Models\Invoice;
 use App\Models\Patient;
@@ -18,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 
 class PlaceholderController extends Controller
 {
@@ -172,7 +175,7 @@ class PlaceholderController extends Controller
     public function departmentsIndex()
     {
         Gate::authorize('departments.manage');
-        $departments = Department::withCount('employees')->orderBy('name')->get();
+        $departments = Department::withCount('employees')->orderBy('name')->paginate(15);
         return view('departments.index', compact('departments'));
     }
 
@@ -191,19 +194,57 @@ class PlaceholderController extends Controller
             'code' => 'nullable|string|max:20|unique:departments,code',
             'is_active' => 'nullable|boolean',
         ]);
-        Department::create([
+        $dept = Department::create([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
         ]);
+        ActivityLogger::log('department_created', Department::class, $dept->id, __('Department created') . ': ' . $dept->name, null, $dept->toArray());
         return redirect()->route('departments.index')->with('success', __('Department created successfully.'));
+    }
+
+    public function departmentsShow(Department $department)
+    {
+        Gate::authorize('departments.manage');
+        return view('departments.show', compact('department'));
+    }
+
+    public function departmentsEdit(Department $department)
+    {
+        Gate::authorize('departments.manage');
+        return view('departments.edit', compact('department'));
+    }
+
+    public function departmentsUpdate(Request $request, Department $department)
+    {
+        Gate::authorize('departments.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'code' => 'nullable|string|max:20|unique:departments,code,' . $department->id,
+            'is_active' => 'nullable|boolean',
+        ]);
+        $department->update([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: null,
+            'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        return redirect()->route('departments.index')->with('success', __('Department updated successfully.'));
+    }
+
+    public function departmentsDestroy(Department $department)
+    {
+        Gate::authorize('departments.manage');
+        $department->delete();
+        return redirect()->route('departments.index')->with('success', __('Department deleted successfully.'));
     }
 
     public function servicesIndex()
     {
         Gate::authorize('services.manage');
-        $services = Service::with('department')->orderBy('name')->get();
+        $services = Service::with('department')->orderBy('name')->paginate(15);
         return view('services.index', compact('services'));
     }
 
@@ -225,7 +266,7 @@ class PlaceholderController extends Controller
             'department_id' => 'required|exists:departments,id',
         ]);
 
-        Service::create([
+        $service = Service::create([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: $request->input('name'),
             'code' => $request->input('code'),
@@ -233,15 +274,220 @@ class PlaceholderController extends Controller
             'department_id' => $request->input('department_id'),
             'is_active' => true,
         ]);
+        ActivityLogger::log('service_created', Service::class, $service->id, __('Service created') . ': ' . $service->name, null, $service->toArray());
 
         return redirect()->route('services.index')->with('success', __('Service created successfully.'));
+    }
+
+    public function servicesShow(Service $service)
+    {
+        Gate::authorize('services.manage');
+        return view('services.show', compact('service'));
+    }
+
+    public function servicesEdit(Service $service)
+    {
+        Gate::authorize('services.manage');
+        $departments = Department::orderBy('name')->get();
+        return view('services.edit', compact('service', 'departments'));
+    }
+
+    public function servicesUpdate(Request $request, Service $service)
+    {
+        Gate::authorize('services.manage');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'code' => 'required|string|max:50|unique:services,code,' . $service->id,
+            'default_price' => 'required|numeric|min:0',
+            'department_id' => 'required|exists:departments,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $old = $service->toArray();
+        $service->update([
+            'name' => $request->input('name'),
+            'name_ar' => $request->input('name_ar') ?: $request->input('name'),
+            'code' => $request->input('code'),
+            'default_price' => $request->input('default_price'),
+            'department_id' => $request->input('department_id'),
+            'is_active' => $request->boolean('is_active', true)
+        ]);
+        ActivityLogger::log('service_updated', Service::class, $service->id, __('Service updated') . ': ' . $service->name, $old, $service->toArray());
+
+        return redirect()->route('services.index')->with('success', __('Service updated successfully.'));
+    }
+
+    public function servicesDestroy(Service $service)
+    {
+        Gate::authorize('services.manage');
+        $old = $service->toArray();
+        $name = $service->name;
+        $id = $service->id;
+        $service->delete();
+        ActivityLogger::log('service_deleted', Service::class, $id, __('Service deleted') . ': ' . $name, $old, null);
+        return redirect()->route('services.index')->with('success', __('Service deleted successfully.'));
     }
 
     public function usersIndex()
     {
         Gate::authorize('users.manage');
-        $users = User::with('employee.department')->whereNotNull('username')->orderBy('username')->get();
+        $users = User::with('employee.department')->whereNotNull('username')->orderBy('username')->paginate(15);
         return view('users.index', compact('users'));
+    }
+
+    public function usersCreate()
+    {
+        Gate::authorize('users.manage');
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
+        return view('users.create', compact('departments', 'roles'));
+    }
+
+    public function usersStore(Request $request)
+    {
+        Gate::authorize('users.manage');
+
+        $request->validate([
+            // Employee fields
+            'department_id' => 'required|exists:departments,id',
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'job_title' => 'nullable|string|max:255',
+            'job_title_ar' => 'nullable|string|max:255',
+            'status' => 'nullable|in:active,inactive',
+
+            // User fields
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'nullable|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|exists:roles,name',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            // Create employee first
+            $employee = Employee::create([
+                'department_id' => $request->input('department_id'),
+                'name' => $request->input('name'),
+                'name_ar' => $request->input('name_ar') ?: null,
+                'job_title' => $request->input('job_title') ?: null,
+                'job_title_ar' => $request->input('job_title_ar') ?: null,
+                'status' => $request->input('status', 'active'),
+            ]);
+
+            // Create user with employee_id
+            $user = User::create([
+                'employee_id' => $employee->id,
+                'username' => $request->input('username'),
+                'email' => $request->input('email') ?: null,
+                'password' => bcrypt($request->input('password')),
+                'name' => $request->input('name'),
+            ]);
+
+            // Assign role
+            $user->assignRole($request->input('role'));
+            ActivityLogger::log('user_created', User::class, $user->id, __('Employee created') . ': ' . $user->username, null, ['username' => $user->username, 'name' => $user->employee->name ?? $user->name]);
+        });
+
+        return redirect()->route('users.index')->with('success', __('Employee created successfully.'));
+    }
+
+    public function usersShow(User $user)
+    {
+        Gate::authorize('users.manage');
+        $user->load('employee.department', 'roles');
+        return view('users.show', compact('user'));
+    }
+
+    public function usersEdit(User $user)
+    {
+        Gate::authorize('users.manage');
+        $user->load('employee.department', 'roles');
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
+        return view('users.edit', compact('user', 'departments', 'roles'));
+    }
+
+    public function usersUpdate(Request $request, User $user)
+    {
+        Gate::authorize('users.manage');
+
+        $request->validate([
+            // Employee fields
+            'department_id' => 'required|exists:departments,id',
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'job_title' => 'nullable|string|max:255',
+            'job_title_ar' => 'nullable|string|max:255',
+            'status' => 'nullable|in:active,inactive',
+
+            // User fields
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:6|confirmed',
+            'role' => 'required|exists:roles,name',
+        ]);
+
+        DB::transaction(function () use ($request, $user) {
+            // Update employee
+            if ($user->employee) {
+                $user->employee->update([
+                    'department_id' => $request->input('department_id'),
+                    'name' => $request->input('name'),
+                    'name_ar' => $request->input('name_ar') ?: null,
+                    'job_title' => $request->input('job_title') ?: null,
+                    'job_title_ar' => $request->input('job_title_ar') ?: null,
+                    'status' => $request->input('status', 'active'),
+                ]);
+            }
+
+            // Update user
+            $userData = [
+                'username' => $request->input('username'),
+                'email' => $request->input('email') ?: null,
+                'name' => $request->input('name'),
+            ];
+
+            // Only update password if provided
+            if ($request->filled('password')) {
+                $userData['password'] = bcrypt($request->input('password'));
+            }
+
+            $user->update($userData);
+
+            // Sync role
+            $user->syncRoles([$request->input('role')]);
+            ActivityLogger::log('user_updated', User::class, $user->id, __('Employee updated') . ': ' . $user->username, null, ['username' => $user->username]);
+        });
+
+        return redirect()->route('users.index')->with('success', __('Employee updated successfully.'));
+    }
+
+    public function usersDestroy(User $user)
+    {
+        Gate::authorize('users.manage');
+
+        // Prevent deleting own account
+        if (auth()->id() === $user->id) {
+            return back()->with('error', __('You cannot delete your own account.'));
+        }
+
+        $username = $user->username;
+        $userId = $user->id;
+        DB::transaction(function () use ($user) {
+            $employeeId = $user->employee_id;
+
+            // Delete user first (this will also delete roles via pivot table)
+            $user->delete();
+
+            // Delete employee if exists
+            if ($employeeId) {
+                Employee::where('id', $employeeId)->delete();
+            }
+        });
+        ActivityLogger::log('user_deleted', User::class, $userId, __('Employee deleted') . ': ' . $username, ['username' => $username], null);
+
+        return redirect()->route('users.index')->with('success', __('Employee deleted successfully.'));
     }
 
     public function settingsIndex()
@@ -249,7 +495,11 @@ class PlaceholderController extends Controller
         Gate::authorize('settings.manage');
         $hospitalName = Setting::get('hospital_name', '');
         $managerName = Setting::get('manager_name', '');
-        return view('settings.index', compact('hospitalName', 'managerName'));
+        $logoPath = Setting::get('logo', '');
+        $companyPhone = Setting::get('company_phone', '');
+        $companyEmail = Setting::get('company_email', '');
+        $companyAddress = Setting::get('company_address', '');
+        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress'));
     }
 
     public function settingsUpdate(Request $request)
@@ -258,9 +508,27 @@ class PlaceholderController extends Controller
         $request->validate([
             'hospital_name' => 'nullable|string|max:255',
             'manager_name' => 'nullable|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
+            'company_phone' => 'nullable|string|max:100',
+            'company_email' => 'nullable|email|max:255',
+            'company_address' => 'nullable|string|max:500',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
         Setting::set('manager_name', $request->input('manager_name', ''), 'general');
+        Setting::set('company_phone', $request->input('company_phone', ''), 'general');
+        Setting::set('company_email', $request->input('company_email', ''), 'general');
+        Setting::set('company_address', $request->input('company_address', ''), 'general');
+
+        if ($request->hasFile('logo')) {
+            $oldLogo = Setting::get('logo', '');
+            if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+                Storage::disk('public')->delete($oldLogo);
+            }
+            $path = $request->file('logo')->store('settings', 'public');
+            Setting::set('logo', $path, 'general');
+        }
+        ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
+
         return back()->with('success', __('Saved successfully.'));
     }
 
@@ -308,6 +576,16 @@ class PlaceholderController extends Controller
                 $svc->wasRecentlyCreated ? $created++ : $updated++;
             }
             fclose($handle);
+        ActivityLogger::log('codes_uploaded', null, null, __('Upload official codes') . " (created: {$created}, updated: {$updated})", null, ['created' => $created, 'updated' => $updated]);
         return back()->with('success', __('Processed successfully. Created: :c, Updated: :u', ['c' => $created, 'u' => $updated]));
+    }
+
+    public function activityIndex()
+    {
+        Gate::authorize('activity.view');
+        $logs = ActivityLog::with('user.employee')
+            ->orderByDesc('created_at')
+            ->paginate(50);
+        return view('activity.index', compact('logs'));
     }
 }

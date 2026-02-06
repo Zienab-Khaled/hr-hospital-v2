@@ -128,5 +128,17 @@
             </div>
         @endif
 
+        {{-- Activity Log (for anyone with activity.view: manager, accountant, etc.) --}}
+        @if ($user->can('activity.view'))
+            <div class="pt-3 mt-3 border-t border-slate-200">
+                <a href="{{ route('activity.index') }}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
+                   {{ request()->routeIs('activity.*') ? $activeClass : $inactiveClass }}">
+                    <span class="text-lg">📜</span>
+                    <span>{{ app()->getLocale() === 'ar' ? 'سجل النشاط' : 'Activity Log' }}</span>
+                </a>
+            </div>
+        @endif
+
     </nav>
 </aside>

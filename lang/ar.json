@@ -30,5 +30,22 @@
     "Hospital Revenue Management": "نظام إدارة وتنمية الإيرادات",
     "View All": "عرض الكل",
     "View Details": "عرض التفاصيل",
-    "These credentials do not match our records.": "بيانات الدخول غير صحيحة."
+    "These credentials do not match our records.": "بيانات الدخول غير صحيحة.",
+    "Employee created successfully.": "تم إنشاء الموظف بنجاح.",
+    "Employee updated successfully.": "تم تحديث الموظف بنجاح.",
+    "Employee deleted successfully.": "تم حذف الموظف بنجاح.",
+    "You cannot delete your own account.": "لا يمكنك حذف حسابك الخاص.",
+    "Saved successfully.": "تم الحفظ بنجاح.",
+    "Department created successfully.": "تم إنشاء القسم بنجاح.",
+    "Session expired. Please try again.": "انتهت الجلسة. يرجى المحاولة مرة أخرى.",
+"Activity Log": "سجل النشاط",
+"Department created": "تم إنشاء القسم",
+"Service created": "تم إنشاء الخدمة",
+"Service updated": "تم تحديث الخدمة",
+"Service deleted": "تم حذف الخدمة",
+"Employee created": "تم إنشاء الموظف",
+"Employee updated": "تم تحديث الموظف",
+"Employee deleted": "تم حذف الموظف",
+"Settings updated": "تم تحديث الإعدادات",
+"Upload official codes": "رفع الكود الرسمي"
 }

@@ -30,5 +30,22 @@
     "Payments": "Payments",
     "Insurance/Charity Claims": "Insurance/Charity Claims",
     "Upload Reports to Cluster": "Upload Reports to Cluster",
-    "These credentials do not match our records.": "These credentials do not match our records."
+    "These credentials do not match our records.": "These credentials do not match our records.",
+    "Employee created successfully.": "Employee created successfully.",
+    "Employee updated successfully.": "Employee updated successfully.",
+    "Employee deleted successfully.": "Employee deleted successfully.",
+    "You cannot delete your own account.": "You cannot delete your own account.",
+    "Saved successfully.": "Saved successfully.",
+    "Department created successfully.": "Department created successfully.",
+    "Session expired. Please try again.": "Session expired. Please try again.",
+"Activity Log": "Activity Log",
+"Department created": "Department created",
+"Service created": "Service created",
+"Service updated": "Service updated",
+"Service deleted": "Service deleted",
+"Employee created": "Employee created",
+"Employee updated": "Employee updated",
+"Employee deleted": "Employee deleted",
+"Settings updated": "Settings updated",
+"Upload official codes": "Upload official codes"
 }

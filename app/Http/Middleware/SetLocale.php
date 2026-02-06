@@ -18,9 +18,12 @@ class SetLocale
             ?? config('app.locale');
 
         if (in_array($locale, ['ar', 'en'], true)) {
-            session(['locale' => $locale]);
+            // Only update session if locale has changed to avoid interfering with CSRF
+            if (session('locale') !== $locale) {
+                session(['locale' => $locale]);
+                Cookie::queue('app_locale', $locale, 60 * 24 * 365, '/', null, false, false);
+            }
             App::setLocale($locale);
-            Cookie::queue('app_locale', $locale, 60 * 24 * 365, '/', null, false, false);
         }
 
         return $next($request);
