@@ -513,7 +513,10 @@ class PlaceholderController extends Controller
         $companyPhone = Setting::get('company_phone', '');
         $companyEmail = Setting::get('company_email', '');
         $companyAddress = Setting::get('company_address', '');
-        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress'));
+        $accountNumber = Setting::get('account_number', '');
+        $ibanNumber = Setting::get('iban_number', '');
+        $stampPath = Setting::get('stamp', '');
+        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'stampPath'));
     }
 
     public function settingsUpdate(Request $request)
@@ -526,12 +529,17 @@ class PlaceholderController extends Controller
             'company_phone' => 'nullable|string|max:100',
             'company_email' => 'nullable|email|max:255',
             'company_address' => 'nullable|string|max:500',
+            'account_number' => 'nullable|string|max:100',
+            'iban_number' => 'nullable|string|max:50',
+            'stamp' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
         Setting::set('manager_name', $request->input('manager_name', ''), 'general');
         Setting::set('company_phone', $request->input('company_phone', ''), 'general');
         Setting::set('company_email', $request->input('company_email', ''), 'general');
         Setting::set('company_address', $request->input('company_address', ''), 'general');
+        Setting::set('account_number', $request->input('account_number', ''), 'general');
+        Setting::set('iban_number', $request->input('iban_number', ''), 'general');
 
         if ($request->hasFile('logo')) {
             $oldLogo = Setting::get('logo', '');
@@ -541,6 +549,16 @@ class PlaceholderController extends Controller
             $path = $request->file('logo')->store('settings', 'public');
             Setting::set('logo', $path, 'general');
         }
+
+        if ($request->hasFile('stamp')) {
+            $oldStamp = Setting::get('stamp', '');
+            if ($oldStamp && Storage::disk('public')->exists($oldStamp)) {
+                Storage::disk('public')->delete($oldStamp);
+            }
+            $path = $request->file('stamp')->store('settings', 'public');
+            Setting::set('stamp', $path, 'general');
+        }
+
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
 
         return back()->with('success', __('Saved successfully.'));
