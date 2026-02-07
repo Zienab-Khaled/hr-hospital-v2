@@ -268,6 +268,10 @@ class PlaceholderController extends Controller
             'code' => 'required|string|max:50|unique:services,code',
             'default_price' => 'required|numeric|min:0',
             'department_id' => 'required|exists:departments,id',
+            'is_multi_session' => 'boolean',
+            'session_count' => 'nullable|integer|min:1|required_if:is_multi_session,1',
+            'session_wait_time' => 'nullable|integer|min:1|required_if:is_multi_session,1',
+            'session_wait_unit' => 'nullable|in:days,weeks,months|required_if:is_multi_session,1',
         ]);
 
         $service = Service::create([
@@ -277,6 +281,10 @@ class PlaceholderController extends Controller
             'default_price' => $request->input('default_price'),
             'department_id' => $request->input('department_id'),
             'is_active' => true,
+            'is_multi_session' => $request->boolean('is_multi_session', false),
+            'session_count' => $request->boolean('is_multi_session') ? $request->input('session_count') : null,
+            'session_wait_time' => $request->boolean('is_multi_session') ? $request->input('session_wait_time') : null,
+            'session_wait_unit' => $request->boolean('is_multi_session') ? $request->input('session_wait_unit') : null,
         ]);
         ActivityLogger::log('service_created', Service::class, $service->id, __('Service created') . ': ' . $service->name, null, $service->toArray());
 
@@ -306,6 +314,10 @@ class PlaceholderController extends Controller
             'default_price' => 'required|numeric|min:0',
             'department_id' => 'required|exists:departments,id',
             'is_active' => 'boolean',
+            'is_multi_session' => 'boolean',
+            'session_count' => 'nullable|integer|min:1|required_if:is_multi_session,1',
+            'session_wait_time' => 'nullable|integer|min:1|required_if:is_multi_session,1',
+            'session_wait_unit' => 'nullable|in:days,weeks,months|required_if:is_multi_session,1',
         ]);
 
         $old = $service->toArray();
@@ -315,7 +327,11 @@ class PlaceholderController extends Controller
             'code' => $request->input('code'),
             'default_price' => $request->input('default_price'),
             'department_id' => $request->input('department_id'),
-            'is_active' => $request->boolean('is_active', true)
+            'is_active' => $request->boolean('is_active', true),
+            'is_multi_session' => $request->boolean('is_multi_session', false),
+            'session_count' => $request->boolean('is_multi_session') ? $request->input('session_count') : null,
+            'session_wait_time' => $request->boolean('is_multi_session') ? $request->input('session_wait_time') : null,
+            'session_wait_unit' => $request->boolean('is_multi_session') ? $request->input('session_wait_unit') : null,
         ]);
         ActivityLogger::log('service_updated', Service::class, $service->id, __('Service updated') . ': ' . $service->name, $old, $service->toArray());
 
@@ -366,6 +382,7 @@ class PlaceholderController extends Controller
             'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|exists:roles,name',
+            'signature_data' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -379,14 +396,20 @@ class PlaceholderController extends Controller
                 'status' => $request->input('status', 'active'),
             ]);
 
-            // Create user with employee_id
-            $user = User::create([
+            $userData = [
                 'employee_id' => $employee->id,
                 'username' => $request->input('username'),
                 'email' => $request->input('email') ?: null,
                 'password' => bcrypt($request->input('password')),
                 'name' => $request->input('name'),
-            ]);
+            ];
+            $signaturePath = $this->saveSignatureFromBase64($request->input('signature_data'));
+            if ($signaturePath) {
+                $userData['signature'] = $signaturePath;
+            }
+
+            // Create user with employee_id
+            $user = User::create($userData);
 
             // Assign role
             $user->assignRole($request->input('role'));
@@ -440,6 +463,7 @@ class PlaceholderController extends Controller
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6|confirmed',
             'role' => 'required|exists:roles,name',
+            'signature_data' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $user) {
@@ -465,6 +489,16 @@ class PlaceholderController extends Controller
             // Only update password if provided
             if ($request->filled('password')) {
                 $userData['password'] = bcrypt($request->input('password'));
+            }
+
+            // Handle employee electronic signature (drawn)
+            $signaturePath = $this->saveSignatureFromBase64($request->input('signature_data'));
+            if ($signaturePath) {
+                $oldSignature = $user->signature;
+                if ($oldSignature && Storage::disk('public')->exists($oldSignature)) {
+                    Storage::disk('public')->delete($oldSignature);
+                }
+                $userData['signature'] = $signaturePath;
             }
 
             $user->update($userData);
@@ -516,7 +550,8 @@ class PlaceholderController extends Controller
         $accountNumber = Setting::get('account_number', '');
         $ibanNumber = Setting::get('iban_number', '');
         $stampPath = Setting::get('stamp', '');
-        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'stampPath'));
+        $managerSignaturePath = Setting::get('manager_signature', '');
+        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'stampPath', 'managerSignaturePath'));
     }
 
     public function settingsUpdate(Request $request)
@@ -532,6 +567,7 @@ class PlaceholderController extends Controller
             'account_number' => 'nullable|string|max:100',
             'iban_number' => 'nullable|string|max:50',
             'stamp' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
+            'manager_signature_data' => 'nullable|string',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
         Setting::set('manager_name', $request->input('manager_name', ''), 'general');
@@ -557,6 +593,15 @@ class PlaceholderController extends Controller
             }
             $path = $request->file('stamp')->store('settings', 'public');
             Setting::set('stamp', $path, 'general');
+        }
+
+        $managerSigPath = $this->saveSignatureFromBase64($request->input('manager_signature_data'), 'settings');
+        if ($managerSigPath) {
+            $oldSig = Setting::get('manager_signature', '');
+            if ($oldSig && Storage::disk('public')->exists($oldSig)) {
+                Storage::disk('public')->delete($oldSig);
+            }
+            Setting::set('manager_signature', $managerSigPath, 'general');
         }
 
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
@@ -813,5 +858,22 @@ class PlaceholderController extends Controller
         $charity_entity->delete();
         ActivityLogger::log('charity_entity_deleted', CharityEntity::class, $id, __('Charity entity deleted') . ': ' . $name, $old, null);
         return redirect()->route('charity-entities.index')->with('success', __('Charity entity deleted successfully.'));
+    }
+
+    /** Decode base64 image (data URL from signature pad) and save to storage. Returns path or null. */
+    private function saveSignatureFromBase64(?string $data, string $folder = 'signatures'): ?string
+    {
+        if (! $data || ! preg_match('/^data:image\/(\w+);base64,/', $data)) {
+            return null;
+        }
+        $data = substr($data, (int) strpos($data, ',') + 1);
+        $decoded = base64_decode($data, true);
+        if ($decoded === false) {
+            return null;
+        }
+        $filename = $folder . '/' . uniqid('sig_', true) . '.png';
+        Storage::disk('public')->put($filename, $decoded);
+
+        return $filename;
     }
 }

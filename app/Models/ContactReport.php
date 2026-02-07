@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContactReport extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['patient_id', 'visit_id', 'contact_date', 'employee_id', 'result', 'notes', 'created_by'];
 
     protected function casts(): array

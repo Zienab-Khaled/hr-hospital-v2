@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Authorization extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'patient_id', 'visit_id', 'reference_number', 'service_type', 'referring_entity',
         'payment_type', 'insurance_company_id', 'charity_entity_id',

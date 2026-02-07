@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Patient extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'file_number', 'name', 'name_ar', 'id_number', 'phone',
         'payment_type', 'insurance_company_id', 'charity_entity_id', 'notes', 'is_active',

@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CharityClaim extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'invoice_id', 'charity_entity_id', 'sent_date', 'sent_by', 'status',
         'approved_amount', 'notes', 'entity_response_notes',

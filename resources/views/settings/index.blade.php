@@ -73,6 +73,15 @@
         </div>
 
         <div class="mb-4 pt-4 border-t border-slate-200">
+            <x-signature-pad
+                name="manager_signature_data"
+                :current-image="$managerSignaturePath"
+                :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني للمدير' : 'Manager electronic signature')"
+            />
+            @error('manager_signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div class="mb-4 pt-4 border-t border-slate-200">
             <h3 class="text-sm font-semibold text-slate-700 mb-3">{{ app()->getLocale() === 'ar' ? 'بيانات الاتصال بالشركة' : 'Company contact' }}</h3>
             <div class="space-y-4">
                 <div>

@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceItem extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['invoice_id', 'service_id', 'quantity', 'unit_price', 'total_price', 'description'];
 
     protected function casts(): array

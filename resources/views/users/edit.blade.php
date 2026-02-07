@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('users.update', $user) }}" method="POST" class="bg-white rounded-lg shadow p-6 max-w-2xl">
+    <form action="{{ route('users.update', $user) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 max-w-2xl">
         @csrf
         @method('PUT')
 
@@ -106,6 +106,15 @@
                         @endforeach
                     </select>
                     @error('role')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="md:col-span-2 pt-4 border-t border-slate-200">
+                    <x-signature-pad
+                        name="signature_data"
+                        :current-image="$user->signature"
+                        :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني للموظف' : 'Employee electronic signature')"
+                    />
+                    @error('signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>

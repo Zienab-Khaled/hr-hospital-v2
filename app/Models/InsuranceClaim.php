@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InsuranceClaim extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'invoice_id', 'insurance_company_id', 'sent_date', 'sent_by', 'status',
         'approved_amount', 'notes', 'company_response_notes',
