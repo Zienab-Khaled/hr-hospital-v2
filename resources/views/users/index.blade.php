@@ -7,7 +7,25 @@
             <a href="{{ route('users.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة موظف' : 'Add Employee' }}</a>
         @endcan
     </div>
-
+    
+    {{-- Search and Filter using Global Component --}}
+    <x-index-filters 
+        :action="route('users.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم المستخدم، البريد، الاسم...' : 'Username, email, name...'">
+        <div class="w-40">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}
+            </label>
+            <select name="department_id" class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' && $dept->name_ar ? $dept->name_ar : $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </x-index-filters>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">

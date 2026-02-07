@@ -1,7 +1,24 @@
 @extends('layouts.app')
 @section('title', __('Invoices'))
 @section('content')
-    <h2 class="text-xl font-semibold text-slate-800 mb-6">{{ __('Invoices') }}</h2>
+    <h2 class="text-xl font-semibold text-slate-800 mb-4">{{ __('Invoices') }}</h2>
+    
+    {{-- Search and Filter using Global Component --}}
+    <x-index-filters 
+        :action="route('invoices.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'رقم الفاتورة، اسم المريض...' : 'Invoice no, patient name...'">
+        <div class="w-32">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}
+            </label>
+            <select name="status" class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'مدفوعة' : 'Paid' }}</option>
+                <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'غير مدفوعة' : 'Unpaid' }}</option>
+            </select>
+        </div>
+    </x-index-filters>
+    
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">

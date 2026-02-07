@@ -1,12 +1,19 @@
 @extends('layouts.app')
 @section('title', __('Departments'))
 @section('content')
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-slate-800">{{ __('Departments') }}</h2>
         @can('departments.manage')
             <a href="{{ route('departments.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة قسم' : 'Add Department' }}</a>
         @endcan
     </div>
+    
+    {{-- Search and Filter --}}
+    <x-index-filters 
+        :action="route('departments.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم القسم، الكود...' : 'Department name, code...'">
+    </x-index-filters>
+    
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">

@@ -1,12 +1,19 @@
 @extends('layouts.app')
 @section('title', app()->getLocale() === 'ar' ? 'شركات التأمين' : 'Insurance Companies')
 @section('content')
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'شركات التأمين' : 'Insurance Companies' }}</h2>
         @can('insurance_companies.manage')
             <a href="{{ route('insurance-companies.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة شركة تأمين' : 'Add Insurance Company' }}</a>
         @endcan
     </div>
+    
+    {{-- Search and Filter --}}
+    <x-index-filters 
+        :action="route('insurance-companies.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم الشركة، جهة الاتصال، الهاتف...' : 'Company name, contact, phone...'">
+    </x-index-filters>
+    
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\HasIndexFilters;
 use App\Models\ActivityLog;
 use App\Models\Authorization;
 use App\Models\CharityClaim;
@@ -28,20 +29,35 @@ use Spatie\Permission\Models\Role;
 
 class PlaceholderController extends Controller
 {
-    public function patientsIndex()
+    use HasIndexFilters;
+
+    public function patientsIndex(Request $request)
     {
         Gate::authorize('patients.view');
-        $patients = Patient::with(['insuranceCompany', 'charityEntity'])->latest()->paginate(15);
+        
+        $query = Patient::with(['insuranceCompany', 'charityEntity']);
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'file_number', 'id_number', 'phone'],
+            ['payment_type' => 'payment_type']
+        );
+        
+        $patients = $query->latest()
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         return view('patients.index', compact('patients'));
     }
 
     /** مرضى حسب القسم: جمعيات، كاش، تأمين، متابعة، تحصيل */
-    public function patientsBySection()
+    public function patientsBySection(Request $request)
     {
         Gate::authorize('patients.view');
         $routeName = request()->route()->getName();
         $section = str_replace('patients.section.', '', $routeName);
-        $query = Patient::with(['insuranceCompany', 'charityEntity']);
+        
         $sectionTitles = [
             'charity' => ['ar' => 'مرضى الجمعيات', 'en' => 'Charity Patients'],
             'cash' => ['ar' => 'مرضى الكاش', 'en' => 'Cash Patients'],
@@ -49,9 +65,14 @@ class PlaceholderController extends Controller
             'followup' => ['ar' => 'متابعة المرضى', 'en' => 'Patient Follow-up'],
             'collection' => ['ar' => 'التحصيل', 'en' => 'Collection'],
         ];
+        
         if (!isset($sectionTitles[$section])) {
             abort(404);
         }
+        
+        $query = Patient::with(['insuranceCompany', 'charityEntity']);
+        
+        // Apply section-specific filters
         switch ($section) {
             case 'charity':
                 $query->where('payment_type', 'charity');
@@ -69,15 +90,52 @@ class PlaceholderController extends Controller
                 $query->whereHas('invoices', fn ($q) => $q->where('remaining_amount', '>', 0));
                 break;
         }
-        $patients = $query->latest()->paginate(15);
+        
+        // Apply global filters
+        $filters = in_array($section, ['followup', 'collection']) ? ['payment_type' => 'payment_type'] : [];
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'file_number', 'id_number', 'phone'],
+            $filters
+        );
+        
+        $patients = $query->latest()
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         $sectionTitle = $sectionTitles[$section][app()->getLocale()] ?? $sectionTitles[$section]['ar'];
         return view('patients.index', compact('patients', 'section', 'sectionTitle'));
     }
 
-    public function invoicesIndex()
+    public function invoicesIndex(Request $request)
     {
         Gate::authorize('invoices.view');
-        $invoices = Invoice::with('patient')->latest()->paginate(15);
+        
+        $query = Invoice::with('patient');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['invoice_number', 'patient.name', 'patient.name_ar', 'patient.file_number'],
+            []
+        );
+        
+        // Custom status filter
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if ($status === 'paid') {
+                $query->where('remaining_amount', '=', 0);
+            } elseif ($status === 'unpaid') {
+                $query->where('remaining_amount', '>', 0);
+            }
+        }
+        
+        $invoices = $query->latest()
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         return view('invoices.index', compact('invoices'));
     }
 
@@ -176,10 +234,23 @@ class PlaceholderController extends Controller
         return back()->with('success', __('File uploaded successfully.'));
     }
 
-    public function departmentsIndex()
+    public function departmentsIndex(Request $request)
     {
         Gate::authorize('departments.manage');
-        $departments = Department::withCount('employees')->orderBy('name')->paginate(15);
+        
+        $query = Department::withCount('employees');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'code'],
+            []
+        );
+        
+        $departments = $query->orderBy('name')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         return view('departments.index', compact('departments'));
     }
 
@@ -245,11 +316,25 @@ class PlaceholderController extends Controller
         return redirect()->route('departments.index')->with('success', __('Department deleted successfully.'));
     }
 
-    public function servicesIndex()
+    public function servicesIndex(Request $request)
     {
         Gate::authorize('services.manage');
-        $services = Service::with('department')->orderBy('name')->paginate(15);
-        return view('services.index', compact('services'));
+        
+        $query = Service::with('department');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'code'],
+            ['department_id' => 'department_id']
+        );
+        
+        $services = $query->orderBy('name')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
+        $departments = Department::orderBy('name')->get();
+        return view('services.index', compact('services', 'departments'));
     }
 
     public function servicesCreate()
@@ -349,11 +434,26 @@ class PlaceholderController extends Controller
         return redirect()->route('services.index')->with('success', __('Service deleted successfully.'));
     }
 
-    public function usersIndex()
+    public function usersIndex(Request $request)
     {
         Gate::authorize('users.manage');
-        $users = User::with('employee.department')->whereNotNull('username')->orderBy('username')->paginate(15);
-        return view('users.index', compact('users'));
+        
+        $query = User::with('employee.department')->whereNotNull('username');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['username', 'email', 'name', 'employee.name', 'employee.name_ar'],
+            [],
+            ['department_id' => ['employee', 'department_id']]
+        );
+        
+        $users = $query->orderBy('username')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
+        $departments = Department::orderBy('name')->get();
+        return view('users.index', compact('users', 'departments'));
     }
 
     public function usersCreate()
@@ -667,10 +767,23 @@ class PlaceholderController extends Controller
     }
 
     // ——— Insurance Companies ———
-    public function insuranceCompaniesIndex()
+    public function insuranceCompaniesIndex(Request $request)
     {
         Gate::authorize('insurance_companies.manage');
-        $companies = InsuranceCompany::withCount('patients')->orderBy('name')->paginate(15);
+        
+        $query = InsuranceCompany::withCount('patients');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'contact_person', 'phone', 'email'],
+            []
+        );
+        
+        $companies = $query->orderBy('name')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         return view('insurance-companies.index', compact('companies'));
     }
 
@@ -764,10 +877,23 @@ class PlaceholderController extends Controller
     }
 
     // ——— Charity Entities ———
-    public function charityEntitiesIndex()
+    public function charityEntitiesIndex(Request $request)
     {
         Gate::authorize('charity_entities.manage');
-        $entities = CharityEntity::withCount('patients')->orderBy('name')->paginate(15);
+        
+        $query = CharityEntity::withCount('patients');
+        
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['name', 'name_ar', 'contact_person', 'phone', 'email'],
+            []
+        );
+        
+        $entities = $query->orderBy('name')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+            
         return view('charity-entities.index', compact('entities'));
     }
 

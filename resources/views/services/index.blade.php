@@ -1,12 +1,32 @@
 @extends('layouts.app')
 @section('title', __('Services'))
 @section('content')
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-slate-800">{{ __('Services') }}</h2>
         @can('services.manage')
             <a href="{{ route('services.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة خدمة' : 'Add Service' }}</a>
         @endcan
     </div>
+    
+    {{-- Search and Filter --}}
+    <x-index-filters 
+        :action="route('services.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم الخدمة، الكود...' : 'Service name, code...'">
+        <div class="w-40">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}
+            </label>
+            <select name="department_id" class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' && $dept->name_ar ? $dept->name_ar : $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </x-index-filters>
+    
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">

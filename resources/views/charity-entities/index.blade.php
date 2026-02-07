@@ -1,12 +1,19 @@
 @extends('layouts.app')
 @section('title', app()->getLocale() === 'ar' ? 'الجمعيات الخيرية' : 'Charity Entities')
 @section('content')
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'الجمعيات الخيرية' : 'Charity Entities' }}</h2>
         @can('charity_entities.manage')
             <a href="{{ route('charity-entities.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة جمعية خيرية' : 'Add Charity Entity' }}</a>
         @endcan
     </div>
+    
+    {{-- Search and Filter --}}
+    <x-index-filters 
+        :action="route('charity-entities.index')"
+        :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم الجمعية، جهة الاتصال، الهاتف...' : 'Entity name, contact, phone...'">
+    </x-index-filters>
+    
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b border-slate-200">

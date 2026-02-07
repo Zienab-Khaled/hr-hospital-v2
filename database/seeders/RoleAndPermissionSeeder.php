@@ -52,7 +52,7 @@ class RoleAndPermissionSeeder extends Seeder
             'attachments.upload', 'attachments.view',
             'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
             'reports.view', 'reports.export', 'reports.upload_cluster', 'activity.view',
-            'departments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
+            'dلسة epartments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
             'insurance_companies.manage', 'charity_entities.manage',
         ]);
 
