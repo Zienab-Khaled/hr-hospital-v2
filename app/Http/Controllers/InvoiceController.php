@@ -17,22 +17,22 @@ class InvoiceController extends Controller
     public function create(Request $request)
     {
         $this->authorize('invoices.create');
-        
+
         $patient = null;
         if ($request->has('patient_id')) {
             $patient = Patient::with(['insuranceCompany', 'charityEntity'])->findOrFail($request->get('patient_id'));
         }
-        
+
         $patients = Patient::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('invoices.create', compact('patients', 'services', 'patient'));
     }
-    
+
     public function store(Request $request)
     {
         $this->authorize('invoices.create');
-        
+
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'invoice_date' => 'required|date',
@@ -44,7 +44,7 @@ class InvoiceController extends Controller
             'services.*.total_price' => 'required|numeric|min:0',
             'services.*.description' => 'nullable|string',
         ]);
-        
+
         DB::beginTransaction();
         try {
             // Create visit for this invoice
@@ -55,13 +55,13 @@ class InvoiceController extends Controller
                 'notes' => 'Invoice created',
                 'registered_by' => auth()->id(),
             ]);
-            
+
             // Generate invoice number
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
-            
+
             // Calculate total amount
             $totalAmount = collect($validated['services'])->sum('total_price');
-            
+
             // Create invoice
             $invoice = Invoice::create([
                 'patient_id' => $patient->id,
@@ -75,7 +75,7 @@ class InvoiceController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'],
             ]);
-            
+
             // Create invoice items
             foreach ($validated['services'] as $serviceData) {
                 $invoice->items()->create([
@@ -86,7 +86,7 @@ class InvoiceController extends Controller
                     'description' => $serviceData['description'] ?? null,
                 ]);
             }
-            
+
             // Create approval request for insurance/charity patients
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 $approval = Approval::create([
@@ -99,7 +99,7 @@ class InvoiceController extends Controller
                     'status' => 'pending',
                     'requested_by' => auth()->id(),
                 ]);
-                
+
                 // Get email recipient
                 $recipientEmail = null;
                 if ($patient->payment_type === 'insurance' && $patient->insuranceCompany) {
@@ -107,7 +107,7 @@ class InvoiceController extends Controller
                 } elseif ($patient->payment_type === 'charity' && $patient->charityEntity) {
                     $recipientEmail = $patient->charityEntity->email;
                 }
-                
+
                 // Send approval request email
                 if ($recipientEmail) {
                     try {
@@ -118,24 +118,24 @@ class InvoiceController extends Controller
                     }
                 }
             }
-            
+
             DB::commit();
-            
-            $message = in_array($patient->payment_type, ['insurance', 'charity']) 
+
+            $message = in_array($patient->payment_type, ['insurance', 'charity'])
                 ? __('Invoice created and approval request sent successfully.')
                 : __('Invoice created successfully.');
-            
+
             return redirect()->route('invoices.show', $invoice)->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Error creating invoice: ' . $e->getMessage()])->withInput();
         }
     }
-    
+
     public function show(Invoice $invoice)
     {
         $this->authorize('invoices.view');
-        
+
         $invoice->load([
             'patient.insuranceCompany',
             'patient.charityEntity',
@@ -143,25 +143,25 @@ class InvoiceController extends Controller
             'payments',
             'visit'
         ]);
-        
+
         return view('invoices.show', compact('invoice'));
     }
-    
+
     public function edit(Invoice $invoice)
     {
         $this->authorize('invoices.edit');
-        
+
         $invoice->load('items.service');
         $patients = Patient::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        
+
         return view('invoices.edit', compact('invoice', 'patients', 'services'));
     }
-    
+
     public function update(Request $request, Invoice $invoice)
     {
         $this->authorize('invoices.edit');
-        
+
         $validated = $request->validate([
             'invoice_date' => 'required|date',
             'notes' => 'nullable|string',
@@ -172,12 +172,12 @@ class InvoiceController extends Controller
             'services.*.total_price' => 'required|numeric|min:0',
             'services.*.description' => 'nullable|string',
         ]);
-        
+
         DB::beginTransaction();
         try {
             // Calculate total amount
             $totalAmount = collect($validated['services'])->sum('total_price');
-            
+
             // Update invoice
             $invoice->update([
                 'invoice_date' => $validated['invoice_date'],
@@ -185,7 +185,7 @@ class InvoiceController extends Controller
                 'remaining_amount' => $totalAmount - $invoice->paid_amount,
                 'notes' => $validated['notes'],
             ]);
-            
+
             // Delete old items and create new ones
             $invoice->items()->delete();
             foreach ($validated['services'] as $serviceData) {
@@ -197,9 +197,9 @@ class InvoiceController extends Controller
                     'description' => $serviceData['description'] ?? null,
                 ]);
             }
-            
+
             DB::commit();
-            
+
             return redirect()->route('invoices.show', $invoice)->with('success', __('Invoice updated successfully.'));
         } catch (\Exception $e) {
             DB::rollBack();

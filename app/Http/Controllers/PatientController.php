@@ -105,4 +105,74 @@ class PatientController extends Controller
         
         return view('patients.show', compact('patient'));
     }
+    
+    public function edit(Patient $patient)
+    {
+        $this->authorize('patients.edit');
+        $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
+        $charityEntities = CharityEntity::orderBy('name')->get();
+        return view('patients.edit', compact('patient', 'insuranceCompanies', 'charityEntities'));
+    }
+    
+    public function update(Request $request, Patient $patient)
+    {
+        $this->authorize('patients.edit');
+        
+        $valid = $request->validate([
+            'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,
+            'name' => 'required|string|max:255',
+            'name_ar' => 'nullable|string|max:255',
+            'id_number' => 'nullable|string|max:50|unique:patients,id_number,' . $patient->id,
+            'passport_number' => 'nullable|string|max:50|unique:patients,passport_number,' . $patient->id,
+            'iqama_number' => 'nullable|string|max:50|unique:patients,iqama_number,' . $patient->id,
+            'age' => 'nullable|integer|min:0|max:150',
+            'gender' => 'nullable|in:male,female',
+            'country_of_origin' => 'nullable|string|max:255',
+            'current_location' => 'nullable|string|max:255',
+            'sponsor_name' => 'nullable|string|max:255',
+            'sponsor_phone' => 'nullable|string|max:50',
+            'phone' => 'nullable|string|max:50',
+            'payment_type' => 'required|in:cash,insurance,charity',
+            'insurance_company_id' => 'nullable|exists:insurance_companies,id',
+            'charity_entity_id' => 'nullable|exists:charity_entities,id',
+            'notes' => 'nullable|string',
+        ]);
+        
+        // Ensure at least one identity document is provided
+        if (empty($valid['id_number']) && empty($valid['passport_number']) && empty($valid['iqama_number'])) {
+            return back()->withErrors(['id_number' => 'At least one identity document (ID/Passport/Iqama) is required.'])->withInput();
+        }
+        
+        if ($valid['payment_type'] === 'insurance') {
+            $valid['charity_entity_id'] = null;
+        }
+        if ($valid['payment_type'] === 'charity') {
+            $valid['insurance_company_id'] = null;
+        }
+        
+        $patient->update($valid);
+        
+        // Handle document uploads
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $document) {
+                $patient->addMedia($document)->toMediaCollection('documents');
+            }
+        }
+        
+        return redirect()->route('patients.show', $patient)->with('success', __('Patient updated successfully.'));
+    }
+    
+    public function destroy(Patient $patient)
+    {
+        $this->authorize('patients.delete');
+        
+        // Check if patient has related records
+        if ($patient->visits()->exists() || $patient->invoices()->exists()) {
+            return back()->with('error', __('Cannot delete patient with existing visits or invoices.'));
+        }
+        
+        $patient->delete();
+        
+        return redirect()->route('patients.section.followup')->with('success', __('Patient deleted successfully.'));
+    }
 }

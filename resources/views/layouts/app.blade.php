@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-      dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
     <meta charset="utf-8">
@@ -31,9 +30,17 @@
     @endif
 
     <style>
-        * { font-family: 'Cairo','Inter',system-ui,sans-serif }
-        [dir="rtl"] * { font-family: 'Cairo',system-ui,sans-serif }
-        [dir="ltr"] * { font-family: 'Inter',system-ui,sans-serif }
+        * {
+            font-family: 'Cairo', 'Inter', system-ui, sans-serif
+        }
+
+        [dir="rtl"] * {
+            font-family: 'Cairo', system-ui, sans-serif
+        }
+
+        [dir="ltr"] * {
+            font-family: 'Inter', system-ui, sans-serif
+        }
     </style>
 </head>
 
@@ -50,11 +57,11 @@
                 <div class="flex items-center gap-4">
                     <div class="flex gap-2">
                         <a href="{{ url()->current() }}?lang=ar"
-                           class="px-3 py-1 rounded text-sm {{ app()->getLocale()==='ar' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
+                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'ar' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
                             Arabic
                         </a>
                         <a href="{{ url()->current() }}?lang=en"
-                           class="px-3 py-1 rounded text-sm {{ app()->getLocale()==='en' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
+                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'en' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
                             English
                         </a>
                     </div>
@@ -111,10 +118,6 @@
 
     </div>
 
-    {{-- Alpine.js for interactive components --}}
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    {{-- Custom scripts from components --}}
-    @stack('scripts')
 </body>
+
 </html>

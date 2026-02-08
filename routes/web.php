@@ -36,8 +36,11 @@ Route::middleware('auth')->group(function () {
     Route::get('patients/followup', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.followup');
     Route::get('patients/collection', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.collection');
     Route::get('patients/create', [PatientController::class, 'create'])->name('patients.create');
-    Route::get('patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
     Route::post('patients', [PatientController::class, 'store'])->name('patients.store');
+    Route::get('patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+    Route::get('patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+    Route::put('patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
+    Route::delete('patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
 
     Route::get('contact-reports', [ContactReportController::class, 'index'])->name('contact-reports.index');
     Route::get('contact-reports/create', [ContactReportController::class, 'create'])->name('contact-reports.create');

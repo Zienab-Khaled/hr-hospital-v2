@@ -43,14 +43,16 @@ trait HasIndexFilters
 
         // Apply direct column filters
         foreach ($filters as $key => $column) {
-            if ($value = $request->get($key)) {
+            if ($request->filled($key)) {
+                $value = $request->get($key);
                 $query->where($column, $value);
             }
         }
 
         // Apply relation filters
         foreach ($relationFilters as $key => $config) {
-            if ($value = $request->get($key)) {
+            if ($request->filled($key)) {
+                $value = $request->get($key);
                 [$relation, $column] = $config;
                 $query->whereHas($relation, function ($q) use ($column, $value) {
                     $q->where($column, $value);

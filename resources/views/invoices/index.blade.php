@@ -1,91 +1,57 @@
 @extends('layouts.app')
 @section('title', __('Invoices'))
 @section('content')
+    <h2 class="text-xl font-semibold text-slate-800 mb-4">{{ __('Invoices') }}</h2>
 
-<div x-data="dataTable()" x-init="init()">
-    <div class="flex justify-between items-center mb-6">
-        <div class="flex items-center gap-4">
-            <h2 class="text-2xl font-bold text-slate-800">{{ __('Invoices') }}</h2>
-            <div x-show="selectedItems.length > 0" x-cloak class="flex items-center gap-3">
-                <span class="text-sm text-slate-600 font-medium"><span x-text="selectedItems.length"></span> {{ app()->getLocale() === 'ar' ? 'محدد' : 'selected' }}</span>
-                <button @click="executeBulkAction('{{ route('invoices.bulk-delete') }}', 'DELETE', '{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف الفواتير المحددة؟' : 'Delete selected invoices?' }}')" class="px-4 py-2 text-sm font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-md">{{ app()->getLocale() === 'ar' ? 'حذف المحدد' : 'Delete Selected' }}</button>
-            </div>
-        </div>
-        <a href="{{ route('invoices.create') }}" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-blue-700 hover:to-blue-800 shadow-lg flex items-center gap-2 transition-all transform hover:scale-105">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            {{ app()->getLocale() === 'ar' ? 'إضافة فاتورة' : 'Add Invoice' }}
-        </a>
-    </div>
-
+    {{-- Search and Filter using Global Component --}}
     <x-index-filters :action="route('invoices.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'رقم الفاتورة، اسم المريض...' : 'Invoice no, patient name...'">
         <div class="w-32">
-            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</label>
-            <select name="status" class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}
+            </label>
+            <select name="status"
+                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'مدفوعة' : 'Paid' }}</option>
-                <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'غير مدفوعة' : 'Unpaid' }}</option>
+                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>
+                    {{ app()->getLocale() === 'ar' ? 'مدفوعة' : 'Paid' }}</option>
+                <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>
+                    {{ app()->getLocale() === 'ar' ? 'غير مدفوعة' : 'Unpaid' }}</option>
             </select>
         </div>
     </x-index-filters>
-    
-    <div class="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
-                    <tr>
-                        <th class="px-6 py-4 w-16"><input type="checkbox" @change="toggleSelectAll()" :checked="allSelected" class="w-5 h-5 rounded border-2 border-white/30 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"></th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'المعرف' : 'ID' }}</th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ __("Patients") }}</th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'الإجمالي' : 'Total' }}</th>
-                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'المتبقي' : 'Remaining' }}</th>
-                        <th class="text-center px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'الإجراءات' : 'Actions' }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($invoices as $inv)
-                        <tr class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-slate-50 transition-all duration-150" :class="{'bg-blue-50': selectedItems.includes({{ $inv->id }})}">
-                            <td class="px-6 py-4"><input type="checkbox" value="{{ $inv->id }}" :checked="selectedItems.includes({{ $inv->id }})" @change="toggleItem({{ $inv->id }})" class="w-5 h-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"></td>
-                            <td class="px-6 py-4"><span class="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded text-sm">#{{ $inv->id }}</span></td>
-                            <td class="px-6 py-4"><span class="font-mono text-slate-600 bg-amber-50 px-2 py-1 rounded font-semibold">{{ $inv->invoice_number ?? $inv->id }}</span></td>
-                            <td class="px-6 py-4 font-semibold text-slate-800">{{ $inv->patient?->name }}</td>
-                            <td class="px-6 py-4 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
-                            <td class="px-6 py-4 font-semibold text-green-700">@currency($inv->total_amount)</td>
-                            <td class="px-6 py-4 font-semibold text-red-700">@currency($inv->remaining_amount)</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ route('invoices.show', $inv) }}" class="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </a>
-                                    <a href="{{ route('invoices.edit', $inv) }}" class="inline-flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="8" class="px-4 py-16 text-center">
-                            <div class="flex flex-col items-center justify-center">
-                                <div class="w-20 h-20 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
-                                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                </div>
-                                <h3 class="text-lg font-bold text-slate-700 mb-2">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير' : 'No Invoices Found' }}</h3>
-                                <p class="text-sm text-slate-500">{{ app()->getLocale() === 'ar' ? 'لم يتم العثور على فواتير' : 'No invoices yet' }}</p>
-                            </div>
-                        </td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($invoices->hasPages())<div class="px-6 py-4 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white">{{ $invoices->links() }}</div>@endif
-    </div>
-</div>
 
-@push('scripts')
-<script>
-function dataTable(){return{selectedItems:[],allSelected:false,init(){},toggleSelectAll(){if(this.allSelected){this.selectedItems=[];this.allSelected=false}else{const checkboxes=document.querySelectorAll('tbody input[type="checkbox"]');this.selectedItems=Array.from(checkboxes).map(cb=>parseInt(cb.value)).filter(id=>id>0);this.allSelected=true}},toggleItem(id){const index=this.selectedItems.indexOf(id);if(index>-1){this.selectedItems.splice(index,1)}else{this.selectedItems.push(id)}const totalCheckboxes=document.querySelectorAll('tbody input[type="checkbox"]').length;this.allSelected=this.selectedItems.length===totalCheckboxes&&totalCheckboxes>0},executeBulkAction(action,method,confirmMessage){if(this.selectedItems.length===0){alert('{{ app()->getLocale() === 'ar' ? "الرجاء تحديد عنصر واحد على الأقل" : "Please select at least one item" }}');return}if(confirmMessage&&!confirm(confirmMessage))return;const form=document.createElement('form');form.method='POST';form.action=action;const csrf=document.createElement('input');csrf.type='hidden';csrf.name='_token';csrf.value='{{ csrf_token() }}';form.appendChild(csrf);if(method!=='POST'){const methodField=document.createElement('input');methodField.type='hidden';methodField.name='_method';methodField.value=method;form.appendChild(methodField)}this.selectedItems.forEach(id=>{const input=document.createElement('input');input.type='hidden';input.name='ids[]';input.value=id;form.appendChild(input)});document.body.appendChild(form);form.submit()}}}
-</script>
-@endpush
-<style>[x-cloak]{display:none !important;}</style>
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
+                    <th class="text-start p-3">{{ __('Patients') }}</th>
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الإجمالي' : 'Total' }}</th>
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'المتبقي' : 'Remaining' }}</th>
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($invoices as $inv)
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3">{{ $inv->invoice_number ?? $inv->id }}</td>
+                        <td class="p-3">{{ $inv->patient?->name }}</td>
+                        <td class="p-3">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
+                        <td class="p-3">@currency($inv->total_amount)</td>
+                        <td class="p-3">@currency($inv->remaining_amount)</td>
+                        <td class="p-3">{{ $inv->status ?? '—' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-slate-500">
+                            {{ app()->getLocale() === 'ar' ? 'لا توجد فواتير' : 'No invoices yet' }}</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+        @if ($invoices->hasPages())
+            <div class="p-3 border-t">{{ $invoices->links() }}</div>
+        @endif
+    </div>
 @endsection

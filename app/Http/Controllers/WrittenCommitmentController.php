@@ -23,18 +23,18 @@ class WrittenCommitmentController extends Controller
     public function create(Request $request)
     {
         $this->authorize('procedures.written_commitment');
-        
+
         $patient = null;
         $invoice = null;
-        
+
         if ($request->has('patient_id')) {
             $patient = Patient::with(['insuranceCompany', 'charityEntity'])->findOrFail($request->get('patient_id'));
         }
-        
+
         if ($request->has('invoice_id')) {
             $invoice = \App\Models\Invoice::with('items')->findOrFail($request->get('invoice_id'));
         }
-        
+
         $patients = Patient::orderBy('name')->get();
         return view('written-commitments.create', compact('patients', 'patient', 'invoice'));
     }
@@ -53,31 +53,31 @@ class WrittenCommitmentController extends Controller
             'witness_name' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
-        
+
         $valid['created_by'] = auth()->id();
-        
+
         $commitment = WrittenCommitment::create($valid);
-        
+
         // Handle signature file upload
         if ($request->hasFile('signed_file_path')) {
             $path = $request->file('signed_file_path')->store('commitments', 'public');
             $commitment->update(['signed_file_path' => $path]);
         }
-        
-        $message = $valid['status'] === 'signed' 
-            ? __('Commitment signed successfully.') 
+
+        $message = $valid['status'] === 'signed'
+            ? __('Commitment signed successfully.')
             : __('Commitment refusal recorded.');
-            
+
         return redirect()->route('written-commitments.index')->with('success', $message);
     }
-    
+
     public function print(WrittenCommitment $commitment)
     {
         $this->authorize('procedures.written_commitment');
-        
+
         $commitment->load(['patient', 'createdByUser']);
         $settings = \App\Models\Setting::first();
-        
+
         return view('written-commitments.print', compact('commitment', 'settings'));
     }
 }

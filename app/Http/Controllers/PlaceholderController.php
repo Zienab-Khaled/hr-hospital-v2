@@ -34,20 +34,20 @@ class PlaceholderController extends Controller
     public function patientsIndex(Request $request)
     {
         Gate::authorize('patients.view');
-        
+
         $query = Patient::with(['insuranceCompany', 'charityEntity']);
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['name', 'name_ar', 'file_number', 'id_number', 'phone'],
             ['payment_type' => 'payment_type']
         );
-        
+
         $patients = $query->latest()
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         return view('patients.index', compact('patients'));
     }
 
@@ -57,7 +57,7 @@ class PlaceholderController extends Controller
         Gate::authorize('patients.view');
         $routeName = request()->route()->getName();
         $section = str_replace('patients.section.', '', $routeName);
-        
+
         $sectionTitles = [
             'charity' => ['ar' => 'مرضى الجمعيات', 'en' => 'Charity Patients'],
             'cash' => ['ar' => 'مرضى الكاش', 'en' => 'Cash Patients'],
@@ -65,13 +65,13 @@ class PlaceholderController extends Controller
             'followup' => ['ar' => 'متابعة المرضى', 'en' => 'Patient Follow-up'],
             'collection' => ['ar' => 'التحصيل', 'en' => 'Collection'],
         ];
-        
+
         if (!isset($sectionTitles[$section])) {
             abort(404);
         }
-        
+
         $query = Patient::with(['insuranceCompany', 'charityEntity']);
-        
+
         // Apply section-specific filters
         switch ($section) {
             case 'charity':
@@ -90,54 +90,61 @@ class PlaceholderController extends Controller
                 $query->whereHas('invoices', fn ($q) => $q->where('remaining_amount', '>', 0));
                 break;
         }
-        
-        // Apply section-specific filters
+
+        // Apply global filters based on section
         $filters = [];
+        
         if (in_array($section, ['followup', 'collection'])) {
             $filters['payment_type'] = 'payment_type';
         }
+        
+        // Charity-specific filters
         if ($section === 'charity') {
             $filters['charity_entity_id'] = 'charity_entity_id';
             $filters['gender'] = 'gender';
         }
+        
+        // Insurance-specific filters
         if ($section === 'insurance') {
             $filters['insurance_company_id'] = 'insurance_company_id';
-            $filters['gender'] = 'gender';
         }
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'id_number', 'phone', 'passport_number', 'iqama_number'],
+            ['name', 'name_ar', 'file_number', 'id_number', 'phone', 'passport_number', 'iqama_number', 'sponsor_name', 'country_of_origin'],
             $filters
         );
         
+        // Age range filters
+        if ($request->filled('age_from')) {
+            $query->where('age', '>=', $request->get('age_from'));
+        }
+        if ($request->filled('age_to')) {
+            $query->where('age', '<=', $request->get('age_to'));
+        }
+
         $patients = $query->latest()
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         $sectionTitle = $sectionTitles[$section][app()->getLocale()] ?? $sectionTitles[$section]['ar'];
-        
-        // Get filter data based on section
-        $charityEntities = $section === 'charity' ? \App\Models\CharityEntity::orderBy('name')->get() : collect();
-        $insuranceCompanies = $section === 'insurance' ? \App\Models\InsuranceCompany::orderBy('name')->get() : collect();
-        
-        return view('patients.index', compact('patients', 'section', 'sectionTitle', 'charityEntities', 'insuranceCompanies'));
+        return view('patients.index', compact('patients', 'section', 'sectionTitle'));
     }
 
     public function invoicesIndex(Request $request)
     {
         Gate::authorize('invoices.view');
-        
+
         $query = Invoice::with('patient');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['invoice_number', 'patient.name', 'patient.name_ar', 'patient.file_number'],
             []
         );
-        
+
         // Custom status filter
         if ($request->filled('status')) {
             $status = $request->input('status');
@@ -147,11 +154,11 @@ class PlaceholderController extends Controller
                 $query->where('remaining_amount', '>', 0);
             }
         }
-        
+
         $invoices = $query->latest()
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         return view('invoices.index', compact('invoices'));
     }
 
@@ -253,20 +260,20 @@ class PlaceholderController extends Controller
     public function departmentsIndex(Request $request)
     {
         Gate::authorize('departments.manage');
-        
+
         $query = Department::withCount('employees');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['name', 'name_ar', 'code'],
             []
         );
-        
+
         $departments = $query->orderBy('name')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         return view('departments.index', compact('departments'));
     }
 
@@ -335,20 +342,20 @@ class PlaceholderController extends Controller
     public function servicesIndex(Request $request)
     {
         Gate::authorize('services.manage');
-        
+
         $query = Service::with('department');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['name', 'name_ar', 'code'],
             ['department_id' => 'department_id']
         );
-        
+
         $services = $query->orderBy('name')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         $departments = Department::orderBy('name')->get();
         return view('services.index', compact('services', 'departments'));
     }
@@ -453,9 +460,9 @@ class PlaceholderController extends Controller
     public function usersIndex(Request $request)
     {
         Gate::authorize('users.manage');
-        
+
         $query = User::with('employee.department')->whereNotNull('username');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
@@ -463,11 +470,11 @@ class PlaceholderController extends Controller
             [],
             ['department_id' => ['employee', 'department_id']]
         );
-        
+
         $users = $query->orderBy('username')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         $departments = Department::orderBy('name')->get();
         return view('users.index', compact('users', 'departments'));
     }
@@ -786,20 +793,20 @@ class PlaceholderController extends Controller
     public function insuranceCompaniesIndex(Request $request)
     {
         Gate::authorize('insurance_companies.manage');
-        
+
         $query = InsuranceCompany::withCount('patients');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['name', 'name_ar', 'contact_person', 'phone', 'email'],
             []
         );
-        
+
         $companies = $query->orderBy('name')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         return view('insurance-companies.index', compact('companies'));
     }
 
@@ -896,20 +903,20 @@ class PlaceholderController extends Controller
     public function charityEntitiesIndex(Request $request)
     {
         Gate::authorize('charity_entities.manage');
-        
+
         $query = CharityEntity::withCount('patients');
-        
+
         $this->applyIndexFilters(
             $query,
             $request,
             ['name', 'name_ar', 'contact_person', 'phone', 'email'],
             []
         );
-        
+
         $entities = $query->orderBy('name')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
-            
+
         return view('charity-entities.index', compact('entities'));
     }
 
