@@ -1,64 +1,176 @@
 @extends('layouts.app')
 @section('title', __('Departments'))
 @section('content')
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-slate-800">{{ __('Departments') }}</h2>
+
+<div x-data="dataTable()" x-init="init()">
+    {{-- Header --}}
+    <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-bold text-slate-800">{{ __('Departments') }}</h2>
+            
+            {{-- Bulk Actions --}}
+            <div x-show="selectedItems.length > 0" x-cloak class="flex items-center gap-3">
+                <span class="text-sm text-slate-600 font-medium">
+                    <span x-text="selectedItems.length"></span> {{ app()->getLocale() === 'ar' ? 'محدد' : 'selected' }}
+                </span>
+                @can('departments.manage')
+                    <button @click="executeBulkAction('{{ route('departments.bulk-delete') }}', 'DELETE', '{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف الأقسام المحددة؟' : 'Are you sure you want to delete selected departments?' }}')"
+                        class="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-red-600 text-white hover:bg-red-700 shadow-md">
+                        {{ app()->getLocale() === 'ar' ? 'حذف المحدد' : 'Delete Selected' }}
+                    </button>
+                @endcan
+            </div>
+        </div>
+
         @can('departments.manage')
-            <a href="{{ route('departments.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'إضافة قسم' : 'Add Department' }}</a>
+            <a href="{{ route('departments.create') }}" 
+               class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-blue-700 hover:to-blue-800 shadow-lg flex items-center gap-2 transition-all transform hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                {{ app()->getLocale() === 'ar' ? 'إضافة قسم' : 'Add Department' }}
+            </a>
         @endcan
     </div>
-    
+
     {{-- Search and Filter --}}
     <x-index-filters 
         :action="route('departments.index')"
         :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم القسم، الكود...' : 'Department name, code...'">
     </x-index-filters>
     
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200">
-                <tr>
-                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الاسم' : 'Name' }}</th>
-                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الكود' : 'Code' }}</th>
-                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'عدد الموظفين' : 'Employees' }}</th>
-                    @can('departments.manage')
-                        <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الإجراءات' : 'Actions' }}</th>
-                    @endcan
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($departments as $d)
-                    <tr class="border-b border-slate-100 hover:bg-slate-50">
-                        <td class="p-3">{{ app()->getLocale() === 'ar' ? ($d->name_ar ?: $d->name) : $d->name }}</td>
-                        <td class="p-3">{{ $d->code }}</td>
-                        <td class="p-3">{{ $d->employees_count }}</td>
-                        @can('departments.manage')
-                            <td class="p-3">
-                                <div class="flex gap-2">
-                                    <a href="{{ route('departments.show', $d) }}" class="text-blue-600 hover:text-blue-800" title="{{ app()->getLocale() === 'ar' ? 'عرض' : 'View' }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </a>
-                                    <a href="{{ route('departments.edit', $d) }}" class="text-green-600 hover:text-green-800" title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </a>
-                                    <form action="{{ route('departments.destroy', $d) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذا القسم؟' : 'Are you sure you want to delete this department?' }}')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-800" title="{{ app()->getLocale() === 'ar' ? 'حذف' : 'Delete' }}">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
+    {{-- Table --}}
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+                    <tr>
+                        <th class="px-6 py-4 w-16">
+                            <input type="checkbox" @change="toggleSelectAll()" :checked="allSelected"
+                                class="w-5 h-5 rounded border-2 border-white/30 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        </th>
+                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'المعرف' : 'ID' }}</th>
+                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'الاسم' : 'Name' }}</th>
+                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'الكود' : 'Code' }}</th>
+                        <th class="text-start px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'عدد الموظفين' : 'Employees' }}</th>
+                        <th class="text-center px-6 py-4 font-bold uppercase tracking-wider text-sm">{{ app()->getLocale() === 'ar' ? 'الإجراءات' : 'Actions' }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach($departments as $d)
+                        <tr class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-slate-50 transition-all duration-150"
+                            :class="{'bg-blue-50': selectedItems.includes({{ $d->id }})}">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" value="{{ $d->id }}" :checked="selectedItems.includes({{ $d->id }})"
+                                    @change="toggleItem({{ $d->id }})"
+                                    class="w-5 h-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded text-sm">#{{ $d->id }}</span>
+                            </td>
+                            <td class="px-6 py-4 font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? ($d->name_ar ?: $d->name) : $d->name }}</td>
+                            <td class="px-6 py-4">
+                                <span class="font-mono text-slate-600 bg-amber-50 px-2 py-1 rounded font-semibold">{{ $d->code }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                    {{ $d->employees_count }} {{ app()->getLocale() === 'ar' ? 'موظف' : 'employees' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    @can('departments.manage')
+                                        <a href="{{ route('departments.show', $d) }}" class="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition-all">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </a>
+                                        <a href="{{ route('departments.edit', $d) }}" class="inline-flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm transition-all">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </a>
+                                        <form action="{{ route('departments.destroy', $d) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذا القسم؟' : 'Are you sure you want to delete this department?' }}')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center gap-1.5 bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-700 shadow-sm transition-all">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    @endcan
                                 </div>
                             </td>
-                        @endcan
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        
         @if($departments->hasPages())
-            <div class="px-6 py-4 border-t border-slate-100">
+            <div class="px-6 py-4 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white">
                 {{ $departments->links() }}
             </div>
         @endif
     </div>
+</div>
+
+@push('scripts')
+<script>
+function dataTable() {
+    return {
+        selectedItems: [],
+        allSelected: false,
+        init() {},
+        toggleSelectAll() {
+            if (this.allSelected) {
+                this.selectedItems = [];
+                this.allSelected = false;
+            } else {
+                const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+                this.selectedItems = Array.from(checkboxes).map(cb => parseInt(cb.value)).filter(id => id > 0);
+                this.allSelected = true;
+            }
+        },
+        toggleItem(id) {
+            const index = this.selectedItems.indexOf(id);
+            if (index > -1) {
+                this.selectedItems.splice(index, 1);
+            } else {
+                this.selectedItems.push(id);
+            }
+            const totalCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]').length;
+            this.allSelected = this.selectedItems.length === totalCheckboxes && totalCheckboxes > 0;
+        },
+        executeBulkAction(action, method, confirmMessage) {
+            if (this.selectedItems.length === 0) {
+                alert('{{ app()->getLocale() === 'ar' ? "الرجاء تحديد عنصر واحد على الأقل" : "Please select at least one item" }}');
+                return;
+            }
+            if (confirmMessage && !confirm(confirmMessage)) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = action;
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            if (method !== 'POST') {
+                const methodField = document.createElement('input');
+                methodField.type = 'hidden';
+                methodField.name = '_method';
+                methodField.value = method;
+                form.appendChild(methodField);
+            }
+            this.selectedItems.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = id;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+</script>
+@endpush
+
+<style>[x-cloak] { display: none !important; }</style>
 @endsection

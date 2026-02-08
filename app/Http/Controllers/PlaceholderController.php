@@ -91,13 +91,24 @@ class PlaceholderController extends Controller
                 break;
         }
         
-        // Apply global filters
-        $filters = in_array($section, ['followup', 'collection']) ? ['payment_type' => 'payment_type'] : [];
+        // Apply section-specific filters
+        $filters = [];
+        if (in_array($section, ['followup', 'collection'])) {
+            $filters['payment_type'] = 'payment_type';
+        }
+        if ($section === 'charity') {
+            $filters['charity_entity_id'] = 'charity_entity_id';
+            $filters['gender'] = 'gender';
+        }
+        if ($section === 'insurance') {
+            $filters['insurance_company_id'] = 'insurance_company_id';
+            $filters['gender'] = 'gender';
+        }
         
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'id_number', 'phone'],
+            ['name', 'name_ar', 'file_number', 'id_number', 'phone', 'passport_number', 'iqama_number'],
             $filters
         );
         
@@ -106,7 +117,12 @@ class PlaceholderController extends Controller
             ->withQueryString();
             
         $sectionTitle = $sectionTitles[$section][app()->getLocale()] ?? $sectionTitles[$section]['ar'];
-        return view('patients.index', compact('patients', 'section', 'sectionTitle'));
+        
+        // Get filter data based on section
+        $charityEntities = $section === 'charity' ? \App\Models\CharityEntity::orderBy('name')->get() : collect();
+        $insuranceCompanies = $section === 'insurance' ? \App\Models\InsuranceCompany::orderBy('name')->get() : collect();
+        
+        return view('patients.index', compact('patients', 'section', 'sectionTitle', 'charityEntities', 'insuranceCompanies'));
     }
 
     public function invoicesIndex(Request $request)
