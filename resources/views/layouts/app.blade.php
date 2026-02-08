@@ -37,10 +37,10 @@
     </style>
 </head>
 
-<body class="h-screen overflow-hidden bg-slate-100">
+<body class="min-h-screen bg-slate-100">
 
     {{-- HEADER --}}
-    <header class="bg-white border-b border-slate-200 shadow-sm">
+    <header class="sticky top-0 z-20 bg-white border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <h1 class="text-lg font-semibold text-slate-800">
@@ -85,13 +85,13 @@
     </header>
 
     {{-- MAIN LAYOUT --}}
-    <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div class="flex min-h-[calc(100vh-4rem)]">
 
         @auth
             @include('components.sidebar')
         @endauth
 
-        <main class="flex-1 overflow-y-auto bg-slate-50 px-4 sm:px-6 lg:px-8 py-6">
+        <main class="flex-1 bg-slate-50 px-4 sm:px-6 lg:px-8 py-6 pb-12">
             <div class="max-w-7xl mx-auto">
                 @if (session('success'))
                     <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">

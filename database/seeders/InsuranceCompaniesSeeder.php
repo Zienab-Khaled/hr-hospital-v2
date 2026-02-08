@@ -10,26 +10,66 @@ class InsuranceCompaniesSeeder extends Seeder
     public function run(): void
     {
         $companies = [
-            ['name' => 'Bupa', 'name_ar' => 'بوبا', 'contact_person' => 'أحمد محمد', 'phone' => '0112345678', 'email' => 'contact@bupa.com.sa'],
-            ['name' => 'Tawuniya', 'name_ar' => 'التأمينية', 'contact_person' => 'خالد علي', 'phone' => '0112345679', 'email' => 'info@tawuniya.com.sa'],
-            ['name' => 'MedGulf', 'name_ar' => 'مدغلف', 'contact_person' => 'سارة أحمد', 'phone' => '0112345680', 'email' => 'support@medgulf.com'],
-            ['name' => 'AXA Cooperative', 'name_ar' => 'أكسا التعاونية', 'contact_person' => 'محمد سالم', 'phone' => '0112345681'],
-            ['name' => 'Allianz', 'name_ar' => 'أليانز', 'contact_person' => 'فاطمة حسن', 'phone' => '0112345682', 'email' => 'health@allianz.com.sa'],
+            [
+                'name' => 'Bupa Arabia Insurance',
+                'name_ar' => 'شركة بوبا العربية للتأمين',
+                'email' => 'approvals@bupa.com.sa',
+                'phone' => '+966 11 290 9999',
+                'address' => 'الرياض، المملكة العربية السعودية',
+                'contact_person' => 'إدارة الموافقات الطبية',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Tawuniya Insurance',
+                'name_ar' => 'شركة التعاونية للتأمين',
+                'email' => 'medical@tawuniya.com.sa',
+                'phone' => '+966 11 218 9999',
+                'address' => 'الرياض، المملكة العربية السعودية',
+                'contact_person' => 'قسم الموافقات',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'MedGulf Insurance',
+                'name_ar' => 'شركة ميدغلف للتأمين',
+                'email' => 'claims@medgulf.com.sa',
+                'phone' => '+966 11 275 5555',
+                'address' => 'جدة، المملكة العربية السعودية',
+                'contact_person' => 'إدارة المطالبات',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Saudi Indian Insurance',
+                'name_ar' => 'الشركة السعودية الهندية للتأمين',
+                'email' => 'medical.approval@saudiarabia.com',
+                'phone' => '+966 11 299 8888',
+                'address' => 'الرياض، المملكة العربية السعودية',
+                'contact_person' => 'الموافقات الطبية',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Salama Insurance',
+                'name_ar' => 'شركة سلامة للتأمين التعاوني',
+                'email' => 'approvals@salama.com.sa',
+                'phone' => '+966 11 293 3333',
+                'address' => 'الدمام، المملكة العربية السعودية',
+                'contact_person' => 'قسم التأمين الطبي',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Allianz Saudi Fransi',
+                'name_ar' => 'شركة أليانز السعودي الفرنسي',
+                'email' => 'health@allianz.com.sa',
+                'phone' => '+966 11 274 4444',
+                'address' => 'الرياض، المملكة العربية السعودية',
+                'contact_person' => 'التأمين الصحي',
+                'is_active' => true,
+            ],
         ];
 
-        foreach ($companies as $c) {
-            InsuranceCompany::firstOrCreate(
-                ['name' => $c['name']],
-                [
-                    'name_ar' => $c['name_ar'] ?? null,
-                    'contact_person' => $c['contact_person'] ?? null,
-                    'phone' => $c['phone'] ?? null,
-                    'email' => $c['email'] ?? null,
-                    'fax' => $c['fax'] ?? null,
-                    'address' => $c['address'] ?? null,
-                    'notes' => $c['notes'] ?? null,
-                    'is_active' => true,
-                ]
+        foreach ($companies as $company) {
+            InsuranceCompany::updateOrCreate(
+                ['email' => $company['email']],
+                $company
             );
         }
     }

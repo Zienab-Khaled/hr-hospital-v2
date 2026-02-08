@@ -7,7 +7,7 @@
     $sidebarBorder = $isRtl ? 'border-s border-slate-200' : 'border-e border-slate-200';
 @endphp
 
-<aside class="w-64 flex-shrink-0 bg-white py-4 shadow-sm overflow-y-auto min-h-screen {{ $sidebarBorder }}">
+<aside class="w-64 flex-shrink-0 sticky top-16 self-start bg-white py-4 shadow-sm max-h-[calc(100vh-4rem)] overflow-y-auto {{ $sidebarBorder }}">
     <nav class="px-3 space-y-1">
 
         {{-- Dashboard --}}

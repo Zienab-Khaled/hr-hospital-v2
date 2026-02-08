@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ContactReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DebtInventoryController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NonCommitmentReportController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PlaceholderController;
@@ -14,6 +15,10 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
+// Public approval routes (no auth required)
+Route::get('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'respond'])->name('approvals.respond');
+Route::post('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'processResponse'])->name('approvals.process');
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
@@ -23,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
     Route::get('patients', [PlaceholderController::class, 'patientsIndex'])->name('patients.index');
     Route::get('patients/charity', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.charity');
     Route::get('patients/cash', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.cash');
@@ -30,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('patients/followup', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.followup');
     Route::get('patients/collection', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.collection');
     Route::get('patients/create', [PatientController::class, 'create'])->name('patients.create');
+    Route::get('patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
     Route::post('patients', [PatientController::class, 'store'])->name('patients.store');
 
     Route::get('contact-reports', [ContactReportController::class, 'index'])->name('contact-reports.index');
@@ -39,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::get('written-commitments', [WrittenCommitmentController::class, 'index'])->name('written-commitments.index');
     Route::get('written-commitments/create', [WrittenCommitmentController::class, 'create'])->name('written-commitments.create');
     Route::post('written-commitments', [WrittenCommitmentController::class, 'store'])->name('written-commitments.store');
+    Route::get('written-commitments/{commitment}/print', [WrittenCommitmentController::class, 'print'])->name('written-commitments.print');
 
     Route::get('non-commitment-reports', [NonCommitmentReportController::class, 'index'])->name('non-commitment-reports.index');
     Route::get('non-commitment-reports/create', [NonCommitmentReportController::class, 'create'])->name('non-commitment-reports.create');
@@ -49,6 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::post('debt-inventories', [DebtInventoryController::class, 'store'])->name('debt-inventories.store');
 
     Route::get('invoices', [PlaceholderController::class, 'invoicesIndex'])->name('invoices.index');
+    Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+    Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
     Route::get('authorizations', [PlaceholderController::class, 'authorizationsIndex'])->name('authorizations.index');
     Route::get('payments', [PlaceholderController::class, 'paymentsIndex'])->name('payments.index');
     Route::post('payments/{payment}/approve', [PlaceholderController::class, 'paymentApprove'])->name('payments.approve');
