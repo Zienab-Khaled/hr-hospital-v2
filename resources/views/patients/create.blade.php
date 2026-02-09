@@ -181,7 +181,8 @@
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'شركة التأمين' : 'Insurance Company' }}
                             </label>
-                            <select name="insurance_company_id" id="insurance_company_id" class="w-full rounded border border-slate-300 px-3 py-2">
+                            <select name="insurance_company_id" id="insurance_company_id"
+                                class="w-full rounded border border-slate-300 px-3 py-2">
                                 <option value="">{{ app()->getLocale() === 'ar' ? '-- اختر --' : '-- Select --' }}
                                 </option>
                                 @foreach ($insuranceCompanies as $c)
@@ -192,15 +193,19 @@
                                 @endforeach
                             </select>
                             {{-- Dynamic check: search our records by identity to suggest insurance (CHI official verification link below) --}}
-                            <div id="insurance_check_box" class="mt-2 p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm">
+                            <div id="insurance_check_box"
+                                class="mt-2 p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm">
                                 <p class="text-slate-600 mb-2">
                                     {{ app()->getLocale() === 'ar' ? 'أدخل نوع الهوية ورقم الهوية أعلاه ثم اضغط للتحقق من سجلاتنا أو من موقع مجلس الضمان الصحي.' : 'Enter identity type and number above, then click to check our records or the official CHI portal.' }}
                                 </p>
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <button type="button" id="btn_check_insurance" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-emerald-700">
+                                    <button type="button" id="btn_check_insurance"
+                                        class="bg-emerald-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-emerald-700">
                                         {{ app()->getLocale() === 'ar' ? '🔍 التحقق من السجلات' : '🔍 Check our records' }}
                                     </button>
-                                    <a href="https://www.chi.gov.sa/ServicesDirectory/Pages/Eservices-CheckInsurance.aspx" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline text-sm">
+                                    <a href="https://www.chi.gov.sa/ServicesDirectory/Pages/Eservices-CheckInsurance.aspx"
+                                        target="_blank" rel="noopener noreferrer"
+                                        class="text-blue-600 hover:underline text-sm">
                                         {{ app()->getLocale() === 'ar' ? 'التحقق من موقع مجلس الضمان الصحي (CHI)' : 'Verify on CHI portal (chi.gov.sa)' }}
                                     </a>
                                 </div>
@@ -287,33 +292,53 @@
 
         if (btnCheckInsurance) {
             btnCheckInsurance.addEventListener('click', function() {
-                var identityValue = (identityValueInput && identityValueInput.value) ? identityValueInput.value.trim() : '';
+                var identityValue = (identityValueInput && identityValueInput.value) ? identityValueInput.value
+                    .trim() : '';
                 if (!identityValue) {
-                    showInsuranceResult('{{ app()->getLocale() === "ar" ? "يرجى إدخال رقم الهوية أولاً." : "Please enter identity number first." }}', false);
+                    showInsuranceResult(
+                        '{{ app()->getLocale() === 'ar' ? 'يرجى إدخال رقم الهوية أولاً.' : 'Please enter identity number first.' }}',
+                        false);
                     return;
                 }
                 btnCheckInsurance.disabled = true;
                 insuranceCheckResult.classList.add('hidden');
-                var url = '{{ route("patients.check-insurance") }}?identity_value=' + encodeURIComponent(identityValue);
-                fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function(r) { return r.json(); })
+                var url = '{{ route('patients.check-insurance') }}?identity_value=' + encodeURIComponent(
+                    identityValue);
+                fetch(url, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(function(r) {
+                        return r.json();
+                    })
                     .then(function(data) {
                         if (data.has_insurance && data.insurance_company_id) {
                             var sel = document.getElementById('insurance_company_id');
                             if (sel) {
                                 sel.value = data.insurance_company_id;
-                                showInsuranceResult((data.message || '') + ' {{ app()->getLocale() === "ar" ? "تم تعبئة شركة التأمين." : "Insurance company filled." }}', true);
+                                showInsuranceResult((data.message || '') +
+                                    ' {{ app()->getLocale() === 'ar' ? 'تم تعبئة شركة التأمين.' : 'Insurance company filled.' }}',
+                                    true);
                             } else {
                                 showInsuranceResult(data.message || '', true);
                             }
                         } else {
-                            showInsuranceResult(data.message || (data.found ? '{{ app()->getLocale() === "ar" ? "لا يوجد تأمين مسجل." : "No insurance on record." }}' : '{{ app()->getLocale() === "ar" ? "لا يوجد مريض بهذا الرقم." : "No patient with this identity." }}'), false);
+                            showInsuranceResult(data.message || (data.found ?
+                                '{{ app()->getLocale() === 'ar' ? 'لا يوجد تأمين مسجل.' : 'No insurance on record.' }}' :
+                                '{{ app()->getLocale() === 'ar' ? 'لا يوجد مريض بهذا الرقم.' : 'No patient with this identity.' }}'
+                                ), false);
                         }
                     })
                     .catch(function() {
-                        showInsuranceResult('{{ app()->getLocale() === "ar" ? "حدث خطأ أثناء التحقق." : "Check failed." }}', false);
+                        showInsuranceResult(
+                            '{{ app()->getLocale() === 'ar' ? 'حدث خطأ أثناء التحقق.' : 'Check failed.' }}',
+                            false);
                     })
-                    .finally(function() { btnCheckInsurance.disabled = false; });
+                    .finally(function() {
+                        btnCheckInsurance.disabled = false;
+                    });
             });
         }
 
