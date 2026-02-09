@@ -23,7 +23,22 @@
     </div>
 
     {{-- Search and Filter using Global Component --}}
-    <x-index-filters :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم، رقم ملف، رقم هوية، هاتف...' : 'Name, file no, ID, phone...'">
+    <x-index-filters :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم، رقم ملف، رقم هوية، هاتف...' : 'Name, file no, identity, phone...'">
+        {{-- Identity Type Filter (all sections) --}}
+        <div class="w-40">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'نوع الهوية' : 'Identity Type' }}
+            </label>
+            <select name="identity_type"
+                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                @foreach (\App\Models\Patient::identityTypeOptions() as $key => $labels)
+                    <option value="{{ $key }}" {{ request('identity_type') === $key ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? $labels['ar'] : $labels['en'] }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
         {{-- Charity Section Filters --}}
         @if (isset($section) && $section === 'charity')
             <div class="w-44">
@@ -33,14 +48,15 @@
                 <select name="charity_entity_id"
                     class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                    @foreach(\App\Models\CharityEntity::orderBy('name')->get() as $charity)
-                        <option value="{{ $charity->id }}" {{ request('charity_entity_id') == $charity->id ? 'selected' : '' }}>
+                    @foreach (\App\Models\CharityEntity::orderBy('name')->get() as $charity)
+                        <option value="{{ $charity->id }}"
+                            {{ request('charity_entity_id') == $charity->id ? 'selected' : '' }}>
                             {{ app()->getLocale() === 'ar' && $charity->name_ar ? $charity->name_ar : $charity->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
-            
+
             <div class="w-28">
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                     {{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }}
@@ -54,26 +70,26 @@
                         {{ app()->getLocale() === 'ar' ? 'أنثى' : 'Female' }}</option>
                 </select>
             </div>
-            
+
             <div class="w-24">
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                     {{ app()->getLocale() === 'ar' ? 'العمر من' : 'Age From' }}
                 </label>
                 <input type="number" name="age_from" value="{{ request('age_from') }}" min="0" max="150"
-                       placeholder="{{ app()->getLocale() === 'ar' ? '0' : '0' }}"
-                       class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    placeholder="{{ app()->getLocale() === 'ar' ? '0' : '0' }}"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            
+
             <div class="w-24">
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                     {{ app()->getLocale() === 'ar' ? 'إلى' : 'Age To' }}
                 </label>
                 <input type="number" name="age_to" value="{{ request('age_to') }}" min="0" max="150"
-                       placeholder="{{ app()->getLocale() === 'ar' ? '150' : '150' }}"
-                       class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    placeholder="{{ app()->getLocale() === 'ar' ? '150' : '150' }}"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
         @endif
-        
+
         {{-- Insurance Section Filters --}}
         @if (isset($section) && $section === 'insurance')
             <div class="w-44">
@@ -83,15 +99,16 @@
                 <select name="insurance_company_id"
                     class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                    @foreach(\App\Models\InsuranceCompany::orderBy('name')->get() as $insurance)
-                        <option value="{{ $insurance->id }}" {{ request('insurance_company_id') == $insurance->id ? 'selected' : '' }}>
+                    @foreach (\App\Models\InsuranceCompany::orderBy('name')->get() as $insurance)
+                        <option value="{{ $insurance->id }}"
+                            {{ request('insurance_company_id') == $insurance->id ? 'selected' : '' }}>
                             {{ app()->getLocale() === 'ar' && $insurance->name_ar ? $insurance->name_ar : $insurance->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
         @endif
-        
+
         {{-- Payment Type Filter (for followup/collection sections) --}}
         @if (!isset($section) || in_array($section, ['followup', 'collection']))
             <div class="w-36">
@@ -118,8 +135,10 @@
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'الرقم' : 'ID' }}</th>
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'اسم المريض' : 'Patient Name' }}</th>
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'رقم الملف' : 'File No' }}</th>
+                    <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'نوع الهوية' : 'Identity Type' }}</th>
+                    <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'رقم الهوية' : 'Identity No' }}</th>
                     <th class="text-center p-3">
-                        @if(isset($section) && $section === 'charity')
+                        @if (isset($section) && $section === 'charity')
                             {{ app()->getLocale() === 'ar' ? 'الجمعية' : 'Charity Entity' }}
                         @elseif(isset($section) && $section === 'insurance')
                             {{ app()->getLocale() === 'ar' ? 'شركة التأمين' : 'Insurance Company' }}
@@ -136,18 +155,22 @@
                         <td class="p-3 text-center text-slate-600">{{ $p->id }}</td>
                         <td class="p-3 text-center font-medium text-slate-800">{{ $p->name }}</td>
                         <td class="p-3 text-center text-slate-600">{{ $p->file_number }}</td>
+                        <td class="p-3 text-center text-slate-600">{{ $p->identity_type_label ?? '-' }}</td>
+                        <td class="p-3 text-center text-slate-600">{{ $p->identity_value ?? '-' }}</td>
                         <td class="p-3 text-center">
-                            @if(isset($section) && $section === 'charity')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                    {{ app()->getLocale() === 'ar' && $p->charityEntity?->name_ar 
-                                        ? $p->charityEntity->name_ar 
-                                        : ($p->charityEntity?->name ?? '-') }}
+                            @if (isset($section) && $section === 'charity')
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    {{ app()->getLocale() === 'ar' && $p->charityEntity?->name_ar
+                                        ? $p->charityEntity->name_ar
+                                        : $p->charityEntity?->name ?? '-' }}
                                 </span>
                             @elseif(isset($section) && $section === 'insurance')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ app()->getLocale() === 'ar' && $p->insuranceCompany?->name_ar 
-                                        ? $p->insuranceCompany->name_ar 
-                                        : ($p->insuranceCompany?->name ?? '-') }}
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ app()->getLocale() === 'ar' && $p->insuranceCompany?->name_ar
+                                        ? $p->insuranceCompany->name_ar
+                                        : $p->insuranceCompany?->name ?? '-' }}
                                 </span>
                             @else
                                 <span
@@ -206,7 +229,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="p-6 text-center text-slate-500">
+                        <td colspan="7" class="p-6 text-center text-slate-500">
                             {{ app()->getLocale() === 'ar' ? 'لا يوجد مرضى' : 'No patients' }}</td>
                     </tr>
                 @endforelse

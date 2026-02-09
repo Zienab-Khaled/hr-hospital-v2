@@ -8,7 +8,7 @@
             {{ app()->getLocale() === 'ar' ? '🔍 بحث عن مريض' : '🔍 Patient Search' }}
         </h1>
         <p class="text-blue-100">
-            {{ app()->getLocale() === 'ar' ? 'ابحث باستخدام الرقم القومي، رقم الإقامة، أو جواز السفر' : 'Search using National ID, Iqama Number, or Passport' }}
+            {{ app()->getLocale() === 'ar' ? 'ابحث برقم الهوية (هوية / إقامة / جواز / حدود / تأشيرة)' : 'Search by identity number (ID / Iqama / Passport / Border / Visa)' }}
         </p>
     </div>
 
@@ -17,7 +17,7 @@
         <form method="GET" action="{{ route('patients.search') }}" class="space-y-4">
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-2">
-                    {{ app()->getLocale() === 'ar' ? 'أدخل رقم الهوية / الإقامة / جواز السفر' : 'Enter National ID / Iqama / Passport Number' }}
+                    {{ app()->getLocale() === 'ar' ? 'أدخل رقم الهوية' : 'Enter Identity Number' }}
                 </label>
                 <input 
                     type="text" 
@@ -59,6 +59,14 @@
                     <div>
                         <p class="text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'رقم الملف' : 'File Number' }}</p>
                         <p class="text-lg font-semibold">{{ $patient->file_number }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'نوع الهوية' : 'Identity Type' }}</p>
+                        <p class="text-lg font-semibold">{{ $patient->identity_type_label ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'رقم الهوية' : 'Identity Number' }}</p>
+                        <p class="text-lg font-semibold">{{ $patient->identity_value ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment Type' }}</p>

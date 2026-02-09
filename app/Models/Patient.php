@@ -13,17 +13,39 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Patient extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
-    
+
     protected $fillable = [
-        'file_number', 'name', 'name_ar', 'id_number', 'phone',
+        'file_number', 'name', 'name_ar', 'identity_type', 'identity_value', 'phone',
         'payment_type', 'insurance_company_id', 'charity_entity_id', 'notes', 'is_active',
-        'passport_number', 'iqama_number', 'age', 'gender',
-        'country_of_origin', 'current_location', 'sponsor_name', 'sponsor_phone',
+        'age', 'gender', 'country_of_origin', 'current_location', 'sponsor_name', 'sponsor_phone',
     ];
 
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    /** Identity type options: key => [ar, en] */
+    public static function identityTypeOptions(): array
+    {
+        return [
+            'national_id'    => ['ar' => 'هوية', 'en' => 'National ID'],
+            'visit_visa'     => ['ar' => 'فيزة زيارة', 'en' => 'Visit Visa'],
+            'iqama'          => ['ar' => 'رقم إقامة', 'en' => 'Iqama Number'],
+            'passport'       => ['ar' => 'رقم جواز السفر', 'en' => 'Passport Number'],
+            'border_number'  => ['ar' => 'رقم الحدود', 'en' => 'Border Number'],
+            'visa_number'    => ['ar' => 'رقم التأشيرة', 'en' => 'Visa Number'],
+        ];
+    }
+
+    public function getIdentityTypeLabelAttribute(): ?string
+    {
+        $opts = static::identityTypeOptions();
+        $key = $this->identity_type;
+        if (!$key || !isset($opts[$key])) {
+            return null;
+        }
+        return app()->getLocale() === 'ar' ? $opts[$key]['ar'] : $opts[$key]['en'];
     }
 
     public function insuranceCompany(): BelongsTo
@@ -80,25 +102,25 @@ class Patient extends Model implements HasMedia
     {
         return $this->hasMany(DebtInventory::class);
     }
-    
+
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);
     }
-    
+
     public function paymentReceipts(): HasMany
     {
         return $this->hasMany(PaymentReceipt::class);
     }
-    
+
     /**
-     * Get identity number (prioritize ID, then Iqama, then Passport)
+     * Get identity number (identity_value)
      */
     public function getIdentityNumberAttribute(): ?string
     {
-        return $this->id_number ?? $this->iqama_number ?? $this->passport_number;
+        return $this->identity_value;
     }
-    
+
     /**
      * Register media collections
      */
@@ -106,10 +128,10 @@ class Patient extends Model implements HasMedia
     {
         $this->addMediaCollection('documents')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
-            
+
         $this->addMediaCollection('medical-reports')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png']);
-            
+
         $this->addMediaCollection('profile-photo')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg']);

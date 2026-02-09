@@ -93,7 +93,7 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">ID / Iqama / Passport</div>
-                        <div class="info-value">{{ $patient->id_number ?? $patient->iqama_number ?? $patient->passport_number ?? '-' }}</div>
+                        <div class="info-value">{{ $patient->identity_value ?? '-' }}</div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Phone</div>

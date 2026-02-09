@@ -40,7 +40,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'id_number', 'phone'],
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone'],
             ['payment_type' => 'payment_type']
         );
 
@@ -92,7 +92,7 @@ class PlaceholderController extends Controller
         }
 
         // Apply global filters based on section
-        $filters = [];
+        $filters = ['identity_type' => 'identity_type'];
 
         if (in_array($section, ['followup', 'collection'])) {
             $filters['payment_type'] = 'payment_type';
@@ -112,7 +112,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'id_number', 'phone', 'passport_number', 'iqama_number', 'sponsor_name', 'country_of_origin'],
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'sponsor_name', 'country_of_origin'],
             $filters
         );
 

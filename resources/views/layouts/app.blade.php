@@ -91,7 +91,7 @@
                             {{-- User Info --}}
                             <div class="flex items-center gap-3">
                                 <div class="flex flex-col text-right">
-                                    <span class="text-sm font-semibold text-slate-800">System Admin</span>
+                                    <span class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</span>
                                     <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
                                 </div>
                                 <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">

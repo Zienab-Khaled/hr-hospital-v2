@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
+    Route::get('patients/check-insurance', [PatientController::class, 'checkInsurance'])->name('patients.check-insurance');
     Route::get('patients', [PlaceholderController::class, 'patientsIndex'])->name('patients.index');
     Route::get('patients/charity', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.charity');
     Route::get('patients/cash', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.cash');

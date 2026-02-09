@@ -52,16 +52,18 @@ class PatientsSeeder extends Seeder
             
             // Generate unique identifiers
             $hasIdNumber = $faker->boolean(70);
-            $hasIqama = !$hasIdNumber && $faker->boolean(60);
-            $hasPassport = !$hasIdNumber && !$hasIqama;
+            $identityTypes = ['national_id', 'visit_visa', 'iqama', 'passport', 'border_number', 'visa_number'];
+            $identityType = $faker->randomElement($identityTypes);
+            $identityValue = $identityType === 'national_id' ? '1' . $faker->numerify('##########')
+                : ($identityType === 'iqama' ? '2' . $faker->numerify('##########')
+                : $faker->bothify('?######'));
             
             Patient::create([
                 'file_number' => 'F-' . date('Ymd') . '-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                 'name' => $englishNames[$i],
                 'name_ar' => $arabicNames[$i],
-                'id_number' => $hasIdNumber ? '1' . $faker->numerify('##########') : null,
-                'iqama_number' => $hasIqama ? '2' . $faker->numerify('##########') : null,
-                'passport_number' => $hasPassport ? $faker->bothify('?######') : null,
+                'identity_type' => $identityType,
+                'identity_value' => $identityValue,
                 'age' => $faker->numberBetween(18, 80),
                 'gender' => $faker->randomElement(['male', 'female']),
                 'phone' => '+966' . $faker->numerify('#########'),

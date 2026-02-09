@@ -22,16 +22,50 @@ class PatientController extends Controller
         
         $identity = $request->get('identity');
         
-        // Search in all identity fields
-        $patient = Patient::where(function($query) use ($identity) {
-            $query->where('id_number', $identity)
-                  ->orWhere('passport_number', $identity)
-                  ->orWhere('iqama_number', $identity);
-        })
-        ->with(['insuranceCompany', 'charityEntity', 'visits'])
-        ->first();
+        $patient = Patient::where('identity_value', $identity)
+            ->with(['insuranceCompany', 'charityEntity', 'visits'])
+            ->first();
         
         return view('patients.search', compact('patient'));
+    }
+
+    /**
+     * Check if a patient with the given identity exists in our system and has insurance.
+     * Used when creating a new patient with payment_type=insurance to suggest company from existing records.
+     * Official CHI verification: https://www.chi.gov.sa/ServicesDirectory/Pages/Eservices-CheckInsurance.aspx
+     */
+    public function checkInsurance(Request $request)
+    {
+        $this->authorize('patients.view');
+        $request->validate([
+            'identity_value' => 'required|string|max:50',
+        ]);
+        $identityValue = $request->input('identity_value');
+        $patient = Patient::where('identity_value', $identityValue)
+            ->with('insuranceCompany')
+            ->first();
+        if (!$patient) {
+            return response()->json([
+                'found' => false,
+                'message' => app()->getLocale() === 'ar' ? 'لا يوجد مريض مسجل بهذا الرقم في السجلات.' : 'No patient with this identity found in our records.',
+            ]);
+        }
+        if (!$patient->insurance_company_id || !$patient->insuranceCompany) {
+            return response()->json([
+                'found' => true,
+                'has_insurance' => false,
+                'message' => app()->getLocale() === 'ar' ? 'المريض مسجل لكن بدون شركة تأمين في سجلاتنا.' : 'Patient is registered but has no insurance company in our records.',
+            ]);
+        }
+        return response()->json([
+            'found' => true,
+            'has_insurance' => true,
+            'insurance_company_id' => $patient->insurance_company_id,
+            'insurance_company_name' => $patient->insuranceCompany->name,
+            'message' => app()->getLocale() === 'ar'
+                ? 'تم العثور على تأمين مسجل لهذا الرقم في السجلات.'
+                : 'Insurance found in our records for this identity.',
+        ]);
     }
     
     public function create()
@@ -49,9 +83,8 @@ class PatientController extends Controller
             'file_number' => 'required|string|max:50|unique:patients',
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
-            'id_number' => 'nullable|string|max:50|unique:patients',
-            'passport_number' => 'nullable|string|max:50|unique:patients',
-            'iqama_number' => 'nullable|string|max:50|unique:patients',
+            'identity_type' => 'required|in:national_id,visit_visa,iqama,passport,border_number,visa_number',
+            'identity_value' => 'required|string|max:50|unique:patients,identity_value',
             'age' => 'nullable|integer|min:0|max:150',
             'gender' => 'nullable|in:male,female',
             'country_of_origin' => 'nullable|string|max:255',
@@ -65,9 +98,13 @@ class PatientController extends Controller
             'notes' => 'nullable|string',
         ]);
         
-        // Ensure at least one identity document is provided
-        if (empty($valid['id_number']) && empty($valid['passport_number']) && empty($valid['iqama_number'])) {
-            return back()->withErrors(['id_number' => 'At least one identity document (ID/Passport/Iqama) is required.'])->withInput();
+        if ($valid['identity_type'] === 'iqama') {
+            if (empty($valid['sponsor_name'])) {
+                return back()->withErrors(['sponsor_name' => 'Sponsor name is required for Iqama holders.'])->withInput();
+            }
+            if (empty($valid['sponsor_phone'])) {
+                return back()->withErrors(['sponsor_phone' => 'Sponsor phone is required for Iqama holders.'])->withInput();
+            }
         }
         
         if ($valid['payment_type'] === 'insurance') {
@@ -122,9 +159,8 @@ class PatientController extends Controller
             'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
-            'id_number' => 'nullable|string|max:50|unique:patients,id_number,' . $patient->id,
-            'passport_number' => 'nullable|string|max:50|unique:patients,passport_number,' . $patient->id,
-            'iqama_number' => 'nullable|string|max:50|unique:patients,iqama_number,' . $patient->id,
+            'identity_type' => 'required|in:national_id,visit_visa,iqama,passport,border_number,visa_number',
+            'identity_value' => 'required|string|max:50|unique:patients,identity_value,' . $patient->id,
             'age' => 'nullable|integer|min:0|max:150',
             'gender' => 'nullable|in:male,female',
             'country_of_origin' => 'nullable|string|max:255',
@@ -138,9 +174,13 @@ class PatientController extends Controller
             'notes' => 'nullable|string',
         ]);
         
-        // Ensure at least one identity document is provided
-        if (empty($valid['id_number']) && empty($valid['passport_number']) && empty($valid['iqama_number'])) {
-            return back()->withErrors(['id_number' => 'At least one identity document (ID/Passport/Iqama) is required.'])->withInput();
+        if ($valid['identity_type'] === 'iqama') {
+            if (empty($valid['sponsor_name'])) {
+                return back()->withErrors(['sponsor_name' => 'Sponsor name is required for Iqama holders.'])->withInput();
+            }
+            if (empty($valid['sponsor_phone'])) {
+                return back()->withErrors(['sponsor_phone' => 'Sponsor phone is required for Iqama holders.'])->withInput();
+            }
         }
         
         if ($valid['payment_type'] === 'insurance') {
