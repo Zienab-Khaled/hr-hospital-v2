@@ -8,9 +8,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -21,8 +19,9 @@
                 theme: {
                     extend: {
                         fontFamily: {
-                            sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
-                        }
+                            sans: ['Inter', 'SF Pro Text', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+                            arabic: ['Cairo', 'system-ui', '-apple-system', 'sans-serif'],
+                        },
                     }
                 }
             }
@@ -31,83 +30,113 @@
 
     <style>
         * {
-            font-family: 'Cairo', 'Inter', system-ui, sans-serif
+            font-family: Inter, 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         [dir="rtl"] * {
-            font-family: 'Cairo', system-ui, sans-serif
+            font-family: Cairo, Inter, 'Segoe UI', Tahoma, sans-serif;
         }
 
         [dir="ltr"] * {
-            font-family: 'Inter', system-ui, sans-serif
+            font-family: Inter, 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
 
-<body class="min-h-screen bg-slate-100">
-
-    {{-- HEADER --}}
-    <header class="sticky top-0 z-20 bg-white border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <h1 class="text-lg font-semibold text-slate-800">
-                    {{ __('Hospital Revenue Management') }}
-                </h1>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex gap-2">
-                        <a href="{{ url()->current() }}?lang=ar"
-                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'ar' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
-                            Arabic
-                        </a>
-                        <a href="{{ url()->current() }}?lang=en"
-                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'en' ? 'bg-blue-600 text-white' : 'bg-slate-200' }}">
-                            English
-                        </a>
-                    </div>
-
-                    <span class="text-sm text-slate-600">
-                        {{ auth()->user()->employee?->name ?? auth()->user()->name }}
-                    </span>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="text-sm text-red-600 hover:underline">
-                            {{ __('Logout') }}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        @hasSection('tabs')
-            <div class="border-t border-slate-100">
-                <div class="max-w-7xl mx-auto px-4">
-                    <nav class="flex gap-1 py-2">
-                        @yield('tabs')
-                    </nav>
-                </div>
-            </div>
-        @endif
-    </header>
-
-    {{-- MAIN LAYOUT --}}
-    <div class="flex min-h-[calc(100vh-4rem)]">
-
+<body class="min-h-screen bg-gray-50">
+    <div class="flex min-h-screen">
         @auth
             @include('components.sidebar')
         @endauth
 
-        <main class="flex-1 bg-slate-50 px-4 sm:px-6 lg:px-8 py-6 pb-12">
-            <div class="max-w-7xl mx-auto">
+        <main class="flex-1 overflow-x-hidden" style="background-color: #f2f4f6;">
+            {{-- Top Bar --}}
+            <div class="sticky top-0 z-10 bg-white border-b border-slate-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-semibold text-slate-800">@yield('title', 'Operations')</h1>
+
+                    @auth
+                        <div class="flex items-center gap-6">
+                            {{-- Notifications Icon --}}
+                            <button class="relative p-2 text-slate-600 hover:text-slate-800 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                            </button>
+
+                            {{-- User Info --}}
+                            <div class="flex items-center gap-3">
+                                <div class="flex flex-col text-right">
+                                    <span class="text-sm font-semibold text-slate-800">System Admin</span>
+                                    <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
+                                </div>
+                                <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {{-- Language Switcher --}}
+                            <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                                <a href="{{ route('locale.switch', 'en') }}"
+                                    class="px-3 py-1.5 text-sm font-medium rounded transition-all {{ app()->getLocale() === 'en' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
+                                    EN
+                                </a>
+                                <a href="{{ route('locale.switch', 'ar') }}"
+                                    class="px-3 py-1.5 text-sm font-medium rounded transition-all {{ app()->getLocale() === 'ar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
+                                    عربي
+                                </a>
+                            </div>
+
+                            {{-- Logout --}}
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="p-2 text-slate-600 hover:text-red-600 transition-colors" title="{{ __('Logout') }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    @endauth
+                </div>
+            </div>
+
+            {{-- Content --}}
+            <div class="p-8">
                 @if (session('success'))
-                    <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">
+                    <div class="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
                         {{ session('success') }}
                     </div>
                 @endif
 
                 @if (session('error'))
-                    <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">
+                    <div class="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
                         {{ session('error') }}
                     </div>
                 @endif
@@ -115,9 +144,7 @@
                 @yield('content')
             </div>
         </main>
-
     </div>
-
 </body>
 
 </html>

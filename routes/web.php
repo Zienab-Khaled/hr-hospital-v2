@@ -15,6 +15,15 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
+// Language switcher
+Route::get('/locale/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'ar'])) {
+        session(['locale' => $locale]);
+        app()->setLocale($locale);
+    }
+    return redirect()->back();
+})->name('locale.switch');
+
 // Public approval routes (no auth required)
 Route::get('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'respond'])->name('approvals.respond');
 Route::post('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'processResponse'])->name('approvals.process');

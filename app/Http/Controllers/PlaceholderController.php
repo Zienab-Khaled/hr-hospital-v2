@@ -93,17 +93,17 @@ class PlaceholderController extends Controller
 
         // Apply global filters based on section
         $filters = [];
-        
+
         if (in_array($section, ['followup', 'collection'])) {
             $filters['payment_type'] = 'payment_type';
         }
-        
+
         // Charity-specific filters
         if ($section === 'charity') {
             $filters['charity_entity_id'] = 'charity_entity_id';
             $filters['gender'] = 'gender';
         }
-        
+
         // Insurance-specific filters
         if ($section === 'insurance') {
             $filters['insurance_company_id'] = 'insurance_company_id';
@@ -115,7 +115,7 @@ class PlaceholderController extends Controller
             ['name', 'name_ar', 'file_number', 'id_number', 'phone', 'passport_number', 'iqama_number', 'sponsor_name', 'country_of_origin'],
             $filters
         );
-        
+
         // Age range filters
         if ($request->filled('age_from')) {
             $query->where('age', '>=', $request->get('age_from'));
