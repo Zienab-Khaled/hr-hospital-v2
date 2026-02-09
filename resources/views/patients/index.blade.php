@@ -15,15 +15,10 @@
         }
     @endphp
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-slate-900">{{ $sectionTitle ?? __('Patients') }}</h2>
+        <h2 class="text-xl font-semibold text-slate-800">{{ $sectionTitle ?? __('Patients') }}</h2>
         @can('patients.create')
-            <a href="{{ route('patients.create') }}" 
-               class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                {{ $addBtnLabel }}
-            </a>
+            <a href="{{ route('patients.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+
+                {{ $addBtnLabel }}</a>
         @endcan
     </div>
 
