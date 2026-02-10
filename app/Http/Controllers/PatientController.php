@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CharityEntity;
 use App\Models\InsuranceCompany;
 use App\Models\Patient;
+use App\Services\IdentityDocumentExtractor;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -66,6 +67,43 @@ class PatientController extends Controller
                 ? 'تم العثور على تأمين مسجل لهذا الرقم في السجلات.'
                 : 'Insurance found in our records for this identity.',
         ]);
+    }
+
+    /**
+     * Extract identity data (name, identity number) from an uploaded document image via OCR.
+     * Used when creating a patient: scan/upload ID then auto-fill form; the same file can be re-uploaded with the form.
+     */
+    public function extractIdentityDocument(Request $request)
+    {
+        try {
+            $this->authorize('patients.create');
+            $request->validate([
+                'document' => 'required|file|mimes:jpeg,jpg,png,webp|max:10240',
+            ]);
+            $result = app(IdentityDocumentExtractor::class)->extract($request->file('document'));
+            return response()->json($result);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => app()->getLocale() === 'ar' ? 'غير مصرح لك بهذا الإجراء.' : 'You are not authorized to perform this action.',
+                'data' => [],
+            ], 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->validator->errors()->first(),
+                'data' => [],
+            ], 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => app()->getLocale() === 'ar'
+                    ? 'حدث خطأ أثناء الاستخراج. تحقق من تثبيت Tesseract OCR (راجع docs/TESSERACT_SETUP.md).'
+                    : 'Extraction error. Ensure Tesseract OCR is installed (see docs/TESSERACT_SETUP.md).',
+                'data' => [],
+            ], 500);
+        }
     }
     
     public function create()

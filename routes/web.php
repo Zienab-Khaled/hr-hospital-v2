@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
     Route::get('patients/check-insurance', [PatientController::class, 'checkInsurance'])->name('patients.check-insurance');
+    Route::post('patients/extract-identity-document', [PatientController::class, 'extractIdentityDocument'])->name('patients.extract-identity-document');
     Route::get('patients', [PlaceholderController::class, 'patientsIndex'])->name('patients.index');
     Route::get('patients/charity', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.charity');
     Route::get('patients/cash', [PlaceholderController::class, 'patientsBySection'])->name('patients.section.cash');
