@@ -5,7 +5,7 @@ The "Extract data" feature from identity document images requires **Tesseract OC
 ## Windows
 
 1. **Download** the installer from:  
-   https://github.com/UB-Mannheim/tesseract/wiki  
+   https://github.com/UB-Mannheim/tesseract/wiki
 
 2. **Run** the installer (e.g. `tesseract-ocr-w64-setup-5.x.x.exe`).
 
@@ -13,10 +13,12 @@ The "Extract data" feature from identity document images requires **Tesseract OC
    If you add Tesseract to the system PATH, no extra config is needed.
 
 4. **If not in PATH** – set the executable path in `.env` (use **forward slashes** so the .env parser does not treat backslashes as escape characters):
-   ```env
-   TESSERACT_EXECUTABLE="C:/Program Files/Tesseract-OCR/tesseract.exe"
-   ```
-   Use the actual path where you installed Tesseract (e.g. `C:/Program Files/Tesseract-OCR/` or `C:/Users/<You>/AppData/Local/Programs/Tesseract-OCR/`).
+
+    ```env
+    TESSERACT_EXECUTABLE="C:/Program Files/Tesseract-OCR/tesseract.exe"
+    ```
+
+    Use the actual path where you installed Tesseract (e.g. `C:/Program Files/Tesseract-OCR/` or `C:/Users/<You>/AppData/Local/Programs/Tesseract-OCR/`).
 
 5. **Arabic + English**  
    During setup, ensure **Additional Language Data** includes **Arabic** (and English is default).  
@@ -36,12 +38,15 @@ No `.env` change needed if `tesseract` is in PATH.
 ## Verify
 
 **From the project (recommended):**
+
 ```bash
 php artisan tesseract:check
 ```
+
 This checks the path from `.env` and prints the Tesseract version if OK.
 
 **From a terminal (without Laravel):**
+
 - **Windows (PowerShell):**  
   `& "C:\Program Files\Tesseract-OCR\tesseract.exe" --version`
 - **If in PATH:**  

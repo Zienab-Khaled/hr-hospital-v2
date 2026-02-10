@@ -7,7 +7,8 @@
                 {{ app()->getLocale() === 'ar' ? '👤 تسجيل مريض جديد' : '👤 Register New Patient' }}
             </h2>
 
-            <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" id="patient_create_form">
+            <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6"
+                id="patient_create_form">
                 @csrf
 
                 {{-- Scan / Upload identity document: camera (face + back) OR upload file --}}
@@ -21,44 +22,62 @@
 
                     {{-- Toggle: Scan with camera | Upload file --}}
                     <div class="flex gap-2 mb-4">
-                        <button type="button" id="btn_mode_scan" class="patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
+                        <button type="button" id="btn_mode_scan"
+                            class="patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
                             {{ app()->getLocale() === 'ar' ? '📷 مسح بالكاميرا (وجه + ظهر)' : '📷 Scan with camera (front + back)' }}
                         </button>
-                        <button type="button" id="btn_mode_upload" class="patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors">
+                        <button type="button" id="btn_mode_upload"
+                            class="patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors">
                             {{ app()->getLocale() === 'ar' ? '📁 رفع ملف' : '📁 Upload file' }}
                         </button>
                     </div>
 
                     {{-- Mode: Scan with camera --}}
                     <div id="mode_scan_box" class="space-y-4">
-                        <p class="text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'الخطوة ١: وجه الوثيقة (الأمام)' : 'Step 1: Front of document' }}</p>
+                        <p class="text-sm text-slate-600">
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة ١: وجه الوثيقة (الأمام)' : 'Step 1: Front of document' }}
+                        </p>
                         <div class="flex flex-wrap gap-3 items-start">
-                            <button type="button" id="btn_capture_front" class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
+                            <button type="button" id="btn_capture_front"
+                                class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
                                 {{ app()->getLocale() === 'ar' ? 'فتح الكاميرا والتقاط الوجه' : 'Open camera & capture front' }}
                             </button>
                             <div id="preview_front" class="hidden">
-                                <img id="img_front" src="" alt="Front" class="max-h-32 rounded border border-slate-300">
-                                <p class="text-xs text-slate-500 mt-1">{{ app()->getLocale() === 'ar' ? 'تم التقاط الوجه' : 'Front captured' }}</p>
+                                <img id="img_front" src="" alt="Front"
+                                    class="max-h-32 rounded border border-slate-300">
+                                <p class="text-xs text-slate-500 mt-1">
+                                    {{ app()->getLocale() === 'ar' ? 'تم التقاط الوجه' : 'Front captured' }}</p>
                             </div>
                         </div>
-                        <p class="text-sm text-slate-600 pt-2">{{ app()->getLocale() === 'ar' ? 'الخطوة ٢: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
+                        <p class="text-sm text-slate-600 pt-2">
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة ٢: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
                         <div class="flex flex-wrap gap-3 items-start">
-                            <button type="button" id="btn_capture_back" class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed" disabled>
+                            <button type="button" id="btn_capture_back"
+                                class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                disabled>
                                 {{ app()->getLocale() === 'ar' ? 'فتح الكاميرا والتقاط الظهر' : 'Open camera & capture back' }}
                             </button>
                             <div id="preview_back" class="hidden">
-                                <img id="img_back" src="" alt="Back" class="max-h-32 rounded border border-slate-300">
-                                <p class="text-xs text-slate-500 mt-1">{{ app()->getLocale() === 'ar' ? 'تم التقاط الظهر' : 'Back captured' }}</p>
+                                <img id="img_back" src="" alt="Back"
+                                    class="max-h-32 rounded border border-slate-300">
+                                <p class="text-xs text-slate-500 mt-1">
+                                    {{ app()->getLocale() === 'ar' ? 'تم التقاط الظهر' : 'Back captured' }}</p>
                             </div>
                         </div>
                         {{-- Camera modal: video + capture --}}
-                        <div id="camera_modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+                        <div id="camera_modal"
+                            class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
                             <div class="bg-white rounded-xl max-w-lg w-full p-4">
                                 <p id="camera_step_label" class="font-semibold text-slate-800 mb-2"></p>
-                                <video id="camera_video" autoplay playsinline class="w-full rounded border bg-slate-900" style="max-height: 50vh;"></video>
+                                <video id="camera_video" autoplay playsinline class="w-full rounded border bg-slate-900"
+                                    style="max-height: 50vh;"></video>
                                 <div class="flex gap-2 mt-3">
-                                    <button type="button" id="btn_take_photo" class="flex-1 border-2 border-violet-600 bg-violet-600  py-2.5 rounded-lg font-semibold hover:bg-violet-700 transition-colors"> {{ app()->getLocale() === 'ar' ? 'التقاط' : 'Capture' }}</button>
-                                    <button type="button" id="btn_close_camera" class="px-4 py-2.5 border-2 border-slate-400 bg-slate-100 text-slate-800 rounded-lg font-medium hover:bg-slate-200"> {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}</button>
+                                    <button type="button" id="btn_take_photo"
+                                        class="flex-1 border-2 border-violet-600 bg-violet-600  py-2.5 rounded-lg font-semibold hover:bg-violet-700 transition-colors">
+                                        {{ app()->getLocale() === 'ar' ? 'التقاط' : 'Capture' }}</button>
+                                    <button type="button" id="btn_close_camera"
+                                        class="px-4 py-2.5 border-2 border-slate-400 bg-slate-100 text-slate-800 rounded-lg font-medium hover:bg-slate-200">
+                                        {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}</button>
                                 </div>
                             </div>
                         </div>
@@ -71,17 +90,20 @@
                                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                                     {{ app()->getLocale() === 'ar' ? 'صورة الوثيقة (JPG, PNG, WebP)' : 'Document image (JPG, PNG, WebP)' }}
                                 </label>
-                                <input type="file" name="documents[]" id="identity_document_file" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                                <input type="file" name="documents[]" id="identity_document_file" multiple
+                                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                                     class="patient-form-file-input w-full text-sm text-slate-700 file:mr-3 file:py-2.5 file:px-4 file:rounded-lg file:border-2 file:border-violet-500 file:bg-violet-600 file:text-white file:font-semibold file:cursor-pointer hover:file:bg-violet-700 hover:file:border-violet-600">
                             </div>
-                            <button type="button" id="btn_extract_identity" class="patient-form-btn-primary border-2 border-violet-600 bg-violet-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
+                            <button type="button" id="btn_extract_identity"
+                                class="patient-form-btn-primary border-2 border-violet-600 bg-violet-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
                                 {{ app()->getLocale() === 'ar' ? '🔍 استخراج البيانات' : '🔍 Extract data' }}
                             </button>
                         </div>
                     </div>
 
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <button type="button" id="btn_extract_after_scan" class="hidden border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
+                        <button type="button" id="btn_extract_after_scan"
+                            class="hidden border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors">
                             {{ app()->getLocale() === 'ar' ? '🔍 استخراج البيانات من صورة الوجه' : '🔍 Extract data from front image' }}
                         </button>
                     </div>
@@ -168,8 +190,8 @@
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }}
                             </label>
-                            <input type="number" name="age" value="{{ old('age') }}" min="0" max="150"
-                                class="w-full rounded border border-slate-300 px-3 py-2">
+                            <input type="number" name="age" value="{{ old('age') }}" min="0"
+                                max="150" class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
@@ -212,7 +234,8 @@
                                 {{ app()->getLocale() === 'ar' ? 'اسم الكفيل' : 'Sponsor Name' }} <span
                                     class="text-red-600">*</span>
                             </label>
-                            <input type="text" name="sponsor_name" id="sponsor_name" value="{{ old('sponsor_name') }}"
+                            <input type="text" name="sponsor_name" id="sponsor_name"
+                                value="{{ old('sponsor_name') }}"
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                             <p class="mt-1 text-xs text-blue-600">
                                 {{ app()->getLocale() === 'ar' ? 'مطلوب لحاملي الإقامة' : 'Required for Iqama holders' }}
@@ -318,7 +341,8 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1">
                             {{ app()->getLocale() === 'ar' ? 'رفع المستندات (صور/PDFs)' : 'Upload Documents (Images/PDFs)' }}
                         </label>
-                        <input type="file" name="documents[]" id="documents_upload" multiple accept=".pdf,.jpg,.jpeg,.png"
+                        <input type="file" name="documents[]" id="documents_upload" multiple
+                            accept=".pdf,.jpg,.jpeg,.png"
                             class="patient-form-file-input w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-2 file:border-slate-500 file:bg-slate-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-slate-700">
                         <p class="text-xs text-slate-500 mt-1">
                             {{ app()->getLocale() === 'ar' ? 'يمكنك رفع عدة ملفات (PDF, JPG, PNG)' : 'You can upload multiple files (PDF, JPG, PNG)' }}
@@ -334,10 +358,13 @@
                         </p>
                         <div id="scan_pdf_pages" class="flex flex-wrap gap-2 mb-3 min-h-[60px]"></div>
                         <div class="flex flex-wrap gap-2 items-center">
-                            <button type="button" id="btn_add_scan_page" class="border-2 border-emerald-600 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
+                            <button type="button" id="btn_add_scan_page"
+                                class="border-2 border-emerald-600 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
                                 {{ app()->getLocale() === 'ar' ? '➕ إضافة صفحة (مسح بالكاميرا)' : '➕ Add page (scan with camera)' }}
                             </button>
-                            <button type="button" id="btn_generate_pdf" class="border-2 border-slate-500 bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50" disabled>
+                            <button type="button" id="btn_generate_pdf"
+                                class="border-2 border-slate-500 bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50"
+                                disabled>
                                 {{ app()->getLocale() === 'ar' ? '📄 إنشاء PDF ومرفق' : '📄 Generate PDF & attach' }}
                             </button>
                         </div>
@@ -384,16 +411,17 @@
         var modeUploadBox = document.getElementById('mode_upload_box');
         var btnModeScan = document.getElementById('btn_mode_scan');
         var btnModeUpload = document.getElementById('btn_mode_upload');
+
         function setMode(mode) {
             var isScan = mode === 'scan';
             modeScanBox.classList.toggle('hidden', !isScan);
             modeUploadBox.classList.toggle('hidden', isScan);
-            btnModeScan.className = isScan
-                ? 'patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors'
-                : 'patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors';
-            btnModeUpload.className = !isScan
-                ? 'patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors'
-                : 'patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors';
+            btnModeScan.className = isScan ?
+                'patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors' :
+                'patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors';
+            btnModeUpload.className = !isScan ?
+                'patient-form-btn patient-form-btn-primary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-violet-600 bg-violet-600 text-white hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors' :
+                'patient-form-btn patient-form-btn-secondary px-4 py-2.5 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-500 shadow-sm transition-colors';
             if (!isScan) {
                 var pf = document.getElementById('preview_front');
                 var pb = document.getElementById('preview_back');
@@ -413,8 +441,12 @@
                 if (beas2) beas2.classList.add('hidden');
             }
         }
-        if (btnModeScan) btnModeScan.addEventListener('click', function() { setMode('scan'); });
-        if (btnModeUpload) btnModeUpload.addEventListener('click', function() { setMode('upload'); });
+        if (btnModeScan) btnModeScan.addEventListener('click', function() {
+            setMode('scan');
+        });
+        if (btnModeUpload) btnModeUpload.addEventListener('click', function() {
+            setMode('upload');
+        });
 
         // --- Camera: capture front + back ---
         var cameraModal = document.getElementById('camera_modal');
@@ -444,7 +476,9 @@
 
         function stopCamera() {
             if (cameraStream) {
-                cameraStream.getTracks().forEach(function(t) { t.stop(); });
+                cameraStream.getTracks().forEach(function(t) {
+                    t.stop();
+                });
                 cameraStream = null;
             }
             cameraModal.classList.add('hidden');
@@ -453,22 +487,30 @@
         function openCameraFor(step) {
             currentCaptureStep = step;
             if (step === 'scanpage') {
-                cameraStepLabel.textContent = '{{ app()->getLocale() === "ar" ? "وجّه الكاميرا إلى المستند ثم اضغط التقاط (صفحة للمسح كـ PDF)" : "Point camera at document, then press Capture (page for scan-as-PDF)" }}';
+                cameraStepLabel.textContent =
+                    '{{ app()->getLocale() === 'ar' ? 'وجّه الكاميرا إلى المستند ثم اضغط التقاط (صفحة للمسح كـ PDF)' : 'Point camera at document, then press Capture (page for scan-as-PDF)' }}';
             } else {
-                cameraStepLabel.textContent = step === 'front'
-                    ? '{{ app()->getLocale() === "ar" ? "وجّه الكاميرا إلى وجه الوثيقة (الأمام) ثم اضغط التقاط" : "Point camera at front of document, then press Capture" }}'
-                    : '{{ app()->getLocale() === "ar" ? "وجّه الكاميرا إلى ظهر الوثيقة ثم اضغط التقاط" : "Point camera at back of document, then press Capture" }}';
+                cameraStepLabel.textContent = step === 'front' ?
+                    '{{ app()->getLocale() === 'ar' ? 'وجّه الكاميرا إلى وجه الوثيقة (الأمام) ثم اضغط التقاط' : 'Point camera at front of document, then press Capture' }}' :
+                    '{{ app()->getLocale() === 'ar' ? 'وجّه الكاميرا إلى ظهر الوثيقة ثم اضغط التقاط' : 'Point camera at back of document, then press Capture' }}';
             }
             cameraModal.classList.remove('hidden');
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(stream) {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment'
+                }
+            }).then(function(stream) {
                 cameraStream = stream;
                 cameraVideo.srcObject = stream;
             }).catch(function() {
-                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                navigator.mediaDevices.getUserMedia({
+                    video: true
+                }).then(function(stream) {
                     cameraStream = stream;
                     cameraVideo.srcObject = stream;
                 }).catch(function() {
-                    if (scanStatus) scanStatus.textContent = '{{ app()->getLocale() === "ar" ? "تعذر الوصول للكاميرا." : "Camera access denied." }}';
+                    if (scanStatus) scanStatus.textContent =
+                        '{{ app()->getLocale() === 'ar' ? 'تعذر الوصول للكاميرا.' : 'Camera access denied.' }}';
                     scanStatus.classList.remove('hidden');
                     cameraModal.classList.add('hidden');
                 });
@@ -483,7 +525,10 @@
             canvas.toBlob(function(blob) {
                 if (currentCaptureStep === 'scanpage') {
                     var url = URL.createObjectURL(blob);
-                    scanPagesArray.push({ blob: blob, url: url });
+                    scanPagesArray.push({
+                        blob: blob,
+                        url: url
+                    });
                     renderScanPdfThumbnails();
                     document.getElementById('btn_generate_pdf').disabled = false;
                     stopCamera();
@@ -502,18 +547,27 @@
                     previewBack.classList.remove('hidden');
                     stopCamera();
                     var dt = new DataTransfer();
-                    dt.items.add(new File([capturedFrontBlob], 'document-front.jpg', { type: 'image/jpeg' }));
-                    dt.items.add(new File([capturedBackBlob], 'document-back.jpg', { type: 'image/jpeg' }));
+                    dt.items.add(new File([capturedFrontBlob], 'document-front.jpg', {
+                        type: 'image/jpeg'
+                    }));
+                    dt.items.add(new File([capturedBackBlob], 'document-back.jpg', {
+                        type: 'image/jpeg'
+                    }));
                     identityDocInput.files = dt.files;
-                    if (scanStatus) scanStatus.textContent = '{{ app()->getLocale() === "ar" ? "تم مسح وجه وظهر الوثيقة. يمكنك استخراج البيانات من صورة الوجه أدناه." : "Front and back captured. You can extract data from the front image below." }}';
+                    if (scanStatus) scanStatus.textContent =
+                        '{{ app()->getLocale() === 'ar' ? 'تم مسح وجه وظهر الوثيقة. يمكنك استخراج البيانات من صورة الوجه أدناه.' : 'Front and back captured. You can extract data from the front image below.' }}';
                     scanStatus.classList.remove('hidden');
                     if (btnExtractAfterScan) btnExtractAfterScan.classList.remove('hidden');
                 }
             }, 'image/jpeg', 0.92);
         }
 
-        if (btnCaptureFront) btnCaptureFront.addEventListener('click', function() { openCameraFor('front'); });
-        if (btnCaptureBack) btnCaptureBack.addEventListener('click', function() { openCameraFor('back'); });
+        if (btnCaptureFront) btnCaptureFront.addEventListener('click', function() {
+            openCameraFor('front');
+        });
+        if (btnCaptureBack) btnCaptureBack.addEventListener('click', function() {
+            openCameraFor('back');
+        });
         if (btnTakePhoto) btnTakePhoto.addEventListener('click', capturePhoto);
         if (btnCloseCamera) btnCloseCamera.addEventListener('click', stopCamera);
 
@@ -530,13 +584,15 @@
                 img.className = 'h-20 w-auto rounded border border-slate-300 object-cover';
                 var btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold hover:bg-red-600';
+                btn.className =
+                    'absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold hover:bg-red-600';
                 btn.textContent = '×';
                 btn.addEventListener('click', function() {
                     URL.revokeObjectURL(item.url);
                     scanPagesArray.splice(index, 1);
                     renderScanPdfThumbnails();
-                    if (scanPagesArray.length === 0) document.getElementById('btn_generate_pdf').disabled = true;
+                    if (scanPagesArray.length === 0) document.getElementById('btn_generate_pdf').disabled =
+                        true;
                 });
                 wrap.appendChild(img);
                 wrap.appendChild(btn);
@@ -547,7 +603,9 @@
         function blobToBase64(blob) {
             return new Promise(function(resolve, reject) {
                 var r = new FileReader();
-                r.onload = function() { resolve(r.result.split(',')[1]); };
+                r.onload = function() {
+                    resolve(r.result.split(',')[1]);
+                };
                 r.onerror = reject;
                 r.readAsDataURL(blob);
             });
@@ -559,28 +617,37 @@
 
         document.getElementById('btn_generate_pdf').addEventListener('click', function() {
             if (scanPagesArray.length === 0) return;
-            var JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : null;
+            var JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (typeof jspdf !== 'undefined' &&
+                jspdf.jsPDF) ? jspdf.jsPDF : null;
             if (!JsPDF) {
-                document.getElementById('scanned_pdf_status').textContent = '{{ app()->getLocale() === "ar" ? "مكتبة PDF غير محمّلة." : "PDF library not loaded." }}';
+                document.getElementById('scanned_pdf_status').textContent =
+                    '{{ app()->getLocale() === 'ar' ? 'مكتبة PDF غير محمّلة.' : 'PDF library not loaded.' }}';
                 document.getElementById('scanned_pdf_status').classList.remove('hidden');
                 return;
             }
             var doc = new JsPDF();
             var w = doc.internal.pageSize.getWidth();
             var h = doc.internal.pageSize.getHeight();
-            var promises = scanPagesArray.map(function(p) { return blobToBase64(p.blob); });
+            var promises = scanPagesArray.map(function(p) {
+                return blobToBase64(p.blob);
+            });
             Promise.all(promises).then(function(base64arr) {
                 base64arr.forEach(function(base64, i) {
                     if (i > 0) doc.addPage();
                     doc.addImage(base64, 'JPEG', 0, 0, w, h);
                 });
                 var pdfBlob = doc.output('blob');
-                var file = new File([pdfBlob], 'scanned-document.pdf', { type: 'application/pdf' });
+                var file = new File([pdfBlob], 'scanned-document.pdf', {
+                    type: 'application/pdf'
+                });
                 var dt = new DataTransfer();
                 dt.items.add(file);
                 document.getElementById('scanned_pdf_file').files = dt.files;
                 var status = document.getElementById('scanned_pdf_status');
-                status.textContent = '{{ app()->getLocale() === "ar" ? "تم مرفق PDF (" : "PDF attached (" }}' + scanPagesArray.length + ' {{ app()->getLocale() === "ar" ? "صفحة) مع الطلب." : " pages) with the request." }}';
+                status.textContent =
+                    '{{ app()->getLocale() === 'ar' ? 'تم مرفق PDF (' : 'PDF attached (' }}' +
+                    scanPagesArray.length +
+                    ' {{ app()->getLocale() === 'ar' ? 'صفحة) مع الطلب.' : ' pages) with the request.' }}';
                 status.classList.remove('hidden');
                 status.classList.add('text-emerald-600');
             });
@@ -588,52 +655,69 @@
 
         function doExtractFromFile(file) {
             var extractStatus = document.getElementById('extract_status');
-            extractStatus.textContent = '{{ app()->getLocale() === "ar" ? "جاري الاستخراج..." : "Extracting..." }}';
+            extractStatus.textContent = '{{ app()->getLocale() === 'ar' ? 'جاري الاستخراج...' : 'Extracting...' }}';
             extractStatus.classList.remove('hidden', 'text-emerald-600', 'text-red-600', 'text-amber-600');
             extractStatus.classList.add('text-slate-600');
             var formData = new FormData();
             formData.append('document', file);
             formData.append('_token', document.querySelector('input[name="_token"]').value);
-            fetch('{{ route("patients.extract-identity-document") }}', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-            })
-            .then(function(r) {
-                return r.text().then(function(text) {
-                    try {
-                        var data = text ? JSON.parse(text) : {};
-                        return { ok: r.ok, status: r.status, data: data };
-                    } catch (e) {
-                        return { ok: false, status: r.status, data: { message: r.status === 500 ? 'Server error. Check Tesseract OCR setup.' : text ? text.substring(0, 120) : 'Request failed.' } };
+            fetch('{{ route('patients.extract-identity-document') }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
                     }
+                })
+                .then(function(r) {
+                    return r.text().then(function(text) {
+                        try {
+                            var data = text ? JSON.parse(text) : {};
+                            return {
+                                ok: r.ok,
+                                status: r.status,
+                                data: data
+                            };
+                        } catch (e) {
+                            return {
+                                ok: false,
+                                status: r.status,
+                                data: {
+                                    message: r.status === 500 ? 'Server error. Check Tesseract OCR setup.' :
+                                        text ? text.substring(0, 120) : 'Request failed.'
+                                }
+                            };
+                        }
+                    });
+                })
+                .then(function(result) {
+                    var res = result.data;
+                    extractStatus.textContent = (res && res.message) ? res.message : (result.ok ? '' :
+                        'Request failed (' + result.status + ').');
+                    if (result.ok && res && res.success && res.data) {
+                        extractStatus.classList.remove('text-slate-600', 'text-red-600', 'text-amber-600');
+                        extractStatus.classList.add('text-emerald-600');
+                        var d = res.data;
+                        if (d.name) document.querySelector('input[name="name"]').value = d.name;
+                        if (d.name_ar) document.querySelector('input[name="name_ar"]').value = d.name_ar;
+                        if (d.identity_value) document.getElementById('identity_value').value = d.identity_value;
+                        if (d.identity_type) {
+                            var typeSelect = document.getElementById('identity_type');
+                            if (typeSelect) typeSelect.value = d.identity_type;
+                        }
+                        if (document.getElementById('identity_type')) document.getElementById('identity_type')
+                            .dispatchEvent(new Event('change'));
+                    } else {
+                        extractStatus.classList.remove('text-emerald-600', 'text-slate-600');
+                        extractStatus.classList.add(result.ok ? 'text-amber-600' : 'text-red-600');
+                    }
+                })
+                .catch(function(err) {
+                    extractStatus.textContent = (err && err.message) ? err.message :
+                        '{{ app()->getLocale() === 'ar' ? 'حدث خطأ أثناء الاستخراج. تحقق من الاتصال وتثبيت Tesseract.' : 'Extraction error. Check connection and Tesseract OCR setup.' }}';
+                    extractStatus.classList.remove('text-amber-600', 'text-emerald-600');
+                    extractStatus.classList.add('text-red-600');
                 });
-            })
-            .then(function(result) {
-                var res = result.data;
-                extractStatus.textContent = (res && res.message) ? res.message : (result.ok ? '' : 'Request failed (' + result.status + ').');
-                if (result.ok && res && res.success && res.data) {
-                    extractStatus.classList.remove('text-slate-600', 'text-red-600', 'text-amber-600');
-                    extractStatus.classList.add('text-emerald-600');
-                    var d = res.data;
-                    if (d.name) document.querySelector('input[name="name"]').value = d.name;
-                    if (d.name_ar) document.querySelector('input[name="name_ar"]').value = d.name_ar;
-                    if (d.identity_value) document.getElementById('identity_value').value = d.identity_value;
-                    if (d.identity_type) {
-                        var typeSelect = document.getElementById('identity_type');
-                        if (typeSelect) typeSelect.value = d.identity_type;
-                    }
-                    if (document.getElementById('identity_type')) document.getElementById('identity_type').dispatchEvent(new Event('change'));
-                } else {
-                    extractStatus.classList.remove('text-emerald-600', 'text-slate-600');
-                    extractStatus.classList.add(result.ok ? 'text-amber-600' : 'text-red-600');
-                }
-            })
-            .catch(function(err) {
-                extractStatus.textContent = (err && err.message) ? err.message : '{{ app()->getLocale() === "ar" ? "حدث خطأ أثناء الاستخراج. تحقق من الاتصال وتثبيت Tesseract." : "Extraction error. Check connection and Tesseract OCR setup." }}';
-                extractStatus.classList.remove('text-amber-600', 'text-emerald-600');
-                extractStatus.classList.add('text-red-600');
-            });
         }
 
         if (btnExtractAfterScan) {
@@ -650,14 +734,17 @@
             btnExtract.addEventListener('click', function() {
                 var file = identityDocInput.files && identityDocInput.files[0];
                 if (!file) {
-                    extractStatus.textContent = '{{ app()->getLocale() === "ar" ? "اختر صورة الوثيقة أولاً." : "Please select a document image first." }}';
+                    extractStatus.textContent =
+                        '{{ app()->getLocale() === 'ar' ? 'اختر صورة الوثيقة أولاً.' : 'Please select a document image first.' }}';
                     extractStatus.classList.remove('hidden');
                     extractStatus.className = 'mt-2 text-sm text-amber-600';
                     return;
                 }
                 btnExtract.disabled = true;
                 doExtractFromFile(file);
-                setTimeout(function() { btnExtract.disabled = false; }, 2000);
+                setTimeout(function() {
+                    btnExtract.disabled = false;
+                }, 2000);
             });
         }
 
@@ -710,7 +797,7 @@
                             showInsuranceResult(data.message || (data.found ?
                                 '{{ app()->getLocale() === 'ar' ? 'لا يوجد تأمين مسجل.' : 'No insurance on record.' }}' :
                                 '{{ app()->getLocale() === 'ar' ? 'لا يوجد مريض بهذا الرقم.' : 'No patient with this identity.' }}'
-                                ), false);
+                            ), false);
                         }
                     })
                     .catch(function() {

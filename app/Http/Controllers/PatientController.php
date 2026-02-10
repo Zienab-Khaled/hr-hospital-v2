@@ -16,17 +16,17 @@ class PatientController extends Controller
     public function search(Request $request)
     {
         $this->authorize('patients.view');
-        
+
         if (!$request->has('identity')) {
             return view('patients.search');
         }
-        
+
         $identity = $request->get('identity');
-        
+
         $patient = Patient::where('identity_value', $identity)
             ->with(['insuranceCompany', 'charityEntity', 'visits'])
             ->first();
-        
+
         return view('patients.search', compact('patient'));
     }
 
@@ -105,7 +105,7 @@ class PatientController extends Controller
             ], 500);
         }
     }
-    
+
     public function create()
     {
         $this->authorize('patients.create');
@@ -135,7 +135,7 @@ class PatientController extends Controller
             'charity_entity_id' => 'nullable|exists:charity_entities,id',
             'notes' => 'nullable|string',
         ]);
-        
+
         if ($valid['identity_type'] === 'iqama') {
             if (empty($valid['sponsor_name'])) {
                 return back()->withErrors(['sponsor_name' => 'Sponsor name is required for Iqama holders.'])->withInput();
@@ -144,7 +144,7 @@ class PatientController extends Controller
                 return back()->withErrors(['sponsor_phone' => 'Sponsor phone is required for Iqama holders.'])->withInput();
             }
         }
-        
+
         if ($valid['payment_type'] === 'insurance') {
             $valid['charity_entity_id'] = null;
         }
@@ -152,35 +152,35 @@ class PatientController extends Controller
             $valid['insurance_company_id'] = null;
         }
         $valid['is_active'] = true;
-        
+
         $patient = Patient::create($valid);
-        
+
         // Handle document uploads
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $document) {
                 $patient->addMedia($document)->toMediaCollection('documents');
             }
         }
-        
+
         return redirect()->route('patients.search')->with('success', __('Patient registered successfully.'));
     }
-    
+
     public function show(Patient $patient)
     {
         $this->authorize('patients.view');
-        
+
         $patient->load([
-            'insuranceCompany', 
-            'charityEntity', 
+            'insuranceCompany',
+            'charityEntity',
             'visits' => fn($q) => $q->latest()->limit(10),
             'invoices' => fn($q) => $q->latest()->limit(10),
             'contactReports' => fn($q) => $q->latest()->limit(5),
             'writtenCommitments' => fn($q) => $q->latest()->limit(5),
         ]);
-        
+
         return view('patients.show', compact('patient'));
     }
-    
+
     public function edit(Patient $patient)
     {
         $this->authorize('patients.edit');
@@ -188,11 +188,11 @@ class PatientController extends Controller
         $charityEntities = CharityEntity::orderBy('name')->get();
         return view('patients.edit', compact('patient', 'insuranceCompanies', 'charityEntities'));
     }
-    
+
     public function update(Request $request, Patient $patient)
     {
         $this->authorize('patients.edit');
-        
+
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,
             'name' => 'required|string|max:255',
@@ -211,7 +211,7 @@ class PatientController extends Controller
             'charity_entity_id' => 'nullable|exists:charity_entities,id',
             'notes' => 'nullable|string',
         ]);
-        
+
         if ($valid['identity_type'] === 'iqama') {
             if (empty($valid['sponsor_name'])) {
                 return back()->withErrors(['sponsor_name' => 'Sponsor name is required for Iqama holders.'])->withInput();
@@ -220,37 +220,37 @@ class PatientController extends Controller
                 return back()->withErrors(['sponsor_phone' => 'Sponsor phone is required for Iqama holders.'])->withInput();
             }
         }
-        
+
         if ($valid['payment_type'] === 'insurance') {
             $valid['charity_entity_id'] = null;
         }
         if ($valid['payment_type'] === 'charity') {
             $valid['insurance_company_id'] = null;
         }
-        
+
         $patient->update($valid);
-        
+
         // Handle document uploads
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $document) {
                 $patient->addMedia($document)->toMediaCollection('documents');
             }
         }
-        
+
         return redirect()->route('patients.show', $patient)->with('success', __('Patient updated successfully.'));
     }
-    
+
     public function destroy(Patient $patient)
     {
         $this->authorize('patients.delete');
-        
+
         // Check if patient has related records
         if ($patient->visits()->exists() || $patient->invoices()->exists()) {
             return back()->with('error', __('Cannot delete patient with existing visits or invoices.'));
         }
-        
+
         $patient->delete();
-        
+
         return redirect()->route('patients.section.followup')->with('success', __('Patient deleted successfully.'));
     }
 }
