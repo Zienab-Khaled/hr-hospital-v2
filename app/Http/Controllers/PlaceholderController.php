@@ -18,6 +18,7 @@ use App\Models\Service;
 use App\Models\Setting;
 use App\Models\User;
 use App\Helpers\ActivityLogger;
+use App\Services\OfficialCodesImporter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,9 +41,31 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'identity_value', 'phone'],
-            ['payment_type' => 'payment_type']
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'country_of_origin'],
+            [
+                'payment_type' => 'payment_type',
+                'identity_type' => 'identity_type',
+                'insurance_company_id' => 'insurance_company_id',
+                'charity_entity_id' => 'charity_entity_id',
+                'gender' => 'gender',
+            ]
         );
+
+        if ($request->filled('country_of_origin')) {
+            $query->where('country_of_origin', 'like', '%' . $request->get('country_of_origin') . '%');
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+        if ($request->filled('age_from')) {
+            $query->where('age', '>=', $request->get('age_from'));
+        }
+        if ($request->filled('age_to')) {
+            $query->where('age', '<=', $request->get('age_to'));
+        }
 
         $patients = $query->latest()
             ->paginate($this->getPerPage($request))
@@ -104,6 +127,11 @@ class PlaceholderController extends Controller
             $filters['gender'] = 'gender';
         }
 
+        // Cash section: same demographic filters as charity
+        if ($section === 'cash') {
+            $filters['gender'] = 'gender';
+        }
+
         // Insurance-specific filters
         if ($section === 'insurance') {
             $filters['insurance_company_id'] = 'insurance_company_id';
@@ -116,12 +144,25 @@ class PlaceholderController extends Controller
             $filters
         );
 
-        // Age range filters
+        // Age range (charity + cash + followup + collection)
         if ($request->filled('age_from')) {
             $query->where('age', '>=', $request->get('age_from'));
         }
         if ($request->filled('age_to')) {
             $query->where('age', '<=', $request->get('age_to'));
+        }
+
+        // Date range (registration date) – all sections
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        // Country of origin (text search)
+        if ($request->filled('country_of_origin')) {
+            $query->where('country_of_origin', 'like', '%' . $request->get('country_of_origin') . '%');
         }
 
         $patients = $query->latest()
@@ -741,42 +782,22 @@ class PlaceholderController extends Controller
     public function codesUploadStore(Request $request)
     {
         Gate::authorize('codes.upload');
-        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5120']);
+        $request->validate(['file' => 'required|file|max:20480'], [], ['file' => __('File')]);
+
         $file = $request->file('file');
-        $updated = 0;
-        $created = 0;
-        $handle = fopen($file->getRealPath(), 'r');
-            $first = fgetcsv($handle);
-            $isHeader = $first && in_array(strtolower(trim((string)($first[0] ?? ''))), ['code', 'كود', 'id', 'رقم']);
-            if ($first && !$isHeader) {
-                $code = trim($first[0] ?? '');
-                $name = trim($first[1] ?? '');
-                $price = (float) ($first[2] ?? 0);
-                $deptId = (int) ($first[3] ?? 1);
-                if ($code) {
-                    $svc = Service::updateOrCreate(
-                        ['code' => $code],
-                        ['name' => $name, 'name_ar' => $name, 'default_price' => $price, 'department_id' => $deptId ?: 1, 'is_active' => true]
-                    );
-                    $svc->wasRecentlyCreated ? $created++ : $updated++;
-                }
-            }
-            while (($row = fgetcsv($handle)) !== false) {
-                $code = trim($row[0] ?? '');
-                $name = trim($row[1] ?? '');
-                $price = (float) ($row[2] ?? 0);
-                $deptId = (int) ($row[3] ?? 1);
-                if (!$code) {
-                    continue;
-                }
-                $svc = Service::updateOrCreate(
-                    ['code' => $code],
-                    ['name' => $name, 'name_ar' => $name, 'default_price' => $price, 'department_id' => $deptId ?: 1, 'is_active' => true]
-                );
-                $svc->wasRecentlyCreated ? $created++ : $updated++;
-            }
-            fclose($handle);
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?? '');
+        $allowed = ['csv', 'txt', 'xlsx', 'xls'];
+        if (! in_array($extension, $allowed, true)) {
+            return back()->withErrors(['file' => __('Invalid file type. Use CSV, TXT, XLSX or XLS.')]);
+        }
+
+        $path = $file->getRealPath();
+
+        $importer = new OfficialCodesImporter();
+        [$created, $updated] = $importer->import($path, $extension);
+
         ActivityLogger::log('codes_uploaded', null, null, __('Upload official codes') . " (created: {$created}, updated: {$updated})", null, ['created' => $created, 'updated' => $updated]);
+
         return back()->with('success', __('Processed successfully. Created: :c, Updated: :u', ['c' => $created, 'u' => $updated]));
     }
 

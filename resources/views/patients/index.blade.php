@@ -90,6 +90,39 @@
             </div>
         @endif
 
+        {{-- Cash Section Filters (gender + age range) --}}
+        @if (isset($section) && $section === 'cash')
+            <div class="w-28">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }}
+                </label>
+                <select name="gender"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    <option value="male" {{ request('gender') === 'male' ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'ذكر' : 'Male' }}</option>
+                    <option value="female" {{ request('gender') === 'female' ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'أنثى' : 'Female' }}</option>
+                </select>
+            </div>
+            <div class="w-24">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'العمر من' : 'Age From' }}
+                </label>
+                <input type="number" name="age_from" value="{{ request('age_from') }}" min="0" max="150"
+                    placeholder="0"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-24">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'إلى' : 'Age To' }}
+                </label>
+                <input type="number" name="age_to" value="{{ request('age_to') }}" min="0" max="150"
+                    placeholder="150"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        @endif
+
         {{-- Insurance Section Filters --}}
         @if (isset($section) && $section === 'insurance')
             <div class="w-44">
@@ -127,6 +160,93 @@
                 </select>
             </div>
         @endif
+
+        {{-- Main index only: charity, insurance, gender, age --}}
+        @if (!isset($section))
+            <div class="w-44">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'الجمعية' : 'Charity Entity' }}
+                </label>
+                <select name="charity_entity_id"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    @foreach (\App\Models\CharityEntity::orderBy('name')->get() as $charity)
+                        <option value="{{ $charity->id }}"
+                            {{ request('charity_entity_id') == $charity->id ? 'selected' : '' }}>
+                            {{ app()->getLocale() === 'ar' && $charity->name_ar ? $charity->name_ar : $charity->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-44">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'شركة التأمين' : 'Insurance Company' }}
+                </label>
+                <select name="insurance_company_id"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    @foreach (\App\Models\InsuranceCompany::orderBy('name')->get() as $insurance)
+                        <option value="{{ $insurance->id }}"
+                            {{ request('insurance_company_id') == $insurance->id ? 'selected' : '' }}>
+                            {{ app()->getLocale() === 'ar' && $insurance->name_ar ? $insurance->name_ar : $insurance->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-28">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }}
+                </label>
+                <select name="gender"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    <option value="male" {{ request('gender') === 'male' ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'ذكر' : 'Male' }}</option>
+                    <option value="female" {{ request('gender') === 'female' ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'أنثى' : 'Female' }}</option>
+                </select>
+            </div>
+            <div class="w-24">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'العمر من' : 'Age From' }}
+                </label>
+                <input type="number" name="age_from" value="{{ request('age_from') }}" min="0" max="150"
+                    placeholder="0"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-24">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    {{ app()->getLocale() === 'ar' ? 'إلى' : 'Age To' }}
+                </label>
+                <input type="number" name="age_to" value="{{ request('age_to') }}" min="0" max="150"
+                    placeholder="150"
+                    class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        @endif
+
+        {{-- Date range (registration) – all pages --}}
+        <div class="w-32">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'تسجيل من' : 'Reg. From' }}
+            </label>
+            <input type="date" name="date_from" value="{{ request('date_from') }}"
+                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="w-32">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'تسجيل إلى' : 'Reg. To' }}
+            </label>
+            <input type="date" name="date_to" value="{{ request('date_to') }}"
+                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="w-36">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'بلد المنشأ' : 'Country of Origin' }}
+            </label>
+            <input type="text" name="country_of_origin" value="{{ request('country_of_origin') }}"
+                placeholder="{{ app()->getLocale() === 'ar' ? 'بلد المنشأ' : 'Country' }}"
+                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
     </x-index-filters>
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
