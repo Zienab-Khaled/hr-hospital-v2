@@ -162,7 +162,8 @@ class PatientController extends Controller
             }
         }
 
-        return redirect()->route('patients.search')->with('success', __('Patient registered successfully.'));
+        return redirect()->route('invoices.create', ['patient_id' => $patient->id])
+            ->with('success', __('Patient registered successfully. You can now add services and create an invoice.'));
     }
 
     public function show(Patient $patient)

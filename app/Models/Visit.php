@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Visit extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['patient_id', 'visit_date', 'case_type', 'notes', 'transferred_department_id', 'registered_by'];
+    protected $fillable = ['patient_id', 'visit_date', 'case_type', 'notes', 'referral_number', 'transferred_department_id', 'registered_by'];
 
     protected function casts(): array
     {

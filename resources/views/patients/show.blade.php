@@ -8,6 +8,12 @@
                     {{ app()->getLocale() === 'ar' ? '👤 عرض مريض' : '👤 Patient Details' }}
                 </h2>
                 <div class="flex gap-2">
+                    @can('invoices.create')
+                        <a href="{{ route('invoices.create', ['patient_id' => $patient->id]) }}"
+                            class="border-2 border-blue-600 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+                            {{ app()->getLocale() === 'ar' ? '🧾 تقديم خدمة' : '🧾 Add Service' }}
+                        </a>
+                    @endcan
                     @can('patients.edit')
                         <a href="{{ route('patients.edit', $patient) }}"
                             class="border-2 border-violet-600 bg-violet-600  px-4 py-2 rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">

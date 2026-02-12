@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('invoices', [PlaceholderController::class, 'invoicesIndex'])->name('invoices.index');
     Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::get('invoices/create/patients-search', [InvoiceController::class, 'searchPatients'])->name('invoices.patients-search');
+    Route::get('invoices/create/services-search', [InvoiceController::class, 'searchServices'])->name('invoices.services-search');
     Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');

@@ -1,7 +1,18 @@
 @extends('layouts.app')
 @section('title', __('Invoices'))
 @section('content')
-    <h2 class="text-xl font-semibold text-slate-800 mb-4">{{ __('Invoices') }}</h2>
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <h2 class="text-xl font-semibold text-slate-800">{{ __('Invoices') }}</h2>
+        @can('invoices.create')
+            <a href="{{ route('invoices.create') }}"
+                class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة جديدة' : 'Create Invoice' }}
+            </a>
+        @endcan
+    </div>
 
     {{-- Search and Filter using Global Component --}}
     <x-index-filters :action="route('invoices.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'رقم الفاتورة، اسم المريض...' : 'Invoice no, patient name...'">
