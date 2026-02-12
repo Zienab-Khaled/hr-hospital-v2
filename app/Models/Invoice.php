@@ -13,7 +13,7 @@ class Invoice extends Model
     use SoftDeletes;
     protected $fillable = [
         'patient_id', 'visit_id', 'invoice_number', 'total_amount', 'paid_amount', 'remaining_amount',
-        'deposit_amount', 'status', 'invoice_date', 'notes',
+        'deposit_amount', 'status', 'invoice_date', 'notes', 'print_media_ids',
     ];
 
     protected function casts(): array
@@ -24,6 +24,7 @@ class Invoice extends Model
             'paid_amount' => 'decimal:2',
             'remaining_amount' => 'decimal:2',
             'deposit_amount' => 'decimal:2',
+            'print_media_ids' => 'array',
         ];
     }
 

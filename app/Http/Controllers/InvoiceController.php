@@ -147,6 +147,8 @@ class InvoiceController extends Controller
             'patient_payment_type' => 'nullable|string|in:cash,insurance,charity',
             'patient_insurance_company_id' => 'nullable|exists:insurance_companies,id',
             'patient_charity_entity_id' => 'nullable|exists:charity_entities,id',
+            'print_media_ids' => 'nullable|array',
+            'print_media_ids.*' => 'integer',
         ]);
 
         DB::beginTransaction();
@@ -194,6 +196,10 @@ class InvoiceController extends Controller
             // Calculate total amount
             $totalAmount = collect($validated['services'])->sum('total_price');
 
+            // Only allow print_media_ids that belong to this patient's documents/medical-reports
+            $patientMediaIds = $patient->getMedia('documents')->merge($patient->getMedia('medical-reports'))->pluck('id')->all();
+            $printMediaIds = isset($validated['print_media_ids']) ? array_values(array_intersect(array_map('intval', $validated['print_media_ids']), $patientMediaIds)) : null;
+
             // Create invoice
             $invoice = Invoice::create([
                 'patient_id' => $patient->id,
@@ -206,6 +212,7 @@ class InvoiceController extends Controller
                 'deposit_amount' => 0,
                 'status' => 'pending',
                 'notes' => $validated['notes'],
+                'print_media_ids' => $printMediaIds ?: null,
             ]);
 
             // Create invoice items (quantity: ensure integer for DB)

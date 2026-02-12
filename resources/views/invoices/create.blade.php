@@ -35,9 +35,20 @@
 
                 {{-- Patient block: نفس التصميم سواء مريض محدد مسبقاً أو اختيار من القائمة (تقديم خدمة من مريض) --}}
                 <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-5 mb-6 shadow-sm">
-                    <h3 class="font-bold text-blue-900 mb-3 text-lg">
-                        {{ app()->getLocale() === 'ar' ? '👤 معلومات المريض' : '👤 Patient Information' }}
-                    </h3>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h3 class="font-bold text-blue-900 text-lg">
+                            {{ app()->getLocale() === 'ar' ? '👤 معلومات المريض' : '👤 Patient Information' }}
+                        </h3>
+                        @if (isset($patient) && auth()->user()?->can('patients.create'))
+                            <a href="{{ route('patients.create') }}"
+                                class="inline-flex items-center gap-1.5 shrink-0 bg-emerald-600 text-white px-3 py-1.5 rounded-md font-semibold text-xs hover:bg-emerald-700">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                <span>{{ app()->getLocale() === 'ar' ? 'مريض جديد' : 'New patient' }}</span>
+                            </a>
+                        @endif
+                    </div>
 
                 @if (isset($patient))
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -161,14 +172,53 @@
                                     class="{{ $inputClass }}">
                             </div>
                         </div>
+
+                        @php
+                            $patientDocuments = $patient->getMedia('documents')->merge($patient->getMedia('medical-reports'));
+                        @endphp
+                        @if($patientDocuments->isNotEmpty())
+                            <div class="mt-4 pt-4 border-t border-blue-200">
+                                <h4 class="font-bold text-blue-900 text-sm mb-2">
+                                    {{ app()->getLocale() === 'ar' ? '📎 مستندات المريض — اختر ما يُطبع مع الفاتورة' : '📎 Patient documents — select which to print with invoice' }}
+                                </h4>
+                                <div class="flex flex-wrap gap-3">
+                                    @foreach($patientDocuments as $media)
+                                        <div class="inline-flex items-center gap-2 p-2 rounded-lg border border-slate-300 bg-white">
+                                            <input type="checkbox" name="print_media_ids[]" value="{{ $media->id }}" id="print_media_{{ $media->id }}"
+                                                {{ in_array($media->id, old('print_media_ids', [])) ? 'checked' : '' }}
+                                                class="rounded border-slate-400 text-blue-600 focus:ring-blue-500 shrink-0">
+                                            <label for="print_media_{{ $media->id }}" class="cursor-pointer text-sm font-medium text-slate-800 truncate max-w-[160px]" title="{{ $media->file_name }}">
+                                                {{ $media->file_name ?? $media->name ?? ('File #' . $media->id) }}
+                                            </label>
+                                            <span class="text-xs text-slate-500 shrink-0">({{ strtoupper($media->extension) }})</span>
+                                            <a href="{{ $media->getUrl() }}" target="_blank" rel="noopener noreferrer"
+                                                class="shrink-0 text-blue-600 hover:text-blue-800 text-xs font-semibold whitespace-nowrap">
+                                                {{ app()->getLocale() === 'ar' ? 'عرض' : 'Preview' }}
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                 @else
-                    {{-- بحث عن المريض: اسم / رقم هوية / فيزا / رقم ملف / هاتف — ثم اختياره لتحميل بياناته --}}
+                    {{-- بحث عن المريض أو إنشاء مريض جديد — ثم إنشاء فاتورة له --}}
                     <div>
-                        <label class="block text-blue-700 font-semibold text-sm mb-2">
-                            {{ app()->getLocale() === 'ar' ? 'بحث عن المريض' : 'Search for patient' }} *
-                        </label>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <label class="block text-blue-700 font-semibold text-sm">
+                                {{ app()->getLocale() === 'ar' ? 'بحث عن المريض' : 'Search for patient' }} *
+                            </label>
+                            @can('patients.create')
+                                <a href="{{ route('patients.create') }}"
+                                    class="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md font-semibold text-xs hover:bg-emerald-700">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    {{ app()->getLocale() === 'ar' ? 'إنشاء مريض جديد' : 'Create new patient' }}
+                                </a>
+                            @endcan
+                        </div>
                         <p class="text-slate-600 text-sm mb-2">
-                            {{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو رقم الهوية أو رقم الفيزا أو رقم الملف أو الهاتف، ثم اختر المريض لتحميل بياناته.' : 'Search by name, ID number, visa, file number or phone, then select the patient to load their data.' }}
+                            {{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو رقم الهوية أو رقم الفيزا أو رقم الملف أو الهاتف، ثم اختر المريض. أو أنشئ مريضاً جديداً ثم ستُحوّل لإنشاء فاتورة له.' : 'Search by name, ID number, visa, file number or phone, then select the patient. Or create a new patient and you will be redirected to create an invoice for them.' }}
                         </p>
                         <div class="flex flex-wrap gap-2">
                             <input type="text" id="patient-search-input"
