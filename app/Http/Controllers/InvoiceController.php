@@ -134,6 +134,8 @@ class InvoiceController extends Controller
             'services.*.unit_price' => 'required|numeric|min:0',
             'services.*.total_price' => 'required|numeric|min:0',
             'services.*.description' => 'nullable|string',
+            'services.*.insurance_coverage_type' => 'nullable|string|in:percentage,fixed',
+            'services.*.insurance_coverage_value' => 'nullable|numeric|min:0',
             // Optional patient updates from invoice form
             'patient_name' => 'nullable|string|max:255',
             'patient_name_ar' => 'nullable|string|max:255',
@@ -219,14 +221,20 @@ class InvoiceController extends Controller
                 'print_media_ids' => $printMediaIds ?: null,
             ]);
 
-            // Create invoice items (quantity: ensure integer for DB)
+            // Create invoice items (quantity: ensure integer for DB; optional insurance coverage per line)
             foreach ($validated['services'] as $serviceData) {
+                $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
+                    ? $serviceData['insurance_coverage_type'] : null;
+                $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
+                    ? (float) $serviceData['insurance_coverage_value'] : null;
                 $invoice->items()->create([
                     'service_id' => (int) $serviceData['service_id'],
                     'quantity' => (int) round((float) $serviceData['quantity']),
                     'unit_price' => (float) $serviceData['unit_price'],
                     'total_price' => (float) $serviceData['total_price'],
                     'description' => isset($serviceData['description']) && $serviceData['description'] !== '' ? (string) $serviceData['description'] : null,
+                    'insurance_coverage_type' => $coverageType,
+                    'insurance_coverage_value' => $coverageValue,
                 ]);
             }
 

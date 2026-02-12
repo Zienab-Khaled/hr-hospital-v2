@@ -79,6 +79,11 @@
                 </div>
             @endif
 
+            @php
+                $hasInsuranceCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
+                $totalInsuranceCovered = $invoice->items->sum(fn ($i) => (float) $i->insurance_covered_amount);
+                $totalPatientShare = $invoice->items->sum(fn ($i) => (float) $i->patient_amount);
+            @endphp
             {{-- Services table (الخدمات المقدمة) --}}
             <div class="p-6">
                 <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخدمات المقدمة' : 'Provided Services' }}</h3>
@@ -91,6 +96,11 @@
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'السعر الافرادي' : 'Unit Price' }}</th>
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                @if($hasInsuranceCoverage)
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المغطى' : 'Covered' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -106,10 +116,25 @@
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">{{ $item->quantity }}</td>
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">@currency($item->unit_price)</td>
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm font-medium">@currency($item->total_price)</td>
+                                    @if($hasInsuranceCoverage)
+                                        <td class="border border-slate-300 px-2 py-2 text-center text-sm">
+                                            @if($item->insurance_coverage_type)
+                                                @if($item->insurance_coverage_type === 'percentage')
+                                                    {{ app()->getLocale() === 'ar' ? 'نسبة' : 'Percentage' }} {{ round((float) $item->insurance_coverage_value, 0) }}%
+                                                @else
+                                                    {{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed' }} @currency($item->insurance_coverage_value)
+                                                @endif
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="border border-slate-300 px-2 py-2 text-center text-sm text-emerald-700 font-medium">@currency($item->insurance_covered_amount)</td>
+                                        <td class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">@currency($item->patient_amount)</td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="border border-slate-300 p-4 text-center text-slate-500">
+                                    <td colspan="{{ $hasInsuranceCoverage ? 8 : 5 }}" class="border border-slate-300 p-4 text-center text-slate-500">
                                         {{ app()->getLocale() === 'ar' ? 'لا توجد بنود' : 'No items' }}
                                     </td>
                                 </tr>
@@ -126,6 +151,16 @@
                         <span class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Total:' }}</span>
                         <span class="font-bold">@currency($invoice->total_amount)</span>
                     </div>
+                    @if($hasInsuranceCoverage && $totalInsuranceCovered > 0)
+                        <div class="flex justify-between text-sm">
+                            <span class="font-semibold text-emerald-700">{{ app()->getLocale() === 'ar' ? 'إجمالي المغطى (التأمين):' : 'Insurance covered:' }}</span>
+                            <span class="font-bold text-emerald-700">@currency($totalInsuranceCovered)</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="font-semibold text-amber-800">{{ app()->getLocale() === 'ar' ? 'حصة المريض:' : 'Patient share:' }}</span>
+                            <span class="font-bold text-amber-800">@currency($totalPatientShare)</span>
+                        </div>
+                    @endif
                     <div class="flex justify-between text-sm">
                         <span class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المدفوع:' : 'Paid:' }}</span>
                         <span class="font-bold text-green-700">@currency($invoice->paid_amount)</span>

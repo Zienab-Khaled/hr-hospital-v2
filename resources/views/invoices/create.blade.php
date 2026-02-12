@@ -290,6 +290,8 @@
                                     <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-20">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
                                     <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'السعر الافرادي' : 'Unit Price' }}</th>
                                     <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                    <th id="th-coverage-type" class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-32 {{ (isset($patient) && $patient->payment_type === 'insurance') ? '' : 'hidden' }}">{{ app()->getLocale() === 'ar' ? 'نوع التغطية' : 'Coverage type' }}</th>
+                                    <th id="th-coverage-value" class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-36 {{ (isset($patient) && $patient->payment_type === 'insurance') ? '' : 'hidden' }}">{{ app()->getLocale() === 'ar' ? 'قيمة التغطية / الخصم' : 'Coverage / discount' }}</th>
                                     <th class="border border-slate-500 px-2 py-2 text-center w-14"></th>
                                 </tr>
                             </thead>
@@ -306,6 +308,16 @@
                                 {{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Total Amount:' }}
                             </span>
                             <span id="grand-total" class="text-3xl font-bold">0.00</span>
+                        </div>
+                        <div id="insurance-totals-wrap" class="mt-3 space-y-2 {{ (isset($patient) && $patient->payment_type === 'insurance') ? '' : 'hidden' }}">
+                            <div class="flex justify-between items-center bg-emerald-100 border border-emerald-300 p-3 rounded-lg">
+                                <span class="font-semibold text-emerald-800">{{ app()->getLocale() === 'ar' ? 'إجمالي المبلغ المغطى (التأمين):' : 'Insurance covered total:' }}</span>
+                                <span id="insurance-covered-total" class="text-xl font-bold text-emerald-800">0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-amber-50 border border-amber-300 p-3 rounded-lg">
+                                <span class="font-semibold text-amber-900">{{ app()->getLocale() === 'ar' ? 'المتبقي على المريض:' : 'Patient share:' }}</span>
+                                <span id="patient-share-total" class="text-xl font-bold text-amber-900">0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -395,6 +407,7 @@
         const invoiceCreateUrl = '{{ route('invoices.create') }}';
         const isArabic = '{{ app()->getLocale() }}' === 'ar';
         let serviceRowIndex = 0;
+        window.invoicePatientIsInsurance = @json(isset($patient) && $patient->payment_type === 'insurance');
 
         function addServiceRow(service) {
             const tbody = document.getElementById('services-container');
@@ -404,6 +417,8 @@
             const qty = service.is_multi_session && service.session_count ? service.session_count : 1;
             const price = service.default_price || 0;
             const total = (qty * price).toFixed(2);
+            const covTypeLabelPct = isArabic ? 'نسبة %' : 'Percentage %';
+            const covTypeLabelFixed = isArabic ? 'قيمة ثابتة' : 'Fixed amount';
             const tr = document.createElement('tr');
             tr.className = 'service-row border-b border-slate-400 hover:bg-slate-50';
             tr.innerHTML = `
@@ -422,12 +437,23 @@
                 <td class="border border-slate-400 px-2 py-2 align-top">
                     <input type="number" form="invoice-form" name="services[${index}][total_price]" value="${total}" step="0.01" readonly class="w-full rounded border border-slate-400 px-2 py-2 text-sm text-center bg-slate-100 font-bold text-slate-800">
                 </td>
+                <td class="border border-slate-400 px-2 py-2 align-top insurance-coverage-cell">
+                    <select form="invoice-form" name="services[${index}][insurance_coverage_type]" class="w-full rounded border border-slate-400 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 insurance-coverage-type" onchange="updateInsuranceTotals()">
+                        <option value="">—</option>
+                        <option value="percentage">${covTypeLabelPct}</option>
+                        <option value="fixed">${covTypeLabelFixed}</option>
+                    </select>
+                </td>
+                <td class="border border-slate-400 px-2 py-2 align-top insurance-coverage-cell">
+                    <input type="number" form="invoice-form" name="services[${index}][insurance_coverage_value]" step="0.01" min="0" placeholder="0" class="w-full rounded border border-slate-400 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" onchange="updateInsuranceTotals()" oninput="updateInsuranceTotals()">
+                </td>
                 <td class="border border-slate-400 px-1 py-2 align-middle text-center">
                     <button type="button" onclick="removeServiceRow(this)" class="text-red-600 hover:text-red-800 p-1" title="${isArabic ? 'حذف' : 'Remove'}">
                         <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                 </td>
             `;
             tbody.appendChild(tr);
+            toggleInsuranceColumns();
             calculateGrandTotal();
         }
 
@@ -460,6 +486,42 @@
             });
 
             document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            updateInsuranceTotals();
+        }
+
+        function toggleInsuranceColumns() {
+            const isIns = !!window.invoicePatientIsInsurance;
+            document.querySelectorAll('.insurance-coverage-th').forEach(function(el) { el.classList.toggle('hidden', !isIns); });
+            document.querySelectorAll('.insurance-coverage-cell').forEach(function(el) { el.classList.toggle('hidden', !isIns); });
+            const wrap = document.getElementById('insurance-totals-wrap');
+            if (wrap) wrap.classList.toggle('hidden', !isIns);
+            updateInsuranceTotals();
+        }
+
+        function updateInsuranceTotals() {
+            if (!window.invoicePatientIsInsurance) return;
+            const container = document.getElementById('services-container');
+            const rows = container.querySelectorAll('tr.service-row');
+            let covered = 0;
+            rows.forEach(function(tr) {
+                const totalInp = tr.querySelector('input[name*="[total_price]"]');
+                const typeSel = tr.querySelector('select[name*="[insurance_coverage_type]"]');
+                const valInp = tr.querySelector('input[name*="[insurance_coverage_value]"]');
+                const total = parseFloat(totalInp && totalInp.value ? totalInp.value : 0) || 0;
+                const type = typeSel ? typeSel.value : '';
+                const val = parseFloat(valInp && valInp.value ? valInp.value : 0) || 0;
+                if (!type || total <= 0) return;
+                if (type === 'percentage') covered += total * Math.min(100, Math.max(0, val)) / 100;
+                else if (type === 'fixed') covered += Math.min(val, total);
+            });
+            const totalInputs = container.querySelectorAll('input[name*="[total_price]"]');
+            let grandTotal = 0;
+            totalInputs.forEach(function(input) { grandTotal += parseFloat(input.value) || 0; });
+            const patientShare = Math.max(0, grandTotal - covered);
+            const elCovered = document.getElementById('insurance-covered-total');
+            const elPatient = document.getElementById('patient-share-total');
+            if (elCovered) elCovered.textContent = covered.toFixed(2);
+            if (elPatient) elPatient.textContent = patientShare.toFixed(2);
         }
 
         function removeServiceRow(button) {
@@ -477,9 +539,13 @@
                     const v = paymentTypeEl.value;
                     insuranceWrap.classList.toggle('hidden', v !== 'insurance');
                     charityWrap.classList.toggle('hidden', v !== 'charity');
+                    window.invoicePatientIsInsurance = (v === 'insurance');
+                    if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
                 }
                 paymentTypeEl.addEventListener('change', togglePaymentFields);
                 togglePaymentFields();
+            } else {
+                if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
             }
 
             const searchInput = document.getElementById('service-search-input');
