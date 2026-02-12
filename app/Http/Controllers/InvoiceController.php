@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Service;
 use App\Models\Visit;
 use App\Models\Approval;
+use App\Models\Attachment;
 use App\Models\InsuranceCompany;
 use App\Models\CharityEntity;
 use App\Mail\ApprovalRequestMail;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
@@ -149,6 +151,8 @@ class InvoiceController extends Controller
             'patient_charity_entity_id' => 'nullable|exists:charity_entities,id',
             'print_media_ids' => 'nullable|array',
             'print_media_ids.*' => 'integer',
+            'medical_reports' => 'nullable|array',
+            'medical_reports.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         DB::beginTransaction();
@@ -226,6 +230,21 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            // Attach medical report(s) if uploaded
+            if ($request->hasFile('medical_reports')) {
+                foreach ($request->file('medical_reports') as $file) {
+                    $path = $file->store('invoice-reports', 'public');
+                    $invoice->attachments()->create([
+                        'document_type' => 'medical_report',
+                        'file_path' => $path,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                        'uploaded_by' => auth()->user()?->getKey(),
+                    ]);
+                }
+            }
+
             // Create approval request for insurance/charity patients
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 $approval = Approval::create([
@@ -285,10 +304,19 @@ class InvoiceController extends Controller
             'patient.charityEntity',
             'items.service',
             'payments',
-            'visit'
+            'visit.registeredBy',
+            'attachments'
         ]);
 
-        return view('invoices.show', compact('invoice'));
+        $printMedia = collect();
+        if ($invoice->patient && !empty($invoice->print_media_ids)) {
+            $ids = array_map('intval', (array) $invoice->print_media_ids);
+            $printMedia = $invoice->patient->getMedia('documents')
+                ->merge($invoice->patient->getMedia('medical-reports'))
+                ->whereIn('id', $ids)->values();
+        }
+
+        return view('invoices.show', compact('invoice', 'printMedia'));
     }
 
     public function edit(Invoice $invoice)

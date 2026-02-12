@@ -26,7 +26,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('invoices.store') }}" method="POST" id="invoice-form" class="space-y-6">
+            <form action="{{ route('invoices.store') }}" method="POST" id="invoice-form" class="space-y-6" enctype="multipart/form-data">
                 @csrf
 
                 @if (isset($patient))
@@ -310,6 +310,57 @@
                     </div>
                 </div>
 
+                {{-- التقرير الطبي: رفع أو مسح بالكاميرا (مثل إنشاء المريض) --}}
+                <div class="border-2 border-slate-300 rounded-lg p-4 bg-slate-50">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        {{ app()->getLocale() === 'ar' ? '📋 التقرير الطبي (اختياري)' : '📋 Medical report (optional)' }}
+                    </label>
+                    <p class="text-slate-600 text-sm mb-3">
+                        {{ app()->getLocale() === 'ar' ? 'ارفع ملفاً (PDF أو صورة) أو مسح بالكاميرا ثم إنشاء PDF.' : 'Upload a file (PDF or image) or scan with camera then generate PDF.' }}
+                    </p>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button type="button" id="btn_inv_mode_upload"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold border-2 border-blue-600 bg-blue-600 text-white hover:bg-blue-700">
+                            {{ app()->getLocale() === 'ar' ? '📁 رفع ملف' : '📁 Upload file' }}
+                        </button>
+                        <button type="button" id="btn_inv_mode_scan"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold border-2 border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200">
+                            {{ app()->getLocale() === 'ar' ? '📷 مسح بالكاميرا' : '📷 Scan with camera' }}
+                        </button>
+                    </div>
+                    <div id="inv_medical_upload_box">
+                        <input type="file" name="medical_reports[]" id="medical_reports_upload" accept=".pdf,image/jpeg,image/png,image/jpg" multiple
+                            class="invoice-medical-input w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-2 file:border-blue-500 file:bg-blue-600 file:text-white file:font-semibold file:cursor-pointer hover:file:bg-blue-700">
+                    </div>
+                    <div id="inv_medical_scan_box" class="hidden">
+                        <div id="inv_scan_pdf_pages" class="flex flex-wrap gap-2 mb-3 min-h-[60px]"></div>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button type="button" id="btn_inv_add_scan_page"
+                                class="border-2 border-emerald-600 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700">
+                                {{ app()->getLocale() === 'ar' ? '➕ إضافة صفحة (مسح بالكاميرا)' : '➕ Add page (scan with camera)' }}
+                            </button>
+                            <button type="button" id="btn_inv_generate_pdf"
+                                class="border-2 border-slate-500 bg-slate-600  px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+                                disabled>
+                                {{ app()->getLocale() === 'ar' ? '📄 إنشاء PDF ومرفق' : '📄 Generate PDF & attach' }}
+                            </button>
+                        </div>
+                        <p id="inv_scanned_pdf_status" class="mt-2 text-sm text-slate-600 hidden"></p>
+                        <input type="file" name="medical_reports[]" id="medical_report_scanned_file" accept=".pdf" class="hidden">
+                    </div>
+                </div>
+                {{-- مودال الكاميرا للتقرير الطبي --}}
+                <div id="inv_camera_modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl max-w-lg w-full p-4">
+                        <p id="inv_camera_step_label" class="font-semibold text-slate-800 mb-2"></p>
+                        <video id="inv_camera_video" autoplay playsinline class="w-full rounded border bg-slate-900" style="max-height: 50vh;"></video>
+                        <div class="flex gap-2 mt-3">
+                            <button type="button" id="btn_inv_take_photo" class="flex-1 border-2 border-blue-600 bg-blue-600 py-2.5 rounded-lg font-semibold text-white hover:bg-blue-700">{{ app()->getLocale() === 'ar' ? 'التقاط' : 'Capture' }}</button>
+                            <button type="button" id="btn_inv_close_camera" class="px-4 py-2.5 border-2 border-slate-400 bg-slate-100 text-slate-800 rounded-lg font-medium hover:bg-slate-200">{{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}</button>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Notes --}}
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">
@@ -337,6 +388,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         const searchUrl = '{{ route('invoices.services-search') }}';
         const patientSearchUrl = '{{ route('invoices.patients-search') }}';
@@ -530,6 +582,153 @@
                 });
             }
         });
+
+        // --- التقرير الطبي: رفع ملف | مسح بالكاميرا ---
+        (function() {
+            var btnUpload = document.getElementById('btn_inv_mode_upload');
+            var btnScan = document.getElementById('btn_inv_mode_scan');
+            var boxUpload = document.getElementById('inv_medical_upload_box');
+            var boxScan = document.getElementById('inv_medical_scan_box');
+            if (!btnUpload || !btnScan || !boxUpload || !boxScan) return;
+
+            function setMedicalMode(mode) {
+                var isUpload = mode === 'upload';
+                boxUpload.classList.toggle('hidden', !isUpload);
+                boxScan.classList.toggle('hidden', isUpload);
+                btnUpload.className = 'px-4 py-2 rounded-lg text-sm font-semibold border-2 ' + (isUpload ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200');
+                btnScan.className = 'px-4 py-2 rounded-lg text-sm font-semibold border-2 ' + (!isUpload ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' : 'border-slate-400 bg-slate-100 text-slate-800 hover:bg-slate-200');
+            }
+            btnUpload.addEventListener('click', function() { setMedicalMode('upload'); });
+            btnScan.addEventListener('click', function() { setMedicalMode('scan'); });
+            setMedicalMode('upload');
+
+            var invCameraModal = document.getElementById('inv_camera_modal');
+            var invCameraVideo = document.getElementById('inv_camera_video');
+            var invCameraLabel = document.getElementById('inv_camera_step_label');
+            var invScanPages = document.getElementById('inv_scan_pdf_pages');
+            var invScannedStatus = document.getElementById('inv_scanned_pdf_status');
+            var invScannedFile = document.getElementById('medical_report_scanned_file');
+            var invStream = null;
+            var invScanPagesArray = [];
+            var invCanvas = document.createElement('canvas');
+            var invCtx = invCanvas.getContext('2d');
+
+            function invStopCamera() {
+                if (invStream) {
+                    invStream.getTracks().forEach(function(t) { t.stop(); });
+                    invStream = null;
+                }
+                if (invCameraModal) invCameraModal.classList.add('hidden');
+            }
+
+            function invOpenCamera() {
+                if (invCameraLabel) invCameraLabel.textContent = isArabic ? 'وجّه الكاميرا إلى المستند ثم اضغط التقاط' : 'Point camera at document, then press Capture';
+                if (invCameraModal) invCameraModal.classList.remove('hidden');
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(function(stream) {
+                        invStream = stream;
+                        if (invCameraVideo) invCameraVideo.srcObject = stream;
+                    })
+                    .catch(function() {
+                        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                            invStream = stream;
+                            if (invCameraVideo) invCameraVideo.srcObject = stream;
+                        }).catch(function() {
+                            if (invScannedStatus) {
+                                invScannedStatus.textContent = isArabic ? 'تعذر الوصول للكاميرا.' : 'Camera access denied.';
+                                invScannedStatus.classList.remove('hidden');
+                            }
+                            invStopCamera();
+                        });
+                    });
+            }
+
+            function invCapturePhoto() {
+                if (!invStream || !invCameraVideo) return;
+                invCanvas.width = invCameraVideo.videoWidth;
+                invCanvas.height = invCameraVideo.videoHeight;
+                invCtx.drawImage(invCameraVideo, 0, 0);
+                invCanvas.toBlob(function(blob) {
+                    invScanPagesArray.push({ blob: blob, url: URL.createObjectURL(blob) });
+                    invRenderThumbnails();
+                    var btnGen = document.getElementById('btn_inv_generate_pdf');
+                    if (btnGen) btnGen.disabled = false;
+                    invStopCamera();
+                }, 'image/jpeg', 0.92);
+            }
+
+            function invRenderThumbnails() {
+                if (!invScanPages) return;
+                invScanPages.innerHTML = '';
+                invScanPagesArray.forEach(function(item, index) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'relative inline-block';
+                    var img = document.createElement('img');
+                    img.src = item.url;
+                    img.alt = 'Page ' + (index + 1);
+                    img.className = 'h-20 w-auto rounded border border-slate-300 object-cover';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs hover:bg-red-600';
+                    btn.textContent = '×';
+                    btn.addEventListener('click', function() {
+                        invScanPagesArray.splice(index, 1);
+                        invRenderThumbnails();
+                        if (invScanPagesArray.length === 0) {
+                            var b = document.getElementById('btn_inv_generate_pdf');
+                            if (b) b.disabled = true;
+                        }
+                    });
+                    wrap.appendChild(img);
+                    wrap.appendChild(btn);
+                    invScanPages.appendChild(wrap);
+                });
+            }
+
+            function blobToBase64(blob) {
+                return new Promise(function(resolve, reject) {
+                    var r = new FileReader();
+                    r.onload = function() { resolve(r.result); };
+                    r.onerror = reject;
+                    r.readAsDataURL(blob);
+                });
+            }
+
+            document.getElementById('btn_inv_add_scan_page').addEventListener('click', invOpenCamera);
+            document.getElementById('btn_inv_take_photo').addEventListener('click', invCapturePhoto);
+            document.getElementById('btn_inv_close_camera').addEventListener('click', invStopCamera);
+
+            document.getElementById('btn_inv_generate_pdf').addEventListener('click', function() {
+                if (invScanPagesArray.length === 0) return;
+                var JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (typeof jspdf !== 'undefined' && jspdf.jsPDF) ? jspdf.jsPDF : null;
+                if (!JsPDF) {
+                    if (invScannedStatus) {
+                        invScannedStatus.textContent = isArabic ? 'مكتبة PDF غير محمّلة.' : 'PDF library not loaded.';
+                        invScannedStatus.classList.remove('hidden');
+                    }
+                    return;
+                }
+                var doc = new JsPDF();
+                var w = doc.internal.pageSize.getWidth();
+                var h = doc.internal.pageSize.getHeight();
+                Promise.all(invScanPagesArray.map(function(p) { return blobToBase64(p.blob); })).then(function(base64arr) {
+                    base64arr.forEach(function(base64, i) {
+                        if (i > 0) doc.addPage();
+                        doc.addImage(base64, 'JPEG', 0, 0, w, h);
+                    });
+                    var pdfBlob = doc.output('blob');
+                    var file = new File([pdfBlob], 'scanned-medical-report.pdf', { type: 'application/pdf' });
+                    var dt = new DataTransfer();
+                    dt.items.add(file);
+                    invScannedFile.files = dt.files;
+                    if (invScannedStatus) {
+                        invScannedStatus.textContent = (isArabic ? 'تم مرفق PDF (' : 'PDF attached (') + invScanPagesArray.length + (isArabic ? ' صفحة).' : ' pages).');
+                        invScannedStatus.classList.remove('hidden');
+                        invScannedStatus.classList.add('text-emerald-600');
+                    }
+                });
+            });
+        })();
 
         // Form validation
         document.getElementById('invoice-form').addEventListener('submit', function(e) {

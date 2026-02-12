@@ -21,16 +21,10 @@
             </div>
         </div>
 
-        @if (session('success'))
-            <div class="mb-4 p-4 rounded-lg bg-green-100 border border-green-400 text-green-800">
-                {{ session('success') }}
-            </div>
-        @endif
-
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             {{-- Invoice header --}}
             <div class="p-6 border-b-2 border-slate-200 bg-slate-50">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <span class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة:' : 'Invoice No:' }}</span>
                         <p class="text-lg font-bold text-slate-900">{{ $invoice->invoice_number }}</p>
@@ -49,6 +43,12 @@
                             <p class="text-lg font-medium text-slate-900">{{ $invoice->visit->referral_number }}</p>
                         </div>
                     @endif
+                    @if($invoice->visit?->registeredBy)
+                        <div>
+                            <span class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'أنشئت بواسطة:' : 'Created by:' }}</span>
+                            <p class="text-lg font-medium text-slate-900">{{ $invoice->visit->registeredBy->name ?? $invoice->visit->registeredBy->username ?? '—' }}</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -63,6 +63,18 @@
                         @endif
                         <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الملف:' : 'File No:' }}</span> {{ $invoice->patient->file_number }}</p>
                         <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'نوع الدفع:' : 'Payment:' }}</span> {{ $invoice->patient->payment_type ?? '—' }}</p>
+                        @if($invoice->patient->payment_type === 'insurance' && $invoice->patient->insuranceCompany)
+                            <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance company:' }}</span> {{ $invoice->patient->insuranceCompany->name }}</p>
+                        @endif
+                        @if($invoice->patient->payment_type === 'charity' && $invoice->patient->charityEntity)
+                            <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'الجمعية:' : 'Charity entity:' }}</span> {{ $invoice->patient->charityEntity->name }}</p>
+                        @endif
+                        @if($invoice->patient->phone)
+                            <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'الهاتف:' : 'Phone:' }}</span> {{ $invoice->patient->phone }}</p>
+                        @endif
+                        @if($invoice->patient->identity_value)
+                            <p><span class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الهوية/الفيزا:' : 'ID/Visa:' }}</span> {{ $invoice->patient->identity_value }}</p>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -123,6 +135,41 @@
                         <span class="font-bold text-slate-900">@currency($invoice->remaining_amount)</span>
                     </div>
                 </div>
+                @if($printMedia->isNotEmpty())
+                    <div class="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                        <span class="text-sm font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'مستندات المريض المختارة للطباعة مع الفاتورة:' : 'Patient documents selected to print with invoice:' }}</span>
+                        <ul class="mt-2 space-y-1">
+                            @foreach($printMedia as $media)
+                                <li>
+                                    <a href="{{ $media->getUrl() }}" target="_blank" rel="noopener noreferrer"
+                                        class="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center gap-1">
+                                        {{ $media->file_name ?? $media->name ?? ('File #' . $media->id) }}
+                                        <span class="text-slate-500 text-xs">({{ strtoupper($media->extension ?? '') }})</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                @php
+                    $medicalReports = $invoice->attachments->where('document_type', 'medical_report');
+                @endphp
+                @if($medicalReports->isNotEmpty())
+                    <div class="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-sm font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'التقرير الطبي المرفق بالفاتورة:' : 'Attached medical report(s):' }}</span>
+                        <ul class="mt-2 space-y-1">
+                            @foreach($medicalReports as $att)
+                                <li>
+                                    <a href="{{ asset('storage/' . $att->file_path) }}" target="_blank" rel="noopener noreferrer"
+                                        class="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center gap-1">
+                                        {{ $att->file_name ?? 'File #' . $att->id }}
+                                        <span class="text-slate-500 text-xs">({{ $att->mime_type ?: '—' }})</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 @if($invoice->notes)
                     <div class="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
                         <span class="text-sm font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'ملاحظات:' : 'Notes:' }}</span>
