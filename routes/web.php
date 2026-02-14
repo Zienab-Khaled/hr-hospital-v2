@@ -28,6 +28,10 @@ Route::get('/locale/{locale}', function ($locale) {
 Route::get('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'respond'])->name('approvals.respond');
 Route::post('approvals/{token}', [App\Http\Controllers\ApprovalController::class, 'processResponse'])->name('approvals.process');
 
+// Public invoice party response (confirm/reject with written approval - no auth)
+Route::get('invoice-party-response/{token}', [App\Http\Controllers\InvoicePartyResponseController::class, 'show'])->name('invoice-party-response.show');
+Route::post('invoice-party-response/{token}', [App\Http\Controllers\InvoicePartyResponseController::class, 'process'])->name('invoice-party-response.process');
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
@@ -76,8 +80,13 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/create/services-search', [InvoiceController::class, 'searchServices'])->name('invoices.services-search');
     Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('invoices/{invoice}/print-commitment', [InvoiceController::class, 'printCommitmentForm'])->name('invoices.print-commitment');
+    Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
+    Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
+    Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
     Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
     Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
+    Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     Route::get('authorizations', [PlaceholderController::class, 'authorizationsIndex'])->name('authorizations.index');
     Route::get('payments', [PlaceholderController::class, 'paymentsIndex'])->name('payments.index');
     Route::post('payments/{payment}/approve', [PlaceholderController::class, 'paymentApprove'])->name('payments.approve');

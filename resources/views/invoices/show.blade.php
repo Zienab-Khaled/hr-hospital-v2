@@ -7,7 +7,7 @@
             <h2 class="text-2xl font-bold text-slate-800">
                 {{ app()->getLocale() === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details' }}
             </h2>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <a href="{{ route('invoices.index') }}"
                     class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300">
                     {{ app()->getLocale() === 'ar' ? '← قائمة الفواتير' : '← Invoices List' }}
@@ -18,6 +18,25 @@
                         {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
                     </a>
                 @endcan
+            </div>
+        </div>
+
+        {{-- الخطوات التالية بعد إنشاء الفاتورة --}}
+        <div class="mb-6 p-4 rounded-lg border-2 border-blue-200 bg-blue-50/70">
+            <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخطوات التالية' : 'Next steps' }}</h3>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('invoices.print-commitment', $invoice) }}" target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
+                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر تعهد' : 'Print commitment form' }}
+                </a>
+                <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
+                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم تعهد خطي' : 'Print non-commitment form' }}
+                </a>
+                <a href="{{ route('invoices.send-to-party', $invoice) }}"
+                    class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                    {{ app()->getLocale() === 'ar' ? 'إرسال الفاتورة لشركة التأمين / الجمعية الخيرية' : 'Send invoice to insurance / charity' }}
+                </a>
             </div>
         </div>
 
@@ -35,7 +54,7 @@
                     </div>
                     <div>
                         <span class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'الحالة:' : 'Status:' }}</span>
-                        <p class="text-lg font-medium text-slate-900">{{ $invoice->status ?? '—' }}</p>
+                        <p class="text-lg font-medium text-slate-900">{{ $invoice->status_label }}</p>
                     </div>
                     @if($invoice->visit?->referral_number)
                         <div>

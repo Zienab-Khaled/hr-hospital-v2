@@ -193,6 +193,8 @@ class PlaceholderController extends Controller
                 $query->where('remaining_amount', '=', 0);
             } elseif ($status === 'unpaid') {
                 $query->where('remaining_amount', '>', 0);
+            } elseif (in_array($status, ['sent_to_insurance', 'sent_to_charity'])) {
+                $query->where('status', $status);
             }
         }
 
@@ -706,6 +708,9 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('settings.manage');
         $hospitalName = Setting::get('hospital_name', '');
+        $hospitalNameEn = Setting::get('hospital_name_en', '');
+        $healthClusterName = Setting::get('health_cluster_name', '');
+        $healthClusterNameEn = Setting::get('health_cluster_name_en', '');
         $managerName = Setting::get('manager_name', '');
         $logoPath = Setting::get('logo', '');
         $companyPhone = Setting::get('company_phone', '');
@@ -713,9 +718,12 @@ class PlaceholderController extends Controller
         $companyAddress = Setting::get('company_address', '');
         $accountNumber = Setting::get('account_number', '');
         $ibanNumber = Setting::get('iban_number', '');
+        $bankName = Setting::get('bank_name', '');
         $stampPath = Setting::get('stamp', '');
         $managerSignaturePath = Setting::get('manager_signature', '');
-        return view('settings.index', compact('hospitalName', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'stampPath', 'managerSignaturePath'));
+        $departmentManagerName = Setting::get('department_manager_name', '');
+        $departmentManagerSignaturePath = Setting::get('department_manager_signature', '');
+        return view('settings.index', compact('hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'bankName', 'stampPath', 'managerSignaturePath', 'departmentManagerName', 'departmentManagerSignaturePath'));
     }
 
     public function settingsUpdate(Request $request)
@@ -723,6 +731,9 @@ class PlaceholderController extends Controller
         Gate::authorize('settings.manage');
         $request->validate([
             'hospital_name' => 'nullable|string|max:255',
+            'hospital_name_en' => 'nullable|string|max:255',
+            'health_cluster_name' => 'nullable|string|max:255',
+            'health_cluster_name_en' => 'nullable|string|max:255',
             'manager_name' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'company_phone' => 'nullable|string|max:100',
@@ -730,16 +741,24 @@ class PlaceholderController extends Controller
             'company_address' => 'nullable|string|max:500',
             'account_number' => 'nullable|string|max:100',
             'iban_number' => 'nullable|string|max:50',
+            'bank_name' => 'nullable|string|max:255',
             'stamp' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'manager_signature_data' => 'nullable|string',
+            'department_manager_name' => 'nullable|string|max:255',
+            'department_manager_signature_data' => 'nullable|string',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
+        Setting::set('hospital_name_en', $request->input('hospital_name_en', ''), 'general');
+        Setting::set('health_cluster_name', $request->input('health_cluster_name', ''), 'general');
+        Setting::set('health_cluster_name_en', $request->input('health_cluster_name_en', ''), 'general');
         Setting::set('manager_name', $request->input('manager_name', ''), 'general');
         Setting::set('company_phone', $request->input('company_phone', ''), 'general');
         Setting::set('company_email', $request->input('company_email', ''), 'general');
         Setting::set('company_address', $request->input('company_address', ''), 'general');
         Setting::set('account_number', $request->input('account_number', ''), 'general');
         Setting::set('iban_number', $request->input('iban_number', ''), 'general');
+        Setting::set('bank_name', $request->input('bank_name', ''), 'general');
+        Setting::set('department_manager_name', $request->input('department_manager_name', ''), 'general');
 
         if ($request->hasFile('logo')) {
             $oldLogo = Setting::get('logo', '');
@@ -766,6 +785,15 @@ class PlaceholderController extends Controller
                 Storage::disk('public')->delete($oldSig);
             }
             Setting::set('manager_signature', $managerSigPath, 'general');
+        }
+
+        $deptManagerSigPath = $this->saveSignatureFromBase64($request->input('department_manager_signature_data'), 'settings');
+        if ($deptManagerSigPath) {
+            $oldDeptSig = Setting::get('department_manager_signature', '');
+            if ($oldDeptSig && Storage::disk('public')->exists($oldDeptSig)) {
+                Storage::disk('public')->delete($oldDeptSig);
+            }
+            Setting::set('department_manager_signature', $deptManagerSigPath, 'general');
         }
 
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);

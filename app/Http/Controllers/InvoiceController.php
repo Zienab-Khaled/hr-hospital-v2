@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\InvoicePartySend;
 use App\Models\Patient;
+use App\Models\Setting;
 use App\Models\Service;
 use App\Models\Visit;
 use App\Models\Approval;
@@ -11,6 +13,8 @@ use App\Models\Attachment;
 use App\Models\InsuranceCompany;
 use App\Models\CharityEntity;
 use App\Mail\ApprovalRequestMail;
+use App\Mail\InvoiceToPartyMail;
+use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -327,6 +331,122 @@ class InvoiceController extends Controller
         return view('invoices.show', compact('invoice', 'printMedia'));
     }
 
+    /** طباعة محضر تعهد مرتبط بالفاتورة */
+    public function printCommitmentForm(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+        $settings = \App\Models\Setting::first();
+        return view('invoices.print-commitment', compact('invoice', 'settings'));
+    }
+
+    /** طباعة محضر عدم تعهد خطي مرتبط بالفاتورة */
+    public function printNonCommitmentForm(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+        $settings = \App\Models\Setting::first();
+        return view('invoices.print-non-commitment', compact('invoice', 'settings'));
+    }
+
+    /** إرسال الفاتورة لشركة التأمين / الجمعية الخيرية */
+    public function sendToParty(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+        return view('invoices.send-to-party', compact('invoice'));
+    }
+
+    /** إرسال بريد احترافي مع مرفق عرض السعر وزرّي تأكيد/رفض */
+    public function sendToPartySubmit(Request $request, Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+
+        $request->validate(['recipient_email' => 'required|email']);
+
+        $patient = $invoice->patient;
+        if (! $patient || ! in_array($patient->payment_type, ['insurance', 'charity'])) {
+            return back()->withErrors(['recipient_email' => __('Invoice is not linked to insurance or charity patient.')]);
+        }
+
+        $party = $patient->payment_type === 'insurance' ? $patient->insuranceCompany : $patient->charityEntity;
+        if (! $party) {
+            return back()->withErrors(['recipient_email' => __('Insurance/charity entity not found.')]);
+        }
+
+        $recipientName = app()->getLocale() === 'ar' && ! empty($party->name_ar) ? $party->name_ar : $party->name;
+        $token = InvoicePartySend::generateToken();
+
+        $partySend = InvoicePartySend::create([
+            'invoice_id' => $invoice->id,
+            'recipient_type' => $patient->payment_type,
+            'recipient_entity_id' => $party->id,
+            'recipient_email' => $request->input('recipient_email'),
+            'recipient_name' => $recipientName,
+            'token' => $token,
+            'sent_at' => now(),
+            'sent_by' => auth()->user()?->getKey(),
+        ]);
+
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'hospital_name_en' => Setting::get('hospital_name_en', ''),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'health_cluster_name_en' => Setting::get('health_cluster_name_en', ''),
+            'manager_name' => Setting::get('manager_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'bank_name' => Setting::get('bank_name', ''),
+            'account_number' => Setting::get('account_number', ''),
+            'iban_number' => Setting::get('iban_number', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'department_manager_name' => Setting::get('department_manager_name', ''),
+            'department_manager_signature' => Setting::get('department_manager_signature', ''),
+        ];
+
+        $pdfDir = 'invoice-party-pdfs';
+        $pdfFilename = $token . '.pdf';
+        $pdfRelativePath = $pdfDir . '/' . $pdfFilename;
+
+        try {
+            $html = view('invoices.price-offer-pdf', [
+                'invoice' => $invoice,
+                'recipientName' => $recipientName,
+                'settings' => $settings,
+            ])->render();
+
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'default_font_size' => 11,
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'margin_top' => 16,
+                'margin_bottom' => 16,
+            ]);
+            $mpdf->SetDirectionality('rtl');
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            Storage::disk('local')->put($pdfRelativePath, $pdfContent);
+
+            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail($partySend, $pdfRelativePath));
+
+            $invoice->update([
+                'status' => $patient->payment_type === 'insurance' ? 'sent_to_insurance' : 'sent_to_charity',
+            ]);
+
+            Storage::disk('local')->delete($pdfRelativePath);
+        } catch (\Throwable $e) {
+            Log::error('Invoice send to party failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            if (Storage::disk('local')->exists($pdfRelativePath)) {
+                Storage::disk('local')->delete($pdfRelativePath);
+            }
+            return back()->withErrors(['recipient_email' => __('Failed to send email. Please try again.')]);
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', __('Professional email with price offer has been sent. The recipient can confirm or reject with written response.'));
+    }
+
     public function edit(Invoice $invoice)
     {
         $this->authorize('invoices.edit');
@@ -385,5 +505,12 @@ class InvoiceController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => 'Error updating invoice: ' . $e->getMessage()])->withInput();
         }
+    }
+
+    public function destroy(Invoice $invoice)
+    {
+        $this->authorize('invoices.delete');
+        $invoice->delete();
+        return redirect()->route('invoices.index')->with('success', __('Invoice deleted successfully.'));
     }
 }

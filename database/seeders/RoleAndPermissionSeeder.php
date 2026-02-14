@@ -14,7 +14,7 @@ class RoleAndPermissionSeeder extends Seeder
             // مرضى وزيارات
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
             // فواتير ومدفوعات
-            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.print',
+            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.print',
             'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.daily_close',
             // موافقات وإحالات
             'authorizations.view', 'authorizations.create', 'authorizations.edit', 'authorizations.print',
@@ -45,14 +45,14 @@ class RoleAndPermissionSeeder extends Seeder
         $manager = Role::firstOrCreate(['name' => 'manager', 'guard_name' => 'web']);
         $manager->syncPermissions([
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
-            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.print',
+            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.print',
             'authorizations.view', 'authorizations.create', 'authorizations.edit', 'authorizations.print',
             'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.daily_close',
             'claims.view', 'claims.create', 'claims.edit', 'claims.notes', 'claims.send',
             'attachments.upload', 'attachments.view',
             'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
             'reports.view', 'reports.export', 'reports.upload_cluster', 'activity.view',
-            'dلسة epartments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
+            'departments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
             'insurance_companies.manage', 'charity_entities.manage',
         ]);
 

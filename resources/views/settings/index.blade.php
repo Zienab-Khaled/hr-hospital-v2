@@ -14,8 +14,25 @@
     <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 max-w-xl">
         @csrf
         <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم التجمع الصحي (اختياري، يظهر في عرض السعر)' : 'Health cluster name (optional, shown on price offer)' }}</label>
+            <input type="text" name="health_cluster_name" value="{{ old('health_cluster_name', $healthClusterName ?? '') }}"
+                placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: تجمع الجوف الصحي' : 'e.g. Aljouf Health Cluster' }}"
+                class="w-full rounded border border-slate-300 px-3 py-2">
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم التجمع الصحي (إنجليزي، اختياري)' : 'Health cluster name (English, optional)' }}</label>
+            <input type="text" name="health_cluster_name_en" value="{{ old('health_cluster_name_en', $healthClusterNameEn ?? '') }}"
+                placeholder="e.g. Aljouf Health Cluster"
+                class="w-full rounded border border-slate-300 px-3 py-2">
+        </div>
+        <div class="mb-4">
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم المستشفى' : 'Hospital name' }}</label>
             <input type="text" name="hospital_name" value="{{ old('hospital_name', $hospitalName) }}"
+                class="w-full rounded border border-slate-300 px-3 py-2">
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم المستشفى (إنجليزي، اختياري)' : 'Hospital name (English, optional)' }}</label>
+            <input type="text" name="hospital_name_en" value="{{ old('hospital_name_en', $hospitalNameEn ?? '') }}"
                 class="w-full rounded border border-slate-300 px-3 py-2">
         </div>
         <div class="mb-4">
@@ -41,6 +58,13 @@
         <div class="mb-4 pt-4 border-t border-slate-200">
             <h3 class="text-sm font-semibold text-slate-700 mb-3">{{ app()->getLocale() === 'ar' ? 'البيانات البنكية' : 'Bank details' }}</h3>
             <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم البنك' : 'Bank name' }}</label>
+                    <input type="text" name="bank_name" value="{{ old('bank_name', $bankName ?? '') }}"
+                        placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: البنك الأهلي' : 'e.g. Al Ahli Bank' }}"
+                        class="w-full rounded border border-slate-300 px-3 py-2 @error('bank_name') border-red-500 @enderror">
+                    @error('bank_name')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'رقم الحساب' : 'Account number' }}</label>
                     <input type="text" name="account_number" value="{{ old('account_number', $accountNumber) }}"
@@ -76,9 +100,23 @@
             <x-signature-pad
                 name="manager_signature_data"
                 :current-image="$managerSignaturePath"
-                :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني للمدير' : 'Manager electronic signature')"
+                :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني لمدير إدارة تنمية الإيرادات' : 'Revenue Development Manager electronic signature')"
             />
             @error('manager_signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div class="mb-4 pt-4 border-t border-slate-200">
+            <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'اسم مدير الإدارة' : 'Department manager name' }}</label>
+            <input type="text" name="department_manager_name" value="{{ old('department_manager_name', $departmentManagerName ?? '') }}"
+                placeholder="{{ app()->getLocale() === 'ar' ? 'للظهور في عرض السعر المُرسل للتأمين/الجمعية' : 'Shown on price offer sent to insurance/charity' }}"
+                class="w-full rounded border border-slate-300 px-3 py-2 @error('department_manager_name') border-red-500 @enderror">
+            @error('department_manager_name')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+            <x-signature-pad
+                name="department_manager_signature_data"
+                :current-image="$departmentManagerSignaturePath ?? ''"
+                :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني لمدير الإدارة' : 'Department manager electronic signature')"
+            />
+            @error('department_manager_signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
         </div>
 
         <div class="mb-4 pt-4 border-t border-slate-200">

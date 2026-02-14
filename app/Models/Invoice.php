@@ -62,4 +62,29 @@ class Invoice extends Model
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
+
+    /** تسمية الحالة للعرض (عربي/إنجليزي) */
+    public function getStatusLabelAttribute(): string
+    {
+        $labels = [
+            'ar' => [
+                'pending' => 'قيد الانتظار',
+                'sent_to_insurance' => 'مرسل لشركة التأمين',
+                'sent_to_charity' => 'مرسل للجمعية',
+                'approved' => 'معتمد',
+                'rejected' => 'مرفوض',
+                'paid' => 'مدفوعة',
+            ],
+            'en' => [
+                'pending' => 'Pending',
+                'sent_to_insurance' => 'Sent to insurance',
+                'sent_to_charity' => 'Sent to charity',
+                'approved' => 'Approved',
+                'rejected' => 'Rejected',
+                'paid' => 'Paid',
+            ],
+        ];
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        return $labels[$locale][$this->status] ?? $this->status ?? '—';
+    }
 }
