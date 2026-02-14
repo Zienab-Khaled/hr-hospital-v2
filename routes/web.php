@@ -7,6 +7,7 @@ use App\Http\Controllers\DebtInventoryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NonCommitmentReportController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PatientSectionController;
 use App\Http\Controllers\PlaceholderController;
 use App\Http\Controllers\WrittenCommitmentController;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +39,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+    Route::match(['get', 'post'], 'logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
