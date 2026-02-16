@@ -64,6 +64,35 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        /* بوردر واضح حول كل الانبوتات والتيكست ايريا والسليكت */
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="email"],
+        form input[type="password"],
+        form input[type="search"],
+        form input[type="tel"],
+        form input[type="date"],
+        form input[type="datetime-local"],
+        form textarea,
+        form select {
+            border-width: 2px;
+            border-style: solid;
+            border-color: #94a3b8;
+            border-radius: 0.5rem;
+        }
+        form input:focus,
+        form textarea:focus,
+        form select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+        form input[type="file"]:not(.hidden) {
+            border: 2px solid #94a3b8;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+        }
     </style>
 </head>
 

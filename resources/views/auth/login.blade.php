@@ -62,7 +62,7 @@
             <div class="mb-4">
                 <label for="username" class="block text-sm font-medium text-slate-700 mb-1">{{ __("Username") }}</label>
                 <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
-                    class="w-full rounded border border-slate-300 px-3 py-2 @error('username') border-red-500 @enderror">
+                    class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('username') border-red-500 @enderror">
                 @error('username')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -70,7 +70,7 @@
             <div class="mb-6">
                 <label for="password" class="block text-sm font-medium text-slate-700 mb-1">{{ __("Password") }}</label>
                 <input id="password" type="password" name="password" required
-                    class="w-full rounded border border-slate-300 px-3 py-2 @error('password') border-red-500 @enderror">
+                    class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('password') border-red-500 @enderror">
                 @error('password')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror

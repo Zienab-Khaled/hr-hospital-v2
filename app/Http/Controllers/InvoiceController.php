@@ -29,16 +29,21 @@ class InvoiceController extends Controller
         $this->authorize('invoices.create');
 
         $patient = null;
+        $visit = null;
         $patientId = $request->get('patient_id') ?? old('patient_id');
+        $visitId = $request->get('visit_id') ?? old('visit_id');
         if ($patientId) {
             $patient = Patient::with(['insuranceCompany', 'charityEntity'])->find($patientId);
+            if ($patient && $visitId) {
+                $visit = Visit::where('patient_id', $patient->id)->find($visitId);
+            }
         }
 
         $patients = Patient::where('is_active', true)->orderBy('name')->get();
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
         $charityEntities = CharityEntity::orderBy('name')->get();
 
-        return view('invoices.create', compact('patients', 'patient', 'insuranceCompanies', 'charityEntities'));
+        return view('invoices.create', compact('patients', 'patient', 'visit', 'insuranceCompanies', 'charityEntities'));
     }
 
     /** بحث المرضى للفاتورة: اسم / رقم هوية / رقم فيزا / رقم ملف / هاتف */
@@ -159,6 +164,7 @@ class InvoiceController extends Controller
             'print_media_ids.*' => 'integer',
             'medical_reports' => 'nullable|array',
             'medical_reports.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'visit_id' => 'nullable|exists:visits,id',
         ]);
 
         DB::beginTransaction();
@@ -191,14 +197,21 @@ class InvoiceController extends Controller
                 $patient->update($patientUpdates);
             }
 
-            // Create visit for this invoice
-            $visit = Visit::create([
-                'patient_id' => $patient->id,
-                'visit_date' => $validated['invoice_date'],
-                'notes' => 'Invoice created',
-                'referral_number' => $validated['referral_number'] ?? null,
-                'registered_by' => auth()->user()?->getKey(),
-            ]);
+            // Use existing visit (e.g. from "create visit" flow) or create one
+            $visitId = isset($validated['visit_id']) ? (int) $validated['visit_id'] : null;
+            $visit = null;
+            if ($visitId) {
+                $visit = Visit::where('patient_id', $patient->id)->find($visitId);
+            }
+            if (!$visit) {
+                $visit = Visit::create([
+                    'patient_id' => $patient->id,
+                    'visit_date' => $validated['invoice_date'],
+                    'notes' => 'Invoice created',
+                    'referral_number' => $validated['referral_number'] ?? null,
+                    'registered_by' => auth()->user()?->getKey(),
+                ]);
+            }
 
             // Generate invoice number
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);

@@ -168,6 +168,10 @@ class PatientController extends Controller
             }
         }
 
+        if ($request->get('redirect_to') === 'visits.create') {
+            return redirect()->route('visits.create', ['patient_id' => $patient->id])
+                ->with('success', __('Patient registered successfully. Register entry to department then add services.'));
+        }
         return redirect()->route('invoices.create', ['patient_id' => $patient->id])
             ->with('success', __('Patient registered successfully. You can now add services and create an invoice.'));
     }

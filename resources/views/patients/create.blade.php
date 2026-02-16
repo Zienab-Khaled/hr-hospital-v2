@@ -10,6 +10,9 @@
             <form action="{{ route('patients.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6"
                 id="patient_create_form">
                 @csrf
+                @if (request('redirect_to') === 'visits.create')
+                    <input type="hidden" name="redirect_to" value="visits.create">
+                @endif
 
                 {{-- Scan / Upload identity document: camera (face + back) OR upload file --}}
                 <div style="background:#e6eaf0" class="mb-6 p-4 rounded-xl border-2">
@@ -363,7 +366,7 @@
                                 {{ app()->getLocale() === 'ar' ? '➕ إضافة صفحة (مسح بالكاميرا)' : '➕ Add page (scan with camera)' }}
                             </button>
                             <button type="button" id="btn_generate_pdf"
-                                class="border-2 border-slate-500 bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50"
+                                class="border-2 border-slate-500 bg-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50"
                                 disabled>
                                 {{ app()->getLocale() === 'ar' ? '📄 إنشاء PDF ومرفق' : '📄 Generate PDF & attach' }}
                             </button>

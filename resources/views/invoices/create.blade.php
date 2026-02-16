@@ -31,6 +31,9 @@
 
                 @if (isset($patient))
                     <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+                    @if (isset($visit) && $visit)
+                        <input type="hidden" name="visit_id" value="{{ $visit->id }}">
+                    @endif
                 @endif
 
                 {{-- Patient block: نفس التصميم سواء مريض محدد مسبقاً أو اختيار من القائمة (تقديم خدمة من مريض) --}}

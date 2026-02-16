@@ -10,11 +10,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Visit extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['patient_id', 'visit_date', 'case_type', 'notes', 'referral_number', 'transferred_department_id', 'registered_by'];
+    protected $fillable = ['patient_id', 'department_id', 'visit_date', 'shift_id', 'case_type', 'notes', 'referral_number', 'transferred_department_id', 'registered_by'];
 
     protected function casts(): array
     {
         return ['visit_date' => 'date'];
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function transferredDepartment(): BelongsTo

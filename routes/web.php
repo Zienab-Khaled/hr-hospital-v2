@@ -8,6 +8,8 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NonCommitmentReportController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PlaceholderController;
+use App\Http\Controllers\ShiftHandoverController;
+use App\Http\Controllers\VisitController;
 use App\Http\Controllers\WrittenCommitmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +61,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
     Route::get('patients/by-department', [PlaceholderController::class, 'patientsDepartmentsList'])->name('patients.departments-list');
     Route::get('patients/by-department/{department}', [PlaceholderController::class, 'patientsByDepartment'])->name('patients.by-department');
+
+    Route::get('visits/create', [VisitController::class, 'create'])->name('visits.create');
+    Route::post('visits', [VisitController::class, 'store'])->name('visits.store');
+    Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
+
+    Route::get('shift-handovers', [ShiftHandoverController::class, 'index'])->name('shift-handovers.index');
+    Route::get('shift-handovers/create', [ShiftHandoverController::class, 'create'])->name('shift-handovers.create');
+    Route::post('shift-handovers', [ShiftHandoverController::class, 'store'])->name('shift-handovers.store');
+    Route::get('shift-handovers/{handover}', [ShiftHandoverController::class, 'show'])->name('shift-handovers.show');
 
     Route::get('contact-reports', [ContactReportController::class, 'index'])->name('contact-reports.index');
     Route::get('contact-reports/create', [ContactReportController::class, 'create'])->name('contact-reports.create');
