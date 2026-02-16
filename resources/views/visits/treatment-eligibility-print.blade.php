@@ -66,25 +66,46 @@
 
     @if (!empty($services))
         <table>
+            @php
+                $isInsurance = $visit->patient->payment_type === 'insurance';
+            @endphp
             <thead>
                 <tr>
                     <th>#</th>
                     <th>{{ app()->getLocale() === 'ar' ? 'الكود' : 'Code' }}</th>
-                    <th style="width: 50%;">{{ app()->getLocale() === 'ar' ? 'الخدمة' : 'Service' }}</th>
+                    <th style="width: 40%;">{{ app()->getLocale() === 'ar' ? 'الخدمة' : 'Service' }}</th>
                     <th>{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
-                    {{-- Prices might be hidden for some roles, but typically shown on eligibility/invoice --}}
                     <th>{{ app()->getLocale() === 'ar' ? 'السعر' : 'Price' }}</th>
                     <th>{{ app()->getLocale() === 'ar' ? 'المجموع' : 'Total' }}</th>
+                    @if ($isInsurance)
+                        <th>{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
-                @php $grandTotal = 0; @endphp
+                @php
+                    $grandTotal = 0;
+                    $insuranceTotal = 0;
+                @endphp
                 @foreach ($services as $index => $s)
                     @php
                         $qty = floatval($s['qty'] ?? 1);
                         $price = floatval($s['unit_price'] ?? 0);
                         $total = floatval($s['total'] ?? ($qty * $price));
                         $grandTotal += $total;
+
+                        $covType = $s['insurance_coverage_type'] ?? '';
+                        $covVal = floatval($s['insurance_coverage_value'] ?? 0);
+                        $covered = 0;
+
+                        if ($isInsurance && $covType && $total > 0) {
+                            if ($covType === 'percentage') {
+                                $covered = $total * min(100, max(0, $covVal)) / 100;
+                            } elseif ($covType === 'fixed') {
+                                $covered = min($covVal, $total);
+                            }
+                            $insuranceTotal += $covered;
+                        }
                     @endphp
                     <tr>
                         <td>{{ $index + 1 }}</td>
@@ -93,14 +114,40 @@
                         <td>{{ $qty }}</td>
                         <td>{{ number_format($price, 2) }}</td>
                         <td>{{ number_format($total, 2) }}</td>
+                        @if ($isInsurance)
+                            <td>
+                                @if ($covType === 'percentage')
+                                    {{ $covVal }}%
+                                @elseif ($covType === 'fixed')
+                                    {{ number_format($covVal, 2) }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        @endif
                     </tr>
                 @endforeach
                 <tr class="total-row">
-                    <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px;">
-                        {{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Total:' }}
+                    <td colspan="{{ $isInsurance ? 5 : 5 }}" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px;">
+                        {{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Grand Total:' }}
                     </td>
-                    <td>{{ number_format($grandTotal, 2) }}</td>
+                    <td colspan="{{ $isInsurance ? 2 : 1 }}">{{ number_format($grandTotal, 2) }}</td>
                 </tr>
+                @if ($isInsurance)
+                @php $patientShare = max(0, $grandTotal - $insuranceTotal); @endphp
+                <tr class="total-row" style="background-color: #f0fff4;">
+                    <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px; color: #065f46;">
+                        {{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance Share:' }}
+                    </td>
+                    <td colspan="2" style="color: #065f46;">{{ number_format($insuranceTotal, 2) }}</td>
+                </tr>
+                <tr class="total-row" style="background-color: #fffbeb;">
+                    <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px; color: #92400e;">
+                        {{ app()->getLocale() === 'ar' ? 'تحمّل المريض:' : 'Patient Share:' }}
+                    </td>
+                    <td colspan="2" style="color: #92400e;">{{ number_format($patientShare, 2) }}</td>
+                </tr>
+                @endif
             </tbody>
         </table>
     @else

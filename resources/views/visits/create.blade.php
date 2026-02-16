@@ -4,6 +4,11 @@
     @php
         $inputClass = 'w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
         $visitForPrint = isset($patient) && $patient ? ($visit ?? $patient->visits()->whereDate('visit_date', today())->latest()->first()) : null;
+
+        // Define common variables here to be available throughout the view
+        $isTransferred = $visitForPrint && $visitForPrint->transferred_department_id;
+        $showEligibilitySection = !$isTransferred && ($visit || $registered ?? false) && ($visitForPrint ?? null) && isset($departments);
+        $patientIsInsurance = $patient && $patient->payment_type === 'insurance';
     @endphp
     <div class="max-w-6xl mx-auto">
         <div class="rounded-lg shadow-lg p-6">
@@ -224,21 +229,44 @@
                         <div class="overflow-x-auto border-2 border-slate-400 rounded-lg bg-white mb-4">
                             <table class="w-full border-collapse text-sm">
                                 <thead>
-                                    <tr class="bg-slate-200 border-b-2 border-slate-500">
-                                        <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'الرمز' : 'Code' }}</th>
-                                        <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 min-w-[200px]">{{ app()->getLocale() === 'ar' ? 'البيان' : 'Description' }}</th>
-                                        <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-20">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
-                                        <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'السعر الافرادي' : 'Unit Price' }}</th>
-                                        <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
-                                        <th class="border border-slate-500 px-2 py-2 text-center w-14"></th>
+                                <tr class="bg-slate-200 border-b-2 border-slate-500">
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'الرمز' : 'Code' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 min-w-[200px]">{{ app()->getLocale() === 'ar' ? 'البيان' : 'Description' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-20">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'السعر الافرادي' : 'Unit Price' }}</th>
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                    @if ($patientIsInsurance)
+                                        <th class="border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-32">{{ app()->getLocale() === 'ar' ? 'نوع التغطية' : 'Coverage type' }}</th>
+                                        <th class="border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-36">{{ app()->getLocale() === 'ar' ? 'قيمة التغطية / الخصم' : 'Coverage / discount' }}</th>
+                                    @endif
+                                    <th class="border border-slate-500 px-2 py-2 text-center w-14"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="eligibility_services_tbody"></tbody>
+                            <tfoot>
+                                <tr class="bg-slate-100 font-bold text-slate-800">
+                                    <td colspan="{{ $patientIsInsurance ? 5 : 4 }}" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Grand Total:' }}</td>
+                                    <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_grand_total">0.00</td>
+                                    @if ($patientIsInsurance)
+                                        <td colspan="3" class="border border-slate-400 bg-slate-50"></td>
+                                    @else
+                                        <td class="border border-slate-400 bg-slate-50"></td>
+                                    @endif
+                                </tr>
+                                @if ($patientIsInsurance)
+                                    <tr class="bg-emerald-50 font-bold text-emerald-900">
+                                        <td colspan="5" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance Share:' }}</td>
+                                        <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_insurance_total">0.00</td>
+                                        <td colspan="3" class="border border-slate-400"></td>
                                     </tr>
-                                </thead>
-                                <tbody id="eligibility_services_tbody"></tbody>
+                                    <tr class="bg-amber-50 font-bold text-amber-900">
+                                        <td colspan="5" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل المريض:' : 'Patient Share:' }}</td>
+                                        <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_patient_share">0.00</td>
+                                        <td colspan="3" class="border border-slate-400"></td>
+                                    </tr>
+                                @endif
+                            </tfoot>
                             </table>
-                        </div>
-                        <div class="flex justify-between items-center bg-slate-200 p-3 rounded-lg mb-4">
-                            <span class="font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Total:' }}</span>
-                            <span id="eligibility_grand_total" class="text-xl font-bold text-slate-800">0.00</span>
                         </div>
                         <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                             @csrf
@@ -325,12 +353,9 @@
     @endif
 
     {{-- أحقية العلاج: بحث خدمات حسب القسم، جدول، مجموع، طباعة --}}
-    @php
-        $isTransferred = $visitForPrint && $visitForPrint->transferred_department_id;
-        $showEligibilitySection = !$isTransferred && ($visit || $registered ?? false) && ($visitForPrint ?? null) && isset($departments);
-    @endphp
     @if ($patient && $showEligibilitySection)
     <script>
+        window.visitPatientIsInsurance = @json($patientIsInsurance);
         (function() {
             var deptSelect = document.getElementById('eligibility_department_id');
             var searchInput = document.getElementById('eligibility_service_search');
@@ -338,6 +363,8 @@
             var resultsDiv = document.getElementById('eligibility_service_results');
             var tbody = document.getElementById('eligibility_services_tbody');
             var grandTotalEl = document.getElementById('eligibility_grand_total');
+            var insuranceTotalEl = document.getElementById('eligibility_insurance_total');
+            var patientShareEl = document.getElementById('eligibility_patient_share');
             var printForm = document.getElementById('eligibility_print_form');
             var printBtn = document.getElementById('eligibility_print_btn');
             var searchUrl = '{{ route('visits.eligibility-services-search') }}';
@@ -353,7 +380,17 @@
                 // Fix: use default_price from API response
                 var unitPrice = parseFloat(service.default_price) || 0;
                 var total = qty * unitPrice;
-                var row = { id: service.id, code: service.code || '', name: service.name || '', name_ar: service.name_ar || '', qty: qty, unit_price: unitPrice, total: total };
+                var row = {
+                    id: service.id,
+                    code: service.code || '',
+                    name: service.name || '',
+                    name_ar: service.name_ar || '',
+                    qty: qty,
+                    unit_price: unitPrice,
+                    total: total,
+                    insurance_coverage_type: '',
+                    insurance_coverage_value: 0
+                };
                 rows.push(row);
                 renderRows();
             }
@@ -365,33 +402,102 @@
                 if (!rows[index]) return;
                 if (field === 'qty') { rows[index].qty = parseFloat(value) || 0; }
                 if (field === 'unit_price') { rows[index].unit_price = parseFloat(value) || 0; }
+                if (field === 'insurance_coverage_type') { rows[index].insurance_coverage_type = value; }
+                if (field === 'insurance_coverage_value') { rows[index].insurance_coverage_value = parseFloat(value) || 0; }
+
                 rows[index].total = rows[index].qty * rows[index].unit_price;
-                renderRows();
+
+                // Update specific row total in DOM without re-rendering everything
+                var tr = tbody.children[index];
+                if (tr) {
+                    var totalCell = tr.querySelector('.row-total');
+                    if (totalCell) totalCell.textContent = rows[index].total.toFixed(2);
+                }
+                recalculateTotals();
             }
+
+            function recalculateTotals() {
+                var grand = 0;
+                var insuranceTotal = 0;
+                var isIns = window.visitPatientIsInsurance;
+
+                rows.forEach(function(r) {
+                    grand += r.total;
+                    if (isIns && r.insurance_coverage_type && r.total > 0) {
+                        var val = r.insurance_coverage_value;
+                        if (r.insurance_coverage_type === 'percentage') {
+                            insuranceTotal += r.total * Math.min(100, Math.max(0, val)) / 100;
+                        } else if (r.insurance_coverage_type === 'fixed') {
+                            insuranceTotal += Math.min(val, r.total);
+                        }
+                    }
+                });
+
+                if (grandTotalEl) grandTotalEl.textContent = grand.toFixed(2);
+
+                if (isIns && insuranceTotalEl && patientShareEl) {
+                    var patientShare = Math.max(0, grand - insuranceTotal);
+                    insuranceTotalEl.textContent = insuranceTotal.toFixed(2);
+                    patientShareEl.textContent = patientShare.toFixed(2);
+                }
+            }
+
             function renderRows() {
                 tbody.innerHTML = '';
-                var grand = 0;
+                var isIns = window.visitPatientIsInsurance;
+
                 rows.forEach(function(r, i) {
-                    grand += r.total;
                     var tr = document.createElement('tr');
                     tr.className = 'border-b border-slate-300 hover:bg-slate-50';
                     var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
+
+                    var insuranceCols = '';
+                    if (isIns) {
+                        var pctLabel = document.documentElement.lang === 'ar' ? 'نسبة %' : 'Percentage %';
+                        var fixedLabel = document.documentElement.lang === 'ar' ? 'قيمة ثابتة' : 'Fixed amount';
+                        var selPct = r.insurance_coverage_type === 'percentage' ? 'selected' : '';
+                        var selFixed = r.insurance_coverage_type === 'fixed' ? 'selected' : '';
+
+                        insuranceCols =
+                            '<td class="border border-slate-400 px-2 py-1">' +
+                                '<select class="w-full rounded border border-slate-400 px-1 py-1 text-xs focus:ring-1 focus:ring-blue-500" data-row="' + i + '" data-field="insurance_coverage_type">' +
+                                    '<option value="">—</option>' +
+                                    '<option value="percentage" ' + selPct + '>' + pctLabel + '</option>' +
+                                    '<option value="fixed" ' + selFixed + '>' + fixedLabel + '</option>' +
+                                '</select>' +
+                            '</td>' +
+                            '<td class="border border-slate-400 px-2 py-1">' +
+                                '<input type="number" min="0" step="0.01" class="w-full text-center rounded border border-slate-400 px-1 py-1 text-slate-800 text-sm focus:ring-1 focus:ring-blue-500" value="' + (r.insurance_coverage_value || '') + '" placeholder="0" data-row="' + i + '" data-field="insurance_coverage_value">' +
+                            '</td>';
+                    }
+
                     tr.innerHTML =
                         '<td class="border border-slate-400 px-2 py-1 text-center text-sm font-medium text-slate-800">' + (r.code || '') + '</td>' +
                         '<td class="border border-slate-400 px-2 py-1 text-sm font-medium text-slate-900">' + (nameDisplay || '') + '</td>' +
                         '<td class="border border-slate-400 px-2 py-1"><input type="number" min="1" step="1" class="w-full text-center rounded border border-slate-400 px-1 py-1 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500" value="' + r.qty + '" data-row="' + i + '" data-field="qty"></td>' +
                         '<td class="border border-slate-400 px-2 py-1"><input type="number" min="0" step="0.01" class="w-full text-center rounded border border-slate-400 px-1 py-1 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500" value="' + r.unit_price + '" data-row="' + i + '" data-field="unit_price"></td>' +
-                        '<td class="border border-slate-400 px-2 py-1 text-center text-sm font-bold text-slate-800 bg-slate-100">' + (r.total.toFixed(2)) + '</td>' +
+                        '<td class="border border-slate-400 px-2 py-1 text-center text-sm font-bold text-slate-800 bg-slate-100 row-total">' + (r.total.toFixed(2)) + '</td>' +
+                        insuranceCols +
                         '<td class="border border-slate-400 px-2 py-1 text-center"><button type="button" class="text-red-600 hover:underline text-sm font-bold" data-remove="' + i + '">' + (document.documentElement.lang === 'ar' ? 'حذف' : 'Remove') + '</button></td>';
                     tbody.appendChild(tr);
                 });
-                grandTotalEl.textContent = grand.toFixed(2);
+
+                recalculateTotals();
+
                 tbody.querySelectorAll('input[data-field="qty"]').forEach(function(inp) {
                     inp.addEventListener('input', function() { updateRow(parseInt(this.dataset.row, 10), 'qty', this.value); });
                 });
                 tbody.querySelectorAll('input[data-field="unit_price"]').forEach(function(inp) {
                     inp.addEventListener('input', function() { updateRow(parseInt(this.dataset.row, 10), 'unit_price', this.value); });
                 });
+                if (isIns) {
+                    tbody.querySelectorAll('select[data-field="insurance_coverage_type"]').forEach(function(sel) {
+                        sel.addEventListener('change', function() { updateRow(parseInt(this.dataset.row, 10), 'insurance_coverage_type', this.value); });
+                    });
+                    tbody.querySelectorAll('input[data-field="insurance_coverage_value"]').forEach(function(inp) {
+                        inp.addEventListener('input', function() { updateRow(parseInt(this.dataset.row, 10), 'insurance_coverage_value', this.value); });
+                    });
+                }
                 tbody.querySelectorAll('button[data-remove]').forEach(function(btn) {
                     btn.addEventListener('click', function() { removeRow(parseInt(this.dataset.remove, 10)); });
                 });
@@ -444,7 +550,8 @@
                     existing.forEach(function(el) { el.remove(); });
                     rows.forEach(function(r, i) {
                         var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
-                        ['code','name','qty','unit_price','total'].forEach(function(k) {
+                        // Add insurance fields to hidden inputs
+                        ['code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
                             var inp = document.createElement('input');
                             inp.type = 'hidden';
                             inp.name = 'services[' + i + '][' + k + ']';
