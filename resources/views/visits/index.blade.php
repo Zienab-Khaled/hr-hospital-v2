@@ -48,6 +48,28 @@
                 <input type="date" name="date" value="{{ request('date', date('Y-m-d')) }}"
                     class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
             </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الجهة / التأمين' : 'Insurance / Entity' }}</label>
+                <select name="insurance_company_id" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    @foreach ($insuranceCompanies as $ic)
+                        <option value="{{ $ic->id }}" {{ request('insurance_company_id') == $ic->id ? 'selected' : '' }}>
+                            {{ app()->getLocale() === 'ar' && $ic->name_ar ? $ic->name_ar : $ic->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'المسجّل' : 'Registered By' }}</label>
+                <select name="registered_by" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    @foreach ($registrars as $u)
+                        <option value="{{ $u->id }}" {{ request('registered_by') == $u->id ? 'selected' : '' }}>
+                            {{ $u->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </x-index-filters>
     @else
         <x-index-filters :action="route('visits.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم المريض، رقم الملف...' : 'Patient name, file no...'">
@@ -86,6 +108,11 @@
                             @else
                                 —
                             @endif
+                            @if ($v->transferred_department_id)
+                                <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded ms-1 border border-amber-200">
+                                    {{ app()->getLocale() === 'ar' ? 'تم التحويل' : 'Transferred' }}
+                                </span>
+                            @endif
                         </td>
                         @if ($isAdmin)
                             <td class="p-3 text-slate-800">
@@ -109,21 +136,25 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </a>
                                     @can('invoices.create')
-                                        <a href="{{ route('invoices.create', ['patient_id' => $v->patient->id, 'visit_id' => $v->id]) }}" title="{{ app()->getLocale() === 'ar' ? 'فاتورة' : 'Invoice' }}" class="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                        </a>
+                                        @if (!$v->transferred_department_id)
+                                            <a href="{{ route('invoices.create', ['patient_id' => $v->patient->id, 'visit_id' => $v->id]) }}" title="{{ app()->getLocale() === 'ar' ? 'فاتورة' : 'Invoice' }}" class="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            </a>
+                                        @endif
                                     @endcan
                                     @can('visits.delete') {{-- Or checks for admin --}}
-                                        <a href="{{ route('visits.edit', $v) }}" title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}" class="text-slate-600 hover:text-slate-800 p-1 rounded hover:bg-slate-50">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-                                        <form action="{{ route('visits.destroy', $v) }}" method="POST" class="inline-block" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذه الزيارة؟' : 'Are you sure you want to delete this visit?' }}')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" title="{{ app()->getLocale() === 'ar' ? 'حذف' : 'Delete' }}" class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
+                                        @if (!$v->transferred_department_id)
+                                            <a href="{{ route('visits.edit', $v) }}" title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}" class="text-slate-600 hover:text-slate-800 p-1 rounded hover:bg-slate-50">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            </a>
+                                            <form action="{{ route('visits.destroy', $v) }}" method="POST" class="inline-block" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذه الزيارة؟' : 'Are you sure you want to delete this visit?' }}')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" title="{{ app()->getLocale() === 'ar' ? 'حذف' : 'Delete' }}" class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endcan
                                 @endif
                             </div>

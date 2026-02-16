@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 class VisitController extends Controller
 {
     use HasIndexFilters;
+
     /**
      * شاشة إنشاء زيارة: اختيار مريض (بحث أو إضافة جديد) ثم تسجيل دخول القسم ثم تحويل / إحقاق علاج / خدمات / فاتورة
      */
@@ -33,17 +34,32 @@ class VisitController extends Controller
         $visitId = $request->get('visit_id');
         $registered = $request->boolean('registered');
 
+        $activeVisits = collect();
+
         if ($patientId) {
             $patient = Patient::with(['department', 'insuranceCompany', 'charityEntity'])
                 ->find($patientId);
+
+            // البحث عن زيارات سابقة لليوم
+            $todayVisits = $patient ? $patient->visits()->with(['department', 'shift'])->whereDate('visit_date', today())->latest()->get() : collect();
+
             if ($visitId) {
-                $visit = Visit::where('patient_id', $patientId)->find($visitId);
-            } elseif ($patient) {
-                $visit = $patient->visits()->whereDate('visit_date', today())->latest()->first();
+                $visit = $todayVisits->where('id', $visitId)->first();
+            } elseif ($request->boolean('new_visit')) {
+                // إجبار إنشاء زيارة جديدة
+                $visit = null;
+            } elseif ($todayVisits->isNotEmpty()) {
+                // يوجد زيارات سابقة: نعرضها للمستخدم ليختار فتحها أو إنشاء جديدة
+                $activeVisits = $todayVisits;
+                $visit = null;
             }
 
-            // إنشاء الزيارة تلقائياً عند الدخول بمريض وبدون زيارة اليوم (بدون الحاجة لضغط «تسجيل دخول القسم»)
-            if ($patient && !$visit && $myDepartment && $currentShift) {
+            // إنشاء الزيارة تلقائياً عند الدخول بمريض:
+            // 1. لا توجد زيارة محددة ($visit null)
+            // 2. لا توجد قائمة زيارات للاختيار منها ($activeVisits empty) أو طلب المستخدم زيارة جديدة explicitely
+            $shouldCreate = $patient && !$visit && $myDepartment && $currentShift && ($activeVisits->isEmpty() || $request->boolean('new_visit'));
+
+            if ($shouldCreate) {
                 $visit = Visit::create([
                     'patient_id' => $patient->id,
                     'department_id' => $myDepartment->id,
@@ -71,7 +87,7 @@ class VisitController extends Controller
             ->get();
 
         return view('visits.create', compact(
-            'currentShift', 'departments', 'eligibilityDepartments', 'myDepartment', 'patient', 'visit', 'registered'
+            'currentShift', 'departments', 'eligibilityDepartments', 'myDepartment', 'patient', 'visit', 'activeVisits', 'registered'
         ));
     }
 
@@ -216,8 +232,8 @@ class VisitController extends Controller
             $query,
             $request,
             ['patient.name', 'patient.name_ar', 'patient.file_number', 'patient.identity_value', 'notes'],
-            [],
-            []
+            ['shift_id' => 'shift_id', 'department_id' => 'department_id', 'registered_by' => 'registered_by'],
+            ['insurance_company_id' => ['patient', 'insurance_company_id']]
         );
 
         $visits = $query->latest('visit_date')->latest('id')
@@ -226,8 +242,10 @@ class VisitController extends Controller
 
         $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $registrars = \App\Models\User::orderBy('name')->get();
+        $insuranceCompanies = \App\Models\InsuranceCompany::where('is_active', true)->orderBy('name')->get();
 
-        return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments'));
+        return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments', 'registrars', 'insuranceCompanies'));
     }
 
     public function edit(Visit $visit)

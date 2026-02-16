@@ -104,13 +104,54 @@
                     </div>
                 </div>
 
+                @if (isset($activeVisits) && $activeVisits->isNotEmpty() && !$visit)
+                    <div class="border-2 border-blue-200 bg-blue-50 rounded-lg p-5 mb-6">
+                        <h3 class="font-bold text-blue-900 text-lg mb-3">
+                            {{ app()->getLocale() === 'ar' ? 'يوجد زيارات مفتوحة لهذا المريض اليوم:' : 'Patient has active visits today:' }}
+                        </h3>
+                        <div class="space-y-3 mb-4">
+                            @foreach ($activeVisits as $v)
+                                <div class="bg-white border border-blue-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                                    <div class="text-sm">
+                                        <span class="font-semibold text-slate-800">
+                                            {{ app()->getLocale() === 'ar' && $v->department->name_ar ? $v->department->name_ar : $v->department->name }}
+                                        </span>
+                                        <span class="text-slate-500 mx-1">—</span>
+                                        <span class="text-slate-600">
+                                            {{ app()->getLocale() === 'ar' && $v->shift->name_ar ? $v->shift->name_ar : $v->shift->name }}
+                                        </span>
+                                        @if ($v->transferred_department_id)
+                                            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-1.5 py-0.5 rounded ms-2">
+                                                {{ app()->getLocale() === 'ar' ? 'محول' : 'Transferred' }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <a href="{{ route('visits.create', ['patient_id' => $patient->id, 'visit_id' => $v->id, 'registered' => 1]) }}"
+                                       class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold hover:bg-blue-700">
+                                        {{ app()->getLocale() === 'ar' ? 'فتح الزيارة' : 'Open Visit' }}
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="text-slate-600 text-sm italic">
+                            {{ app()->getLocale() === 'ar'
+                                ? 'يمكنك فتح زيارة موجودة أو إنشاء زيارة جديدة بالأسفل (إذا كان مسموحاً).'
+                                : 'You can open an existing visit or create a new one below.' }}
+                        </p>
+                    </div>
+                @endif
+
                 @if (!$visit && $myDepartment)
                     <form action="{{ route('visits.store') }}" method="POST" class="mb-6">
                         @csrf
                         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                         <button type="submit" class="bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
-                            {{ app()->getLocale() === 'ar' ? 'تسجيل دخول المريض إلى القسم:' : 'Register patient entry to department:' }}
-                            {{ app()->getLocale() === 'ar' && $myDepartment->name_ar ? $myDepartment->name_ar : $myDepartment->name }}
+                            @if (isset($activeVisits) && $activeVisits->isNotEmpty())
+                                {{ app()->getLocale() === 'ar' ? 'إنشاء زيارة جديدة (إضافية)' : 'Create New Visit (Additional)' }}
+                            @else
+                                {{ app()->getLocale() === 'ar' ? 'تسجيل دخول المريض إلى القسم:' : 'Register patient entry to department:' }}
+                                {{ app()->getLocale() === 'ar' && $myDepartment->name_ar ? $myDepartment->name_ar : $myDepartment->name }}
+                            @endif
                         </button>
                     </form>
                 @endif
@@ -122,22 +163,24 @@
                     @endphp
 
                     @if ($isTransferred)
-                        <div class="border-2 border-amber-300 bg-amber-50 rounded-lg p-5 mb-6 text-center">
-                            <h3 class="text-xl font-bold text-amber-800 mb-2">
-                                {{ app()->getLocale() === 'ar' ? 'تم تحويل المريض' : 'Patient Transferred' }}
-                            </h3>
-                            <p class="text-amber-700">
-                                {{ app()->getLocale() === 'ar' ? 'تم تحويل هذا المريض إلى قسم:' : 'This patient has been transferred to:' }}
-                                <span class="font-bold">{{ app()->getLocale() === 'ar' && $transferredDept->name_ar ? $transferredDept->name_ar : $transferredDept->name }}</span>
-                            </p>
-                            <div class="mt-4">
-                                <a href="{{ route('visits.index') }}" class="inline-block bg-slate-600  px-4 py-2 rounded font-semibold hover:bg-slate-700">
-                                    {{ app()->getLocale() === 'ar' ? 'عودة لقائمة الزيارات' : 'Back to Visits List' }}
-                                </a>
+                        <div class="border-2 border-amber-300 bg-amber-50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-amber-800 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل المريض' : 'Patient Transferred' }}
+                                </h3>
+                                <p class="text-amber-700 text-sm">
+                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل هذا المريض إلى قسم:' : 'This patient has been transferred to:' }}
+                                    <span class="font-bold">{{ app()->getLocale() === 'ar' && $transferredDept->name_ar ? $transferredDept->name_ar : $transferredDept->name }}</span>
+                                </p>
                             </div>
+                            <a href="{{ route('visits.index') }}" class="inline-block bg-white border border-amber-300 text-amber-800 px-3 py-1.5 rounded text-sm font-semibold hover:bg-amber-100">
+                                {{ app()->getLocale() === 'ar' ? 'عودة' : 'Back' }}
+                            </a>
                         </div>
-                    @else
-                        {{-- Actions Buttons --}}
+                    @endif
+
+                    {{-- Actions Buttons --}}
+
                         <div id="visit_actions_container" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-slate-50">
                             <h3 class="text-lg font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
                             <div class="flex flex-wrap gap-3">
@@ -146,10 +189,12 @@
                                     {{ app()->getLocale() === 'ar' ? 'ملف المريض' : 'Patient Profile' }}
                                 </a>
 
+                                @if (!$isTransferred)
                                 <button type="button" id="btn_show_transfer"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium hover:bg-purple-100 text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'تحويل إلى قسم آخر' : 'Transfer to another department' }}
                                 </button>
+                                @endif
 
                                 @if ($visitForPrint)
                                     <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
@@ -157,14 +202,18 @@
                                         {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج (بدون خدمات)' : 'Print eligibility (no services)' }}
                                     </a>
                                 @endif
+
+                                @if (!$isTransferred)
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
                                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-600 text-slate-50 font-medium hover:bg-blue-700 text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'تقديم خدمات و إنشاء فاتورة' : 'Add services & create invoice' }}
                                 </a>
+                                @endif
                             </div>
                         </div>
 
                         {{-- Transfer Form (Hidden by default) --}}
+                        @if (!$isTransferred)
                         <div id="visit_transfer_form" class="hidden border-2 border-purple-300 rounded-lg p-5 mb-6 bg-purple-50">
                             <h3 class="text-lg font-bold text-purple-900 mb-3">{{ app()->getLocale() === 'ar' ? 'تحويل المريض' : 'Transfer Patient' }}</h3>
                             <form action="{{ route('visits.transfer', $visitForPrint ?? $visit) }}" method="POST">
@@ -195,7 +244,8 @@
                                 </div>
                             </form>
                         </div>
-                    @endif
+                        @endif
+
                 @endif
 
                     {{-- أحقية العلاج: حسب القسم (عيادة / مختبر / أشعة / تنويم / طوارئ) + بحث وإضافة خدمات ثم طباعة --}}
