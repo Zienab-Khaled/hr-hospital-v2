@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CharityEntity;
+use App\Models\Department;
 use App\Models\InsuranceCompany;
 use App\Models\Patient;
+use App\Models\PatientTransfer;
 use App\Services\IdentityDocumentExtractor;
 use Illuminate\Http\Request;
 
@@ -153,6 +155,10 @@ class PatientController extends Controller
         }
         $valid['is_active'] = true;
 
+        if (auth()->user() && auth()->user()->employee && auth()->user()->employee->department_id) {
+            $valid['department_id'] = auth()->user()->employee->department_id;
+        }
+
         $patient = Patient::create($valid);
 
         // Handle document uploads
@@ -173,13 +179,44 @@ class PatientController extends Controller
         $patient->load([
             'insuranceCompany',
             'charityEntity',
+            'department',
+            'transfers.fromDepartment',
+            'transfers.toDepartment',
             'visits' => fn($q) => $q->latest()->limit(10),
             'invoices' => fn($q) => $q->latest()->limit(10),
             'contactReports' => fn($q) => $q->latest()->limit(5),
             'writtenCommitments' => fn($q) => $q->latest()->limit(5),
         ]);
 
-        return view('patients.show', compact('patient'));
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        return view('patients.show', compact('patient', 'departments'));
+    }
+
+    public function transfer(Request $request, Patient $patient)
+    {
+        $this->authorize('patients.edit');
+        $request->validate([
+            'to_department_id' => 'required|exists:departments,id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+        $toDepartmentId = (int) $request->input('to_department_id');
+        $fromDepartmentId = $patient->department_id;
+        if (! $fromDepartmentId) {
+            return back()->withErrors(['to_department_id' => app()->getLocale() === 'ar' ? 'المريض غير مرتبط بقسم حالي. يمكن تعيين القسم من التعديل.' : 'Patient has no current department.'])->withInput();
+        }
+        if ($fromDepartmentId === $toDepartmentId) {
+            return back()->withErrors(['to_department_id' => app()->getLocale() === 'ar' ? 'اختر قسماً مختلفاً عن القسم الحالي.' : 'Choose a different department.'])->withInput();
+        }
+        PatientTransfer::create([
+            'patient_id' => $patient->id,
+            'from_department_id' => $fromDepartmentId,
+            'to_department_id' => $toDepartmentId,
+            'transferred_at' => now(),
+            'transferred_by' => auth()->user()?->getKey(),
+            'notes' => $request->input('notes'),
+        ]);
+        $patient->update(['department_id' => $toDepartmentId]);
+        return redirect()->route('patients.show', $patient)->with('success', app()->getLocale() === 'ar' ? 'تم تحويل المريض إلى القسم الجديد.' : 'Patient transferred successfully.');
     }
 
     public function edit(Patient $patient)
@@ -187,7 +224,8 @@ class PatientController extends Controller
         $this->authorize('patients.edit');
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
         $charityEntities = CharityEntity::orderBy('name')->get();
-        return view('patients.edit', compact('patient', 'insuranceCompanies', 'charityEntities'));
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        return view('patients.edit', compact('patient', 'insuranceCompanies', 'charityEntities', 'departments'));
     }
 
     public function update(Request $request, Patient $patient)
@@ -210,6 +248,7 @@ class PatientController extends Controller
             'payment_type' => 'required|in:cash,insurance,charity',
             'insurance_company_id' => 'nullable|exists:insurance_companies,id',
             'charity_entity_id' => 'nullable|exists:charity_entities,id',
+            'department_id' => 'nullable|exists:departments,id',
             'notes' => 'nullable|string',
         ]);
 

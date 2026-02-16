@@ -25,4 +25,14 @@ class Department extends Model
     {
         return $this->hasMany(Service::class);
     }
+
+    public function patients(): HasMany
+    {
+        return $this->hasMany(Patient::class);
+    }
+
+    public function patientTransfersFrom(): HasMany
+    {
+        return $this->hasMany(PatientTransfer::class, 'from_department_id');
+    }
 }

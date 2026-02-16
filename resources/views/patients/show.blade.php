@@ -27,6 +27,10 @@
                 </div>
             </div>
 
+            @if (session('success'))
+                <div class="mb-4 p-3 rounded-lg bg-emerald-100 text-emerald-800 text-sm">{{ session('success') }}</div>
+            @endif
+
             {{-- Identity --}}
             <div class="border-b border-slate-200 pb-4 mb-4">
                 <h3 class="text-lg font-semibold text-slate-700 mb-3">
@@ -113,6 +117,86 @@
                         <p class="text-slate-800 mt-1">{{ $patient->notes }}</p>
                     </div>
                 @endif
+            </div>
+
+            {{-- Department & Transfer --}}
+            <div class="border-b border-slate-200 pb-4 mb-4">
+                <h3 class="text-lg font-semibold text-slate-700 mb-3">
+                    {{ app()->getLocale() === 'ar' ? '🏥 القسم والتحويل' : '🏥 Department & Transfer' }}
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-slate-500">{{ app()->getLocale() === 'ar' ? 'القسم الحالي' : 'Current Department' }}</span>
+                        <p class="font-medium text-slate-800">
+                            @if ($patient->department)
+                                {{ app()->getLocale() === 'ar' && $patient->department->name_ar ? $patient->department->name_ar : $patient->department->name }}
+                            @else
+                                {{ app()->getLocale() === 'ar' ? 'لا يوجد' : '—' }}
+                            @endif
+                        </p>
+                    </div>
+
+                    @can('patients.edit')
+                        @if ($patient->department_id)
+                            @php
+                                $otherDepartments = $departments->where('id', '!=', $patient->department_id);
+                            @endphp
+                            @if ($otherDepartments->isNotEmpty())
+                                <form action="{{ route('patients.transfer', $patient) }}" method="POST" class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    @csrf
+                                    <p class="text-sm font-medium text-slate-700 mb-3">{{ app()->getLocale() === 'ar' ? 'تحويل المريض لقسم آخر' : 'Transfer patient to another department' }}</p>
+                                    <div class="flex flex-wrap gap-3 items-end">
+                                        <div class="min-w-[180px]">
+                                            <label for="to_department_id" class="block text-xs text-slate-500 mb-1">{{ app()->getLocale() === 'ar' ? 'القسم المستهدف' : 'Target department' }}</label>
+                                            <select name="to_department_id" id="to_department_id" required
+                                                class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                                @foreach ($otherDepartments as $dept)
+                                                    <option value="{{ $dept->id }}" {{ old('to_department_id') == $dept->id ? 'selected' : '' }}>
+                                                        {{ app()->getLocale() === 'ar' && $dept->name_ar ? $dept->name_ar : $dept->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('to_department_id')
+                                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                        <div class="min-w-[200px] flex-1">
+                                            <label for="transfer_notes" class="block text-xs text-slate-500 mb-1">{{ app()->getLocale() === 'ar' ? 'ملاحظات (اختياري)' : 'Notes (optional)' }}</label>
+                                            <input type="text" name="notes" id="transfer_notes" value="{{ old('notes') }}" maxlength="500"
+                                                class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                placeholder="{{ app()->getLocale() === 'ar' ? 'سبب التحويل أو ملاحظات' : 'Reason or notes' }}">
+                                        </div>
+                                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                            {{ app()->getLocale() === 'ar' ? 'تحويل' : 'Transfer' }}
+                                        </button>
+                                    </div>
+                                </form>
+                            @endif
+                        @else
+                            <p class="text-sm text-amber-700">{{ app()->getLocale() === 'ar' ? 'لتحويل المريض يجب أن يكون مرتبطاً بقسم. يمكن تعيين القسم من صفحة التعديل.' : 'To transfer, assign a department first via Edit.' }}</p>
+                        @endif
+                    @endcan
+
+                    @if ($patient->transfers->isNotEmpty())
+                        <div>
+                            <span class="text-slate-500 block mb-2">{{ app()->getLocale() === 'ar' ? 'سجل التحويلات' : 'Transfer history' }}</span>
+                            <ul class="space-y-1 text-sm text-slate-700 border border-slate-200 rounded-lg overflow-hidden">
+                                @foreach ($patient->transfers->sortByDesc('transferred_at') as $t)
+                                    <li class="px-3 py-2 bg-slate-50 flex flex-wrap items-center gap-2">
+                                        <span>{{ $t->transferred_at?->format('Y-m-d H:i') ?? '—' }}</span>
+                                        <span>→</span>
+                                        <span>{{ $t->fromDepartment ? (app()->getLocale() === 'ar' && $t->fromDepartment->name_ar ? $t->fromDepartment->name_ar : $t->fromDepartment->name) : '—' }}</span>
+                                        <span>{{ app()->getLocale() === 'ar' ? 'إلى' : 'to' }}</span>
+                                        <span>{{ $t->toDepartment ? (app()->getLocale() === 'ar' && $t->toDepartment->name_ar ? $t->toDepartment->name_ar : $t->toDepartment->name) : '—' }}</span>
+                                        @if ($t->notes)
+                                            <span class="text-slate-500">({{ Str::limit($t->notes, 40) }})</span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
             </div>
 
             {{-- Visits (latest 10) --}}

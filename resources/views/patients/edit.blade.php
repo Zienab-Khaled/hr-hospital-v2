@@ -325,6 +325,36 @@
                     </div>
                 </div>
 
+                {{-- Department --}}
+                <div class="pb-4">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">
+                        {{ app()->getLocale() === 'ar' ? '🏥 القسم' : '🏥 Department' }}
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">
+                                {{ app()->getLocale() === 'ar' ? 'قسم المريض' : 'Patient department' }}
+                            </label>
+                            <select name="department_id" id="department_id"
+                                class="w-full rounded border border-slate-300 px-3 py-2 @error('department_id') border-red-500 @enderror">
+                                <option value="">{{ app()->getLocale() === 'ar' ? '-- لا يوجد / بدون قسم --' : '-- None --' }}</option>
+                                @foreach ($departments as $dept)
+                                    <option value="{{ $dept->id }}"
+                                        {{ old('department_id', $patient->department_id) == $dept->id ? 'selected' : '' }}>
+                                        {{ app()->getLocale() === 'ar' && $dept->name_ar ? $dept->name_ar : $dept->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('department_id')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-slate-500 mt-1">
+                                {{ app()->getLocale() === 'ar' ? 'عند الإضافة يتم تعيين قسم الموظف تلقائياً. يمكن تغييره أو تحويل المريض من صفحة العرض.' : 'On create, employee department is set by default. Change here or transfer from show page.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Document Upload --}}
                 <div class="pb-4">
                     <h3 class="text-lg font-semibold text-slate-700 mb-4">

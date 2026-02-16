@@ -173,6 +173,34 @@ class PlaceholderController extends Controller
         return view('patients.index', compact('patients', 'section', 'sectionTitle'));
     }
 
+    /** صفحة اختيار القسم لعرض مرضى القسم */
+    public function patientsDepartmentsList()
+    {
+        Gate::authorize('patients.view');
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        return view('patients.departments-list', compact('departments'));
+    }
+
+    /** مرضى حسب القسم (الأقسام الموجودة في النظام) — يظهر من تم تحويلهم من هذا القسم مع شارة "تم تحويله" */
+    public function patientsByDepartment(Department $department)
+    {
+        Gate::authorize('patients.view');
+        $query = Patient::with(['department', 'insuranceCompany', 'charityEntity'])
+            ->where(function ($q) use ($department) {
+                $q->where('department_id', $department->id)
+                    ->orWhereHas('transfers', fn ($q2) => $q2->where('from_department_id', $department->id));
+            });
+        $this->applyIndexFilters(
+            $query,
+            request(),
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone'],
+            []
+        );
+        $patients = $query->latest()->paginate($this->getPerPage(request()))->withQueryString();
+        $departmentTitle = app()->getLocale() === 'ar' && $department->name_ar ? $department->name_ar : $department->name;
+        return view('patients.index', compact('patients', 'department', 'departmentTitle'));
+    }
+
     public function invoicesIndex(Request $request)
     {
         Gate::authorize('invoices.view');

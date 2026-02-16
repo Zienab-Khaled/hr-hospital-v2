@@ -7,7 +7,6 @@ use App\Http\Controllers\DebtInventoryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NonCommitmentReportController;
 use App\Http\Controllers\PatientController;
-use App\Http\Controllers\PatientSectionController;
 use App\Http\Controllers\PlaceholderController;
 use App\Http\Controllers\WrittenCommitmentController;
 use Illuminate\Support\Facades\Route;
@@ -39,7 +38,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::match(['get', 'post'], 'logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
@@ -54,9 +53,12 @@ Route::middleware('auth')->group(function () {
     Route::get('patients/create', [PatientController::class, 'create'])->name('patients.create');
     Route::post('patients', [PatientController::class, 'store'])->name('patients.store');
     Route::get('patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+    Route::post('patients/{patient}/transfer', [PatientController::class, 'transfer'])->name('patients.transfer');
     Route::get('patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
     Route::put('patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
     Route::delete('patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
+    Route::get('patients/by-department', [PlaceholderController::class, 'patientsDepartmentsList'])->name('patients.departments-list');
+    Route::get('patients/by-department/{department}', [PlaceholderController::class, 'patientsByDepartment'])->name('patients.by-department');
 
     Route::get('contact-reports', [ContactReportController::class, 'index'])->name('contact-reports.index');
     Route::get('contact-reports/create', [ContactReportController::class, 'create'])->name('contact-reports.create');

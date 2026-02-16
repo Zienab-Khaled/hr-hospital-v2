@@ -90,6 +90,16 @@
                     </svg>
                     <span>{{ __('Collection') }}</span>
                 </a>
+
+                <a href="{{ route('patients.departments-list') }}"
+                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                   {{ request()->routeIs('patients.by-department*') || request()->routeIs('patients.departments-list') ? 'bg-red-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'حسب القسم' : 'By Department' }}</span>
+                </a>
             </div>
         @endif
 

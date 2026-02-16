@@ -16,7 +16,7 @@ class Patient extends Model implements HasMedia
 
     protected $fillable = [
         'file_number', 'name', 'name_ar', 'identity_type', 'identity_value', 'phone',
-        'payment_type', 'insurance_company_id', 'charity_entity_id', 'notes', 'is_active',
+        'payment_type', 'insurance_company_id', 'charity_entity_id', 'department_id', 'notes', 'is_active',
         'age', 'gender', 'country_of_origin', 'current_location', 'sponsor_name', 'sponsor_phone',
     ];
 
@@ -56,6 +56,25 @@ class Patient extends Model implements HasMedia
     public function charityEntity(): BelongsTo
     {
         return $this->belongsTo(CharityEntity::class, 'charity_entity_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(PatientTransfer::class)->latest('transferred_at');
+    }
+
+    /** هل تم تحويل المريض من القسم المحدد (يُستخدم في عرض "تم تحويله" في قائمة القسم) */
+    public function wasTransferredFrom(?int $departmentId): bool
+    {
+        if (! $departmentId) {
+            return false;
+        }
+        return $this->transfers()->where('from_department_id', $departmentId)->exists();
     }
 
     public function visits(): HasMany

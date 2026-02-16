@@ -13,6 +13,7 @@
                 $addBtnLabel = $labels[$section];
             }
         }
+        $showDepartmentColumn = isset($department);
     @endphp
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold text-slate-800">{{ $sectionTitle ?? __('Patients') }}</h2>
@@ -23,7 +24,7 @@
     </div>
 
     {{-- Search and Filter using Global Component --}}
-    <x-index-filters :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم، رقم ملف، رقم هوية، هاتف...' : 'Name, file no, identity, phone...'">
+    <x-index-filters :action="isset($department) ? route('patients.by-department', $department) : route('patients.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم، رقم ملف، رقم هوية، هاتف...' : 'Name, file no, identity, phone...'">
         {{-- Identity Type Filter (all sections) --}}
         <div class="w-40">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
@@ -257,6 +258,9 @@
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'رقم الملف' : 'File No' }}</th>
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'نوع الهوية' : 'Identity Type' }}</th>
                     <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'رقم الهوية' : 'Identity No' }}</th>
+                    @if($showDepartmentColumn ?? false)
+                        <th class="text-center p-3">{{ app()->getLocale() === 'ar' ? 'الحالة / القسم' : 'Status / Dept' }}</th>
+                    @endif
                     <th class="text-center p-3">
                         @if (isset($section) && $section === 'charity')
                             {{ app()->getLocale() === 'ar' ? 'الجمعية' : 'Charity Entity' }}
@@ -277,6 +281,19 @@
                         <td class="p-3 text-center text-slate-600">{{ $p->file_number }}</td>
                         <td class="p-3 text-center text-slate-600">{{ $p->identity_type_label ?? '-' }}</td>
                         <td class="p-3 text-center text-slate-600">{{ $p->identity_value ?? '-' }}</td>
+                        @if($showDepartmentColumn ?? false)
+                            <td class="p-3 text-center">
+                                @if($p->department_id == $department->id)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                                        {{ app()->getLocale() === 'ar' && $p->department?->name_ar ? $p->department->name_ar : $p->department?->name ?? '—' }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800" title="{{ app()->getLocale() === 'ar' ? 'تم تحويله إلى قسم آخر' : 'Transferred to another department' }}">
+                                        {{ app()->getLocale() === 'ar' ? 'تم تحويله' : 'Transferred' }}
+                                    </span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="p-3 text-center">
                             @if (isset($section) && $section === 'charity')
                                 <span
@@ -349,7 +366,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="p-6 text-center text-slate-500">
+                        <td colspan="{{ ($showDepartmentColumn ?? false) ? 8 : 7 }}" class="p-6 text-center text-slate-500">
                             {{ app()->getLocale() === 'ar' ? 'لا يوجد مرضى' : 'No patients' }}</td>
                     </tr>
                 @endforelse
