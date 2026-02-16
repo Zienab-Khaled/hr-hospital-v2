@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-slate-50 rounded-lg font-semibold hover:bg-red-700">
                         {{ app()->getLocale() === 'ar' ? 'تسليم الشيفت' : 'Hand Over Shift' }}
                     </button>
                     <a href="{{ route('shift-handovers.index') }}" class="px-4 py-2 border border-slate-400 rounded-lg text-slate-700 hover:bg-slate-100">

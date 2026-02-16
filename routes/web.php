@@ -63,8 +63,14 @@ Route::middleware('auth')->group(function () {
     Route::get('patients/by-department/{department}', [PlaceholderController::class, 'patientsByDepartment'])->name('patients.by-department');
 
     Route::get('visits/create', [VisitController::class, 'create'])->name('visits.create');
-    Route::post('visits', [VisitController::class, 'store'])->name('visits.store');
+    Route::get('visits/create/services-search', [VisitController::class, 'searchServicesForEligibility'])->name('visits.eligibility-services-search');
+    Route::resource('visits', VisitController::class)->except(['create', 'show']); // visits.index, visits.store, visits.edit, visits.update, visits.destroy
+    // visits.create is handled manually above because of specific logic
+
     Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
+    Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
+    Route::post('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintSubmit'])->name('visits.treatment-eligibility-print.submit');
+    Route::post('visits/{visit}/transfer', [VisitController::class, 'transfer'])->name('visits.transfer');
 
     Route::get('shift-handovers', [ShiftHandoverController::class, 'index'])->name('shift-handovers.index');
     Route::get('shift-handovers/create', [ShiftHandoverController::class, 'create'])->name('shift-handovers.create');

@@ -43,8 +43,8 @@
                 @forelse($users as $u)
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-3">{{ $u->username }}</td>
-                        <td class="p-3">{{ $u->employee?->name ?? '-' }}</td>
-                        <td class="p-3">{{ $u->employee?->department?->name ?? '-' }}</td>
+                        <td class="p-3">{{ $u->name }}</td>
+                        <td class="p-3">{{ $u->department?->name ?? '-' }}</td>
                         <td class="p-3">{{ $u->getRoleNames()->join(', ') ?: '-' }}</td>
                         <td class="p-3">
                             <div class="flex gap-2">

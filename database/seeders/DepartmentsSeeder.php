@@ -28,6 +28,12 @@ class DepartmentsSeeder extends Seeder
             ['name' => 'Physiotherapy', 'name_ar' => 'العلاج الطبيعي', 'is_active' => true],
             ['name' => 'ICU', 'name_ar' => 'العناية المركزة', 'is_active' => true],
             ['name' => 'Admission', 'name_ar' => 'الدخول', 'is_active' => true],
+            ['name' => 'Management', 'name_ar' => 'الإدارة التشغيلية', 'is_active' => true],
+            ['name' => 'Reception', 'name_ar' => 'الاستقبال', 'is_active' => true],
+            ['name' => 'Insurance', 'name_ar' => 'التأمين', 'is_active' => true],
+            ['name' => 'Social Services', 'name_ar' => 'الخدمة الاجتماعية', 'is_active' => true],
+            ['name' => 'Finance', 'name_ar' => 'المالية', 'is_active' => true],
+            ['name' => 'Nursing', 'name_ar' => 'التمريض', 'is_active' => true],
         ];
 
         foreach ($departments as $dept) {

@@ -14,10 +14,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'name_ar',
         'email',
         'username',
         'password',
-        'employee_id',
+        'department_id',
+        'job_title',
+        'job_title_ar',
+        'status',
         'last_login_at',
         'signature',
     ];
@@ -36,9 +40,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Department::class);
     }
 
     public function getAuthIdentifierName(): string

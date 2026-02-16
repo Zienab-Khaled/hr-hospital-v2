@@ -13,6 +13,7 @@ class RoleAndPermissionSeeder extends Seeder
         $permissions = [
             // مرضى وزيارات
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
+            'visits.view', 'visits.create', 'visits.edit', 'visits.delete', 'visits.print',
             // فواتير ومدفوعات
             'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.print',
             'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.daily_close',
@@ -45,6 +46,7 @@ class RoleAndPermissionSeeder extends Seeder
         $manager = Role::firstOrCreate(['name' => 'manager', 'guard_name' => 'web']);
         $manager->syncPermissions([
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
+            'visits.view', 'visits.create', 'visits.edit', 'visits.delete', 'visits.print',
             'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.print',
             'authorizations.view', 'authorizations.create', 'authorizations.edit', 'authorizations.print',
             'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.daily_close',
@@ -60,6 +62,7 @@ class RoleAndPermissionSeeder extends Seeder
         $employee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
         $employee->syncPermissions([
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
+            'visits.view', 'visits.create', 'visits.edit', 'visits.print', // No delete for employee
             'authorizations.view', 'authorizations.create', 'authorizations.print',
             'attachments.upload', 'attachments.view',
             'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
@@ -84,6 +87,7 @@ class RoleAndPermissionSeeder extends Seeder
         $insurance = Role::firstOrCreate(['name' => 'insurance', 'guard_name' => 'web']);
         $insurance->syncPermissions([
             'patients.view', 'invoices.view', 'authorizations.view', 'claims.view', 'claims.create', 'claims.edit', 'claims.notes', 'claims.send',
+            'visits.view', // Can view visits
             'attachments.upload', 'attachments.view',
         ]);
 

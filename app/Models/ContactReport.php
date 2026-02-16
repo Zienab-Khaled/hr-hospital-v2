@@ -11,8 +11,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class ContactReport extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
-    
-    protected $fillable = ['patient_id', 'visit_id', 'contact_date', 'employee_id', 'result', 'notes', 'created_by'];
+
+    protected $fillable = ['patient_id', 'visit_id', 'contact_date', 'result', 'notes', 'created_by'];
 
     protected function casts(): array
     {
@@ -29,16 +29,11 @@ class ContactReport extends Model implements HasMedia
         return $this->belongsTo(Visit::class);
     }
 
-    public function employee(): BelongsTo
-    {
-        return $this->belongsTo(Employee::class);
-    }
-
     public function createdByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-    
+
     /**
      * Register media collections for scanned documents
      */
@@ -46,7 +41,7 @@ class ContactReport extends Model implements HasMedia
     {
         $this->addMediaCollection('documents')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
-            
+
         $this->addMediaCollection('patient-papers')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png']);
     }

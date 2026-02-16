@@ -8,15 +8,14 @@ use App\Models\Authorization;
 use App\Models\CharityClaim;
 use App\Models\CharityEntity;
 use App\Models\Department;
-use App\Models\Employee;
-use App\Models\InsuranceClaim;
-use App\Models\InsuranceCompany;
 use App\Models\Invoice;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\Setting;
+use App\Models\Shift;
 use App\Models\User;
+use App\Models\Visit;
 use App\Helpers\ActivityLogger;
 use App\Services\OfficialCodesImporter;
 use Carbon\Carbon;
@@ -201,6 +200,58 @@ class PlaceholderController extends Controller
         return view('patients.index', compact('patients', 'department', 'departmentTitle'));
     }
 
+    /**
+     * قائمة الزيارات: للأدمن/المدير كل الزيارات، وللموظف زيارات الشيفت الحالي في قسمه فقط.
+     */
+    public function visitsIndex(Request $request)
+    {
+        Gate::authorize('invoices.view');
+
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
+        $currentShift = Shift::currentAt();
+
+        $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
+
+        if (!$isAdmin) {
+            $deptId = $user->department_id;
+            if ($deptId && $currentShift) {
+                $query->where('department_id', $deptId)
+                    ->where('shift_id', $currentShift->id)
+                    ->whereDate('visit_date', today());
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        } else {
+            if ($request->filled('shift_id')) {
+                $query->where('shift_id', $request->input('shift_id'));
+            }
+            if ($request->filled('department_id')) {
+                $query->where('department_id', $request->input('department_id'));
+            }
+            if ($request->filled('date')) {
+                $query->whereDate('visit_date', $request->input('date'));
+            }
+        }
+
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['patient.name', 'patient.name_ar', 'patient.file_number', 'patient.identity_value', 'notes'],
+            [],
+            []
+        );
+
+        $visits = $query->latest('visit_date')->latest('id')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+
+        $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+
+        return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments'));
+    }
+
     public function invoicesIndex(Request $request)
     {
         Gate::authorize('invoices.view');
@@ -332,7 +383,7 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('departments.manage');
 
-        $query = Department::withCount('employees');
+        $query = Department::withCount('users');
 
         $this->applyIndexFilters(
             $query,
@@ -532,14 +583,14 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('users.manage');
 
-        $query = User::with('employee.department')->whereNotNull('username');
+        $query = User::with('department')->whereNotNull('username');
 
         $this->applyIndexFilters(
             $query,
             $request,
-            ['username', 'email', 'name', 'employee.name', 'employee.name_ar'],
+            ['username', 'email', 'name', 'name_ar'],
             [],
-            ['department_id' => ['employee', 'department_id']]
+            ['department_id' => 'department_id']
         );
 
         $users = $query->orderBy('username')
@@ -563,7 +614,7 @@ class PlaceholderController extends Controller
         Gate::authorize('users.manage');
 
         $request->validate([
-            // Employee fields
+            // User fields
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
@@ -571,7 +622,6 @@ class PlaceholderController extends Controller
             'job_title_ar' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,inactive',
 
-            // User fields
             'username' => 'required|string|max:255|unique:users,username',
             'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
@@ -580,34 +630,28 @@ class PlaceholderController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            // Create employee first
-            $employee = Employee::create([
+            $userData = [
                 'department_id' => $request->input('department_id'),
+                'username' => $request->input('username'),
+                'email' => $request->input('email') ?: null,
+                'password' => bcrypt($request->input('password')),
                 'name' => $request->input('name'),
                 'name_ar' => $request->input('name_ar') ?: null,
                 'job_title' => $request->input('job_title') ?: null,
                 'job_title_ar' => $request->input('job_title_ar') ?: null,
                 'status' => $request->input('status', 'active'),
-            ]);
-
-            $userData = [
-                'employee_id' => $employee->id,
-                'username' => $request->input('username'),
-                'email' => $request->input('email') ?: null,
-                'password' => bcrypt($request->input('password')),
-                'name' => $request->input('name'),
             ];
             $signaturePath = $this->saveSignatureFromBase64($request->input('signature_data'));
             if ($signaturePath) {
                 $userData['signature'] = $signaturePath;
             }
 
-            // Create user with employee_id
+            // Create user
             $user = User::create($userData);
 
             // Assign role
             $user->assignRole($request->input('role'));
-            ActivityLogger::log('user_created', User::class, $user->id, __('Employee created') . ': ' . $user->username, null, ['username' => $user->username, 'name' => $user->employee->name ?? $user->name]);
+            ActivityLogger::log('user_created', User::class, $user->id, __('User created') . ': ' . $user->username, null, ['username' => $user->username, 'name' => $user->name]);
 
             // Send credentials email
             if ($user->email) {
@@ -620,20 +664,20 @@ class PlaceholderController extends Controller
             }
         });
 
-        return redirect()->route('users.index')->with('success', __('Employee created successfully.'));
+        return redirect()->route('users.index')->with('success', __('User created successfully.'));
     }
 
     public function usersShow(User $user)
     {
         Gate::authorize('users.manage');
-        $user->load('employee.department', 'roles');
+        $user->load('department', 'roles');
         return view('users.show', compact('user'));
     }
 
     public function usersEdit(User $user)
     {
         Gate::authorize('users.manage');
-        $user->load('employee.department', 'roles');
+        $user->load('department', 'roles');
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         $roles = Role::orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'roles'));
@@ -644,7 +688,7 @@ class PlaceholderController extends Controller
         Gate::authorize('users.manage');
 
         $request->validate([
-            // Employee fields
+            // User fields
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:255',
             'name_ar' => 'nullable|string|max:255',
@@ -652,7 +696,6 @@ class PlaceholderController extends Controller
             'job_title_ar' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,inactive',
 
-            // User fields
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6|confirmed',
@@ -661,23 +704,16 @@ class PlaceholderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $user) {
-            // Update employee
-            if ($user->employee) {
-                $user->employee->update([
-                    'department_id' => $request->input('department_id'),
-                    'name' => $request->input('name'),
-                    'name_ar' => $request->input('name_ar') ?: null,
-                    'job_title' => $request->input('job_title') ?: null,
-                    'job_title_ar' => $request->input('job_title_ar') ?: null,
-                    'status' => $request->input('status', 'active'),
-                ]);
-            }
-
             // Update user
             $userData = [
+                'department_id' => $request->input('department_id'),
                 'username' => $request->input('username'),
                 'email' => $request->input('email') ?: null,
                 'name' => $request->input('name'),
+                'name_ar' => $request->input('name_ar') ?: null,
+                'job_title' => $request->input('job_title') ?: null,
+                'job_title_ar' => $request->input('job_title_ar') ?: null,
+                'status' => $request->input('status', 'active'),
             ];
 
             // Only update password if provided
@@ -699,10 +735,10 @@ class PlaceholderController extends Controller
 
             // Sync role
             $user->syncRoles([$request->input('role')]);
-            ActivityLogger::log('user_updated', User::class, $user->id, __('Employee updated') . ': ' . $user->username, null, ['username' => $user->username]);
+            ActivityLogger::log('user_updated', User::class, $user->id, __('User updated') . ': ' . $user->username, null, ['username' => $user->username]);
         });
 
-        return redirect()->route('users.index')->with('success', __('Employee updated successfully.'));
+        return redirect()->route('users.index')->with('success', __('User updated successfully.'));
     }
 
     public function usersDestroy(User $user)
@@ -721,15 +757,10 @@ class PlaceholderController extends Controller
 
             // Delete user first (this will also delete roles via pivot table)
             $user->delete();
-
-            // Delete employee if exists
-            if ($employeeId) {
-                Employee::where('id', $employeeId)->delete();
-            }
         });
-        ActivityLogger::log('user_deleted', User::class, $userId, __('Employee deleted') . ': ' . $username, ['username' => $username], null);
+        ActivityLogger::log('user_deleted', User::class, $userId, __('User deleted') . ': ' . $username, ['username' => $username], null);
 
-        return redirect()->route('users.index')->with('success', __('Employee deleted successfully.'));
+        return redirect()->route('users.index')->with('success', __('User deleted successfully.'));
     }
 
     public function settingsIndex()

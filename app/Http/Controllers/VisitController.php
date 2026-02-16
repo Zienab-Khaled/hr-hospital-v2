@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Patient;
+use App\Models\Service;
 use App\Models\Shift;
 use App\Models\Visit;
+use App\Traits\HasIndexFilters;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class VisitController extends Controller
 {
+    use HasIndexFilters;
     /**
      * شاشة إنشاء زيارة: اختيار مريض (بحث أو إضافة جديد) ثم تسجيل دخول القسم ثم تحويل / إحقاق علاج / خدمات / فاتورة
      */
@@ -19,8 +23,8 @@ class VisitController extends Controller
 
         $currentShift = Shift::currentAt();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $myDepartment = auth()->user()?->employee?->department_id
-            ? Department::find(auth()->user()->employee->department_id)
+        $myDepartment = auth()->user()?->department_id
+            ? Department::find(auth()->user()->department_id)
             : null;
 
         $patient = null;
@@ -37,10 +41,37 @@ class VisitController extends Controller
             } elseif ($patient) {
                 $visit = $patient->visits()->whereDate('visit_date', today())->latest()->first();
             }
+
+            // إنشاء الزيارة تلقائياً عند الدخول بمريض وبدون زيارة اليوم (بدون الحاجة لضغط «تسجيل دخول القسم»)
+            if ($patient && !$visit && $myDepartment && $currentShift) {
+                $visit = Visit::create([
+                    'patient_id' => $patient->id,
+                    'department_id' => $myDepartment->id,
+                    'visit_date' => today(),
+                    'shift_id' => $currentShift->id,
+                    'case_type' => 'clinics',
+                    'notes' => null,
+                    'registered_by' => auth()->user()->id,
+                ]);
+                $patient->update(['department_id' => $myDepartment->id]);
+                $registered = true;
+                session()->flash('success', app()->getLocale() === 'ar' ? 'تم إنشاء الزيارة وتسجيل دخول المريض للقسم.' : 'Visit created and patient registered to department.');
+            }
         }
 
+        $eligibilityDepartments = Department::where('is_active', true)
+            ->where(function ($q) {
+                $q->where('name_ar', 'LIKE', '%مختبر%')
+                  ->orWhere('name_ar', 'LIKE', '%أشعة%')
+                  ->orWhere('name_ar', 'LIKE', '%تنويم%')
+                  ->orWhere('name_ar', 'LIKE', '%عيادات%')
+                  ->orWhere('name_ar', 'LIKE', '%طوار%');
+            })
+            ->orderBy('name')
+            ->get();
+
         return view('visits.create', compact(
-            'currentShift', 'departments', 'myDepartment', 'patient', 'visit', 'registered'
+            'currentShift', 'departments', 'eligibilityDepartments', 'myDepartment', 'patient', 'visit', 'registered'
         ));
     }
 
@@ -55,8 +86,7 @@ class VisitController extends Controller
 
         $patient = Patient::findOrFail($request->input('patient_id'));
         $user = auth()->user();
-        $employee = $user?->employee;
-        $departmentId = $employee?->department_id;
+        $departmentId = $user?->department_id;
         $currentShift = Shift::currentAt();
 
         if (!$departmentId) {
@@ -85,12 +115,193 @@ class VisitController extends Controller
     }
 
     /**
-     * طباعة إحقاق علاج (placeholder — تفاصيل لاحقاً)
+     * بحث الخدمات حسب القسم (لأحقية العلاج — عيادة / مختبر / أشعة / تنويم / طوارئ)
      */
-    public function treatmentEligibilityPrint(Visit $visit)
+    public function searchServicesForEligibility(Request $request)
+    {
+        $this->authorize('invoices.create');
+        $departmentId = $request->get('department_id');
+        $q = trim((string) $request->get('q', ''));
+
+        if (!$departmentId) {
+            return response()->json([]);
+        }
+
+        $query = Service::where('is_active', true)->where('department_id', $departmentId);
+        if ($q !== '') {
+            $query->where(function ($qry) use ($q) {
+                $qry->where('name', 'like', "%{$q}%")
+                    ->orWhere('name_ar', 'like', "%{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%");
+            });
+        }
+
+        $services = $query->orderBy('name')->limit(50)->get()->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'name' => $s->name,
+                'name_ar' => $s->name_ar,
+                'code' => $s->code,
+                'default_price' => (float) $s->default_price,
+                'is_multi_session' => (bool) $s->is_multi_session,
+                'session_count' => (int) ($s->session_count ?: 1),
+            ];
+        });
+
+        return response()->json($services);
+    }
+
+    /**
+     * طباعة إحقاق علاج — GET بدون خدمات، POST مع قائمة الخدمات المختارة
+     */
+    public function treatmentEligibilityPrint(Request $request, Visit $visit)
     {
         $this->authorize('invoices.create');
         $visit->load(['patient', 'department', 'shift']);
-        return view('visits.treatment-eligibility-print', compact('visit'));
+
+        $services = [];
+        if ($request->isMethod('post') && $request->has('services')) {
+            $services = is_array($request->input('services')) ? $request->input('services') : [];
+        }
+
+        return view('visits.treatment-eligibility-print', compact('visit', 'services'));
+    }
+
+    /**
+     * معالجة طباعة إحقاق العلاج (POST)
+     */
+    public function treatmentEligibilityPrintSubmit(Request $request, Visit $visit)
+    {
+        return $this->treatmentEligibilityPrint($request, $visit);
+    }
+
+    /**
+     * قائمة الزيارات
+     */
+    public function index(Request $request)
+    {
+        Gate::authorize('invoices.view'); // Or visits.view if exists, usually invoices.view is used for reception tasks
+
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
+        $currentShift = Shift::currentAt();
+
+        $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
+
+        if (!$isAdmin) {
+            $deptId = $user->department_id;
+            if ($deptId && $currentShift) {
+                // الموظف يرى زيارات شيفت اليوم في قسمه فقط
+                $query->where('department_id', $deptId)
+                    ->where('shift_id', $currentShift->id)
+                    ->whereDate('visit_date', today());
+            } else {
+                // إذا لم يكن مرتبطاً بقسم أو لا يوجد شيفت حالي، لا يرى شيئاً (أو يمكن تعديله ليرى زياراته فقط)
+                $query->whereRaw('1 = 0');
+            }
+        } else {
+            // الأدمن يرى الكل ويمكنه الفلترة
+            if ($request->filled('shift_id')) {
+                $query->where('shift_id', $request->input('shift_id'));
+            }
+            if ($request->filled('department_id')) {
+                $query->where('department_id', $request->input('department_id'));
+            }
+            if ($request->filled('date')) {
+                $query->whereDate('visit_date', $request->input('date'));
+            }
+        }
+
+        $this->applyIndexFilters(
+            $query,
+            $request,
+            ['patient.name', 'patient.name_ar', 'patient.file_number', 'patient.identity_value', 'notes'],
+            [],
+            []
+        );
+
+        $visits = $query->latest('visit_date')->latest('id')
+            ->paginate($this->getPerPage($request))
+            ->withQueryString();
+
+        $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+
+        return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments'));
+    }
+
+    public function edit(Visit $visit)
+    {
+        $this->authorize('visits.delete'); // Using delete permission or similar admin permission
+        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
+        return view('visits.edit', compact('visit', 'departments', 'shifts'));
+    }
+
+    public function update(Request $request, Visit $visit)
+    {
+        $this->authorize('visits.delete');
+
+        $valid = $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'shift_id' => 'required|exists:shifts,id',
+            'visit_date' => 'required|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        $visit->update($valid);
+
+        // Update patient department if it's the latest visit? Maybe not needed for edit history.
+        // But if we changed department, maybe we should update patient's current department?
+        // Let's keep it simple: update visit record.
+
+        return redirect()->route('visits.index')->with('success', app()->getLocale() === 'ar' ? 'تم تحديث الزيارة بنجاح.' : 'Visit updated successfully.');
+    }
+
+    /**
+     * تحويل المريض من الزيارة الحالية لزيارة قسم آخر
+     */
+    public function transfer(Request $request, Visit $visit)
+    {
+        // 1. Validate
+        $request->validate([
+            'to_department_id' => 'required|exists:departments,id|different:department_id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        // 2. Create PatientTransfer record (logging)
+        // assuming PatientTransfer model exists and has these fields
+        // If not, we might need to use existing logic in PatientController or replicate it
+        \App\Models\PatientTransfer::create([
+            'patient_id' => $visit->patient_id,
+            'from_department_id' => $visit->department_id,
+            'to_department_id' => $request->input('to_department_id'),
+            'transferred_at' => now(),
+            'transferred_by' => auth()->user()->id,
+            'notes' => $request->input('notes'),
+        ]);
+
+        // 3. Update Patient current department
+        $visit->patient->update(['department_id' => $request->input('to_department_id')]);
+
+        // 4. Update Visit to flag as transferred
+        $visit->update(['transferred_department_id' => $request->input('to_department_id')]);
+
+        // 5. Redirect back with success
+        return redirect()->route('visits.create', [
+            'patient_id' => $visit->patient_id,
+            'visit_id' => $visit->id,
+            'registered' => 1
+        ])->with('success', app()->getLocale() === 'ar' ? 'تم تحويل المريض بنجاح.' : 'Patient transferred successfully.');
+    }
+    public function destroy(Visit $visit)
+    {
+        $this->authorize('visits.delete');
+
+        // Check for dependencies? Invoices?
+        // Usually forced delete or check
+
+        $visit->delete();
+        return redirect()->route('visits.index')->with('success', app()->getLocale() === 'ar' ? 'تم حذف الزيارة.' : 'Visit deleted.');
     }
 }

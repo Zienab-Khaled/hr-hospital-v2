@@ -6,7 +6,7 @@
             <h2 class="text-2xl font-bold text-slate-800">
                 {{ app()->getLocale() === 'ar' ? 'تسليمات الشيفتات' : 'Shift Handovers' }}
             </h2>
-            <a href="{{ route('shift-handovers.create') }}" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">
+            <a href="{{ route('shift-handovers.create') }}" class="px-4 py-2 bg-red-600 text-slate-50 rounded-lg font-semibold hover:bg-red-700">
                 {{ app()->getLocale() === 'ar' ? 'تسليم الشيفت' : 'Hand Over Shift' }}
             </a>
         </div>

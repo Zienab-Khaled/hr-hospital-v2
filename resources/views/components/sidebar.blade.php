@@ -36,16 +36,25 @@
                     {{ app()->getLocale() === 'ar' ? 'إدارة المرضى' : 'Patient Management' }}
                 </p>
 
-                @if ($user->can('invoices.create'))
-                <a href="{{ route('visits.create') }}"
+                <a href="{{ route('visits.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-                   {{ request()->routeIs('visits.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+                   {{ request()->routeIs('visits.index') ? 'bg-red-600 text-slate-50' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits' }}</span>
+                </a>
+                @if ($user->can('invoices.create'))
+                {{-- <a href="{{ route('visits.create') }}"
+                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                   {{ request()->routeIs('visits.create') ? 'bg-red-600 text-slate-50' : 'text-slate-700 hover:bg-slate-100' }}">
                     <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'إنشاء زيارة' : 'Create Visit' }}</span>
-                </a>
+                </a> --}}
                 <a href="{{ route('shift-handovers.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('shift-handovers.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">

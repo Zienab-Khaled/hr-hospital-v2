@@ -19,39 +19,39 @@
             <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
                 {{ app()->getLocale() === 'ar' ? 'معلومات الموظف' : 'Employee Information' }}
             </h3>
-            
+
             <div class="space-y-3">
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'الاسم (إنجليزي)' : 'Name (English)' }}</label>
-                    <p class="text-slate-800">{{ $user->employee?->name ?? '-' }}</p>
+                    <p class="text-slate-800">{{ $user->name }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }}</label>
-                    <p class="text-slate-800">{{ $user->employee?->name_ar ?? '-' }}</p>
+                    <p class="text-slate-800">{{ $user->name_ar ?? '-' }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}</label>
                     <p class="text-slate-800">
-                        {{ app()->getLocale() === 'ar' && $user->employee?->department?->name_ar ? $user->employee->department->name_ar : ($user->employee?->department?->name ?? '-') }}
+                        {{ app()->getLocale() === 'ar' && $user->department?->name_ar ? $user->department->name_ar : ($user->department?->name ?? '-') }}
                     </p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'المسمى الوظيفي (إنجليزي)' : 'Job Title (English)' }}</label>
-                    <p class="text-slate-800">{{ $user->employee?->job_title ?? '-' }}</p>
+                    <p class="text-slate-800">{{ $user->job_title ?? '-' }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'المسمى الوظيفي (عربي)' : 'Job Title (Arabic)' }}</label>
-                    <p class="text-slate-800">{{ $user->employee?->job_title_ar ?? '-' }}</p>
+                    <p class="text-slate-800">{{ $user->job_title_ar ?? '-' }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</label>
                     <p>
-                        @if($user->employee?->status === 'active')
+                        @if($user->status === 'active')
                             <span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
                                 {{ app()->getLocale() === 'ar' ? 'نشط' : 'Active' }}
                             </span>
@@ -70,18 +70,18 @@
             <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
                 {{ app()->getLocale() === 'ar' ? 'حساب المستخدم' : 'User Account' }}
             </h3>
-            
+
             <div class="space-y-3">
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'اسم المستخدم' : 'Username' }}</label>
                     <p class="text-slate-800">{{ $user->username }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
                     <p class="text-slate-800">{{ $user->email ?? '-' }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'الدور' : 'Role' }}</label>
                     <p class="text-slate-800">
@@ -92,7 +92,7 @@
                         @endforeach
                     </p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني' : 'Electronic signature' }}</label>
                     @if($user->signature)
@@ -101,17 +101,17 @@
                         <p class="text-slate-500">{{ app()->getLocale() === 'ar' ? 'غير مرفوع' : 'Not uploaded' }}</p>
                     @endif
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'آخر تسجيل دخول' : 'Last Login' }}</label>
                     <p class="text-slate-800">{{ $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i') : '-' }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'تاريخ الإنشاء' : 'Created At' }}</label>
                     <p class="text-slate-800">{{ $user->created_at->format('Y-m-d H:i') }}</p>
                 </div>
-                
+
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'آخر تحديث' : 'Last Updated' }}</label>
                     <p class="text-slate-800">{{ $user->updated_at->format('Y-m-d H:i') }}</p>

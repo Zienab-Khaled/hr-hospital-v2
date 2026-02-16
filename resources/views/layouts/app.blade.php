@@ -65,7 +65,7 @@
             background: #94a3b8;
         }
 
-        /* بوردر واضح حول كل الانبوتات والتيكست ايريا والسليكت */
+        /* بوردر واضح حول كل الانبوتات + لون نص داكن (عدم استخدام نص أبيض) */
         form input[type="text"],
         form input[type="number"],
         form input[type="email"],
@@ -80,6 +80,7 @@
             border-style: solid;
             border-color: #94a3b8;
             border-radius: 0.5rem;
+            color: #1e293b;
         }
         form input:focus,
         form textarea:focus,

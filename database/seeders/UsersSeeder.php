@@ -21,7 +21,7 @@ class UsersSeeder extends Seeder
         $accountantRole = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
         $insuranceRole = Role::firstOrCreate(['name' => 'insurance_clerk', 'guard_name' => 'web']);
         $charityRole = Role::firstOrCreate(['name' => 'charity_clerk', 'guard_name' => 'web']);
-        
+
         // Create Permissions (all used in app: sidebar, controllers, gates)
         $permissions = [
             'patients.view', 'patients.create', 'patients.edit', 'patients.delete',
@@ -43,108 +43,137 @@ class UsersSeeder extends Seeder
             'procedures.contact_report', 'procedures.written_commitment',
             'procedures.non_commitment', 'procedures.debt_inventory',
         ];
-        
+
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
-        
+
         // Assign all permissions to admin
         $adminRole->syncPermissions(Permission::all());
-        
+
+        // Helper to get department ID by name (English or Arabic)
+        $getDeptId = function ($name) {
+            return Department::where('name', $name)->orWhere('name_ar', $name)->value('id');
+        };
+
         // Create Admin User (Login: username + password, not email)
         $admin = User::updateOrCreate(
-            ['email' => 'admin@hospital.sa'],
+            ['username' => 'admin'],
             [
-                'username' => 'admin',
+                'email' => 'admin@hospital.sa',
                 'name' => 'مدير النظام',
                 'password' => Hash::make('admin123'),
+                'department_id' => $getDeptId('Management'), // الإدارة التشغيلية
+                'job_title' => 'System Administrator',
+                'job_title_ar' => 'مدير النظام',
             ]
         );
         $admin->assignRole($adminRole);
-        
+
         // Create Reception Users
         $reception1 = User::updateOrCreate(
-            ['email' => 'reception1@hospital.sa'],
+            ['username' => 'reception1'],
             [
-                'username' => 'reception1',
+                'email' => 'reception1@hospital.sa',
                 'name' => 'أحمد محمد - استقبال',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Reception'), // الاستقبال
+                'job_title' => 'Receptionist',
+                'job_title_ar' => 'موظف استقبال',
             ]
         );
         $reception1->assignRole($receptionRole);
         $reception1->givePermissionTo(['patients.view', 'patients.create', 'invoices.create', 'procedures.contact_report']);
-        
+
         $reception2 = User::updateOrCreate(
-            ['email' => 'reception2@hospital.sa'],
+            ['username' => 'reception2'],
             [
-                'username' => 'reception2',
+                'email' => 'reception2@hospital.sa',
                 'name' => 'فاطمة علي - استقبال',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Reception'),
+                'job_title' => 'Receptionist',
+                'job_title_ar' => 'موظف استقبال',
             ]
         );
         $reception2->assignRole($receptionRole);
         $reception2->givePermissionTo(['patients.view', 'patients.create', 'invoices.create', 'procedures.contact_report']);
-        
+
         // Create Insurance Clerk
         $insurance = User::updateOrCreate(
-            ['email' => 'insurance@hospital.sa'],
+            ['username' => 'insurance'],
             [
-                'username' => 'insurance',
+                'email' => 'insurance@hospital.sa',
                 'name' => 'خالد عبدالله - موظف تأمين',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Insurance'), // التأمين
+                'job_title' => 'Insurance Clerk',
+                'job_title_ar' => 'موظف تأمين',
             ]
         );
         $insurance->assignRole($insuranceRole);
         $insurance->givePermissionTo(['patients.view', 'invoices.view', 'invoices.create', 'procedures.contact_report']);
-        
+
         // Create Charity Clerk
         $charity = User::updateOrCreate(
-            ['email' => 'charity@hospital.sa'],
+            ['username' => 'charity'],
             [
-                'username' => 'charity',
+                'email' => 'charity@hospital.sa',
                 'name' => 'نورة سعيد - موظفة جمعيات',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Social Services'), // الخدمة الاجتماعية
+                'job_title' => 'Charity Clerk',
+                'job_title_ar' => 'موظف جمعيات',
             ]
         );
         $charity->assignRole($charityRole);
         $charity->givePermissionTo(['patients.view', 'invoices.view', 'invoices.create', 'procedures.contact_report']);
-        
+
         // Create Accountant
         $accountant = User::updateOrCreate(
-            ['email' => 'accountant@hospital.sa'],
+            ['username' => 'accountant'],
             [
-                'username' => 'accountant',
+                'email' => 'accountant@hospital.sa',
                 'name' => 'عبدالرحمن حسن - محاسب',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Finance'), // المالية
+                'job_title' => 'Accountant',
+                'job_title_ar' => 'محاسب',
             ]
         );
         $accountant->assignRole($accountantRole);
         $accountant->givePermissionTo(['invoices.view', 'payments.view', 'payments.create', 'payments.approve', 'reports.view', 'reports.generate']);
-        
+
         // Create Doctor
         $doctor = User::updateOrCreate(
-            ['email' => 'doctor@hospital.sa'],
+            ['username' => 'doctor'],
             [
-                'username' => 'doctor',
+                'email' => 'doctor@hospital.sa',
                 'name' => 'د. محمد أحمد - طبيب',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Internal Medicine'), // الباطنة
+                'job_title' => 'Doctor',
+                'job_title_ar' => 'طبيب',
             ]
         );
         $doctor->assignRole($doctorRole);
         $doctor->givePermissionTo(['patients.view', 'patients.edit', 'invoices.view']);
-        
+
         // Create Nurse
         $nurse = User::updateOrCreate(
-            ['email' => 'nurse@hospital.sa'],
+            ['username' => 'nurse'],
             [
-                'username' => 'nurse',
+                'email' => 'nurse@hospital.sa',
                 'name' => 'مريم خالد - ممرضة',
                 'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Nursing'), // التمريض
+                'job_title' => 'Nurse',
+                'job_title_ar' => 'ممرضة',
             ]
         );
         $nurse->assignRole($nurseRole);
         $nurse->givePermissionTo(['patients.view']);
-        
+
         echo "\n✅ Users created successfully!\n";
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         echo "Login with USERNAME + PASSWORD (not email):\n";

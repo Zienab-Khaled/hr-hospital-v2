@@ -16,9 +16,9 @@ class Department extends Model
         return ['is_active' => 'boolean'];
     }
 
-    public function employees(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasMany(User::class);
     }
 
     public function services(): HasMany
