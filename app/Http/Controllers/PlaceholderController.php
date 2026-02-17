@@ -8,6 +8,8 @@ use App\Models\Authorization;
 use App\Models\CharityClaim;
 use App\Models\CharityEntity;
 use App\Models\Department;
+use App\Models\InsuranceClaim;
+use App\Models\InsuranceCompany;
 use App\Models\Invoice;
 use App\Models\Patient;
 use App\Models\Payment;

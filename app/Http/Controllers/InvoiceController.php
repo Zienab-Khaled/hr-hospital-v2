@@ -14,6 +14,7 @@ use App\Models\InsuranceCompany;
 use App\Models\CharityEntity;
 use App\Mail\ApprovalRequestMail;
 use App\Mail\InvoiceToPartyMail;
+use App\Helpers\ActivityLogger;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -308,6 +309,8 @@ class InvoiceController extends Controller
                 ? __('Invoice created and approval request sent successfully.')
                 : __('Invoice created successfully.');
 
+            ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Invoice created with ' . count($validated['services']) . ' items', null, $invoice->toArray());
+
             return redirect()->route('invoices.show', $invoice)->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -448,6 +451,8 @@ class InvoiceController extends Controller
                 'status' => $patient->payment_type === 'insurance' ? 'sent_to_insurance' : 'sent_to_charity',
             ]);
 
+            ActivityLogger::log('Invoice Sent', 'Invoice', $invoice->id, 'Invoice sent to ' . $partySend->recipient_name, null, $partySend->toArray());
+
             Storage::disk('local')->delete($pdfRelativePath);
         } catch (\Throwable $e) {
             Log::error('Invoice send to party failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
@@ -475,6 +480,8 @@ class InvoiceController extends Controller
     {
         $this->authorize('invoices.edit');
 
+        $oldValues = $invoice->toArray();
+
         $validated = $request->validate([
             'invoice_date' => 'required|date',
             'notes' => 'nullable|string',
@@ -498,6 +505,9 @@ class InvoiceController extends Controller
                 'remaining_amount' => $totalAmount - $invoice->paid_amount,
                 'notes' => $validated['notes'],
             ]);
+
+            $newValues = $invoice->toArray();
+            ActivityLogger::log('Invoice Updated', 'Invoice', $invoice->id, 'Invoice details updated', $oldValues, $newValues);
 
             // Delete old items and create new ones
             $invoice->items()->delete();
@@ -523,7 +533,11 @@ class InvoiceController extends Controller
     public function destroy(Invoice $invoice)
     {
         $this->authorize('invoices.delete');
+        $oldValues = $invoice->toArray();
         $invoice->delete();
+
+        ActivityLogger::log('Invoice Deleted', 'Invoice', $invoice->id, 'Invoice deleted', $oldValues, null);
+
         return redirect()->route('invoices.index')->with('success', __('Invoice deleted successfully.'));
     }
 }

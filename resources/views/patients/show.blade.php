@@ -9,6 +9,10 @@
                 </h2>
                 <div class="flex gap-2">
                     @can('invoices.create')
+                        <a href="{{ route('visits.create', ['patient_id' => $patient->id]) }}"
+                            class="border-2 border-emerald-600 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
+                            {{ app()->getLocale() === 'ar' ? '🏥 تسجيل زيارة' : '🏥 Register Visit' }}
+                        </a>
                         <a href="{{ route('invoices.create', ['patient_id' => $patient->id]) }}"
                             class="border-2 border-blue-600 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
                             {{ app()->getLocale() === 'ar' ? '🧾 تقديم خدمة' : '🧾 Add Service' }}

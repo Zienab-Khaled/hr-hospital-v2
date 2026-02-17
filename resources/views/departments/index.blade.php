@@ -31,7 +31,7 @@
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-3">{{ app()->getLocale() === 'ar' ? ($d->name_ar ?: $d->name) : $d->name }}</td>
                         <td class="p-3">{{ $d->code }}</td>
-                        <td class="p-3">{{ $d->employees_count }}</td>
+                        <td class="p-3">{{ $d->users_count }}</td>
                         @can('departments.manage')
                             <td class="p-3">
                                 <div class="flex gap-2">

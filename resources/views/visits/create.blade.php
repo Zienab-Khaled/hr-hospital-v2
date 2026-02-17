@@ -252,12 +252,12 @@
                     @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
                     <div class="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-gradient-to-br from-blue-50 to-slate-50">
                         <h3 class="text-xl font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility' }}</h3>
-                        <p class="text-slate-600 text-sm mb-4">{{ app()->getLocale() === 'ar' ? 'اختر نوع الأحقية (القسم) ثم ابحث بالاسم أو الكود وأضف الخدمات. بعدها اضغط «طباعة إحقاق علاج».' : 'Select eligibility type (department), search by name or code and add services, then print.' }}</p>
+                        <p class="text-slate-600 text-sm mb-4">{{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو الكود وأضف الخدمات. يمكنك اختيار قسم معين أو البحث في كل الخدمات.' : 'Search by name or code and add services. You can select a specific department or search all services.' }}</p>
 
                         <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'نوع الأحقية (القسم)' : 'Eligibility type (Department)' }}</label>
+                            <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'نوع الأحقية (القسم) - اختياري' : 'Eligibility type (Department) - Optional' }}</label>
                             <select id="eligibility_department_id" class="{{ $inputClass }} max-w-xs">
-                                <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
+                                <option value="">{{ app()->getLocale() === 'ar' ? '— كل الأقسام —' : '— All departments —' }}</option>
                                 @foreach ($eligibilityDepartments as $d)
                                     <option value="{{ $d->id }}">{{ app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name }}</option>
                                 @endforeach
@@ -322,6 +322,25 @@
                             @csrf
                             <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-amber-700">
                                 {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج' : 'Print treatment eligibility' }}
+                            </button>
+                        </form>
+
+                        <form id="price_inquiry_print_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline ms-2">
+                            @csrf
+                            <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700">
+                                {{ app()->getLocale() === 'ar' ? '📋 طباعة عرض سعر استعلامي' : '📋 Print price inquiry' }}
+                            </button>
+                        </form>
+
+                        <form id="visit_create_invoice_form" method="POST" action="{{ route('invoices.store') }}" class="inline ms-2">
+
+                            @csrf
+                            <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+                            <input type="hidden" name="visit_id" value="{{ $visitForPrint->id }}">
+                            <input type="hidden" name="invoice_date" value="{{ today()->format('Y-m-d') }}">
+                            <input type="hidden" name="notes" value="Invoice created from visit eligibility">
+                            <button type="button" id="visit_create_invoice_btn" class="bg-blue-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                                {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة' : 'Create Invoice' }}
                             </button>
                         </form>
                     </div>
@@ -417,6 +436,8 @@
             var patientShareEl = document.getElementById('eligibility_patient_share');
             var printForm = document.getElementById('eligibility_print_form');
             var printBtn = document.getElementById('eligibility_print_btn');
+            var invoiceForm = document.getElementById('visit_create_invoice_form');
+            var invoiceBtn = document.getElementById('visit_create_invoice_btn');
             var searchUrl = '{{ route('visits.eligibility-services-search') }}';
             var rows = [];
 
@@ -554,12 +575,17 @@
             }
             function doEligibilitySearch() {
                 var deptId = deptSelect.value;
-                if (!deptId) {
-                    if (resultsDiv) { resultsDiv.innerHTML = '<div class="p-3 text-amber-700 text-sm">' + (document.documentElement.lang === 'ar' ? 'اختر القسم أولاً' : 'Select department first') + '</div>'; resultsDiv.classList.remove('hidden'); }
-                    return;
-                }
                 var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
-                var url = searchUrl + '?department_id=' + encodeURIComponent(deptId) + (q ? '&q=' + encodeURIComponent(q) : '');
+
+                // Allow searching without department selection (search all services)
+                var url = searchUrl + '?';
+                if (deptId) {
+                    url += 'department_id=' + encodeURIComponent(deptId);
+                }
+                if (q) {
+                    url += (deptId ? '&' : '') + 'q=' + encodeURIComponent(q);
+                }
+
                 fetch(url).then(function(r) { return r.json(); }).then(function(data) {
                     var list = Array.isArray(data) ? data : (data.services || data.data || []);
                     resultsDiv.innerHTML = '';
@@ -594,6 +620,8 @@
             }
             deptSelect.addEventListener('change', function() { clearResults(); });
             if (searchBtn) searchBtn.addEventListener('click', doEligibilitySearch);
+
+            // Handle Print Button
             if (printBtn && printForm) {
                 printBtn.addEventListener('click', function() {
                     var existing = printForm.querySelectorAll('input[name^="services"]');
@@ -612,7 +640,71 @@
                     printForm.submit();
                 });
             }
+
+            // Handle Invoice Button
+            if (invoiceBtn && invoiceForm) {
+                invoiceBtn.addEventListener('click', function() {
+                    if (rows.length === 0) {
+                        alert(document.documentElement.lang === 'ar' ? 'يرجى إضافة خدمات أولاً' : 'Please add services first');
+                        return;
+                    }
+                    if (!confirm(document.documentElement.lang === 'ar' ? 'هل أنت متأكد من إنشاء الفاتورة؟' : 'Are you sure you want to create the invoice?')) return;
+
+                    var existing = invoiceForm.querySelectorAll('input[name^="services"]');
+                    existing.forEach(function(el) { el.remove(); });
+                    rows.forEach(function(r, i) {
+                        var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
+                        // Add required fields for InvoiceController::store
+                        // 'services.*.service_id', 'quantity', 'unit_price', 'total_price', 'description'
+                        // + insurance fields
+                        var map = {
+                            'service_id': r.id,
+                            'quantity': r.qty,
+                            'unit_price': r.unit_price,
+                            'total_price': r.total,
+                            'description': nameDisplay,
+                            'insurance_coverage_type': r.insurance_coverage_type,
+                            'insurance_coverage_value': r.insurance_coverage_value
+                        };
+                        for (var k in map) {
+                            var inp = document.createElement('input');
+                            inp.type = 'hidden';
+                            inp.name = 'services[' + i + '][' + k + ']';
+                            inp.value = map[k] !== undefined ? map[k] : '';
+                            invoiceForm.appendChild(inp);
+                        }
+                    });
+                    invoiceForm.submit();
+                });
+            }
+
+            // Handle Price Inquiry Print Button
+            var priceInquiryBtn = document.getElementById('price_inquiry_print_btn');
+            var priceInquiryForm = document.getElementById('price_inquiry_print_form');
+            if (priceInquiryBtn && priceInquiryForm) {
+                priceInquiryBtn.addEventListener('click', function() {
+                    if (rows.length === 0) {
+                        alert(document.documentElement.lang === 'ar' ? 'يرجى إضافة خدمات أولاً' : 'Please add services first');
+                        return;
+                    }
+                    var existing = priceInquiryForm.querySelectorAll('input[name^="services"]');
+                    existing.forEach(function(el) { el.remove(); });
+                    rows.forEach(function(r, i) {
+                        var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
+                        // Add same fields as treatment eligibility print
+                        ['code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
+                            var inp = document.createElement('input');
+                            inp.type = 'hidden';
+                            inp.name = 'services[' + i + '][' + k + ']';
+                            inp.value = k === 'name' ? nameDisplay : (k === 'total' ? r.total.toFixed(2) : (r[k] !== undefined ? r[k] : ''));
+                            priceInquiryForm.appendChild(inp);
+                        });
+                    });
+                    priceInquiryForm.submit();
+                });
+            }
         })();
+
     </script>
     <script>
         // Transfer Toggle Logic

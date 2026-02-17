@@ -68,8 +68,12 @@ Route::middleware('auth')->group(function () {
     // visits.create is handled manually above because of specific logic
 
     Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
-    Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
     Route::post('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintSubmit'])->name('visits.treatment-eligibility-print.submit');
+
+    // Price Inquiry Print (for quotation/estimation only - does NOT record revenue)
+    Route::get('visits/{visit}/price-inquiry-print', [VisitController::class, 'priceInquiryPrint'])->name('visits.price-inquiry-print');
+    Route::post('visits/{visit}/price-inquiry-print', [VisitController::class, 'priceInquiryPrintSubmit'])->name('visits.price-inquiry-print.submit');
+
     Route::post('visits/{visit}/transfer', [VisitController::class, 'transfer'])->name('visits.transfer');
 
     Route::get('shift-handovers', [ShiftHandoverController::class, 'index'])->name('shift-handovers.index');

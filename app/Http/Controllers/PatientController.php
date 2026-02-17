@@ -10,6 +10,8 @@ use App\Models\PatientTransfer;
 use App\Services\IdentityDocumentExtractor;
 use Illuminate\Http\Request;
 
+use App\Helpers\ActivityLogger;
+
 class PatientController extends Controller
 {
     /**
@@ -168,6 +170,8 @@ class PatientController extends Controller
             }
         }
 
+        ActivityLogger::log('Patient Created', 'Patient', $patient->id, 'Patient registered', null, $patient->toArray());
+
         if ($request->get('redirect_to') === 'visits.create') {
             return redirect()->route('visits.create', ['patient_id' => $patient->id])
                 ->with('success', __('Patient registered successfully. Register entry to department then add services.'));
@@ -272,7 +276,10 @@ class PatientController extends Controller
             $valid['insurance_company_id'] = null;
         }
 
+        $oldValues = $patient->toArray();
         $patient->update($valid);
+
+        ActivityLogger::log('Patient Updated', 'Patient', $patient->id, 'Patient details updated', $oldValues, $patient->toArray());
 
         // Handle document uploads
         if ($request->hasFile('documents')) {
@@ -293,7 +300,10 @@ class PatientController extends Controller
             return back()->with('error', __('Cannot delete patient with existing visits or invoices.'));
         }
 
+        $oldValues = $patient->toArray();
         $patient->delete();
+
+        ActivityLogger::log('Patient Deleted', 'Patient', $patient->id, 'Patient deleted', $oldValues, null);
 
         return redirect()->route('patients.section.followup')->with('success', __('Patient deleted successfully.'));
     }

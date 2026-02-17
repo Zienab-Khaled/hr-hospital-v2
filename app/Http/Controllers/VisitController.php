@@ -11,6 +11,7 @@ use App\Traits\HasIndexFilters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
+use App\Helpers\ActivityLogger;
 class VisitController extends Controller
 {
     use HasIndexFilters;
@@ -123,6 +124,8 @@ class VisitController extends Controller
 
         $patient->update(['department_id' => $departmentId]);
 
+        ActivityLogger::log('Visit Created', 'Visit', $visit->id, 'Patient registered to department', null, $visit->toArray());
+
         return redirect()->route('visits.create', [
             'patient_id' => $patient->id,
             'visit_id' => $visit->id,
@@ -132,6 +135,7 @@ class VisitController extends Controller
 
     /**
      * بحث الخدمات حسب القسم (لأحقية العلاج — عيادة / مختبر / أشعة / تنويم / طوارئ)
+     * إذا لم يتم تحديد قسم، يتم البحث في كل الخدمات
      */
     public function searchServicesForEligibility(Request $request)
     {
@@ -139,11 +143,15 @@ class VisitController extends Controller
         $departmentId = $request->get('department_id');
         $q = trim((string) $request->get('q', ''));
 
-        if (!$departmentId) {
-            return response()->json([]);
+        // Start with all active services
+        $query = Service::where('is_active', true);
+
+        // Filter by department if provided
+        if ($departmentId) {
+            $query->where('department_id', $departmentId);
         }
 
-        $query = Service::where('is_active', true)->where('department_id', $departmentId);
+        // Filter by search query if provided
         if ($q !== '') {
             $query->where(function ($qry) use ($q) {
                 $qry->where('name', 'like', "%{$q}%")
@@ -190,6 +198,32 @@ class VisitController extends Controller
     {
         return $this->treatmentEligibilityPrint($request, $visit);
     }
+
+    /**
+     * طباعة عرض سعر استعلامي — للاستعلام فقط بدون تسجيل إيرادات
+     * Price Inquiry Print — for quotation/estimation only, does NOT record revenue
+     */
+    public function priceInquiryPrint(Request $request, Visit $visit)
+    {
+        $this->authorize('invoices.create');
+        $visit->load(['patient', 'department', 'shift']);
+
+        $services = [];
+        if ($request->isMethod('post') && $request->has('services')) {
+            $services = is_array($request->input('services')) ? $request->input('services') : [];
+        }
+
+        return view('visits.price-inquiry-print', compact('visit', 'services'));
+    }
+
+    /**
+     * معالجة طباعة عرض السعر الاستعلامي (POST)
+     */
+    public function priceInquiryPrintSubmit(Request $request, Visit $visit)
+    {
+        return $this->priceInquiryPrint($request, $visit);
+    }
+
 
     /**
      * قائمة الزيارات
@@ -267,11 +301,10 @@ class VisitController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $oldValues = $visit->getOriginal();
         $visit->update($valid);
 
-        // Update patient department if it's the latest visit? Maybe not needed for edit history.
-        // But if we changed department, maybe we should update patient's current department?
-        // Let's keep it simple: update visit record.
+        ActivityLogger::log('Visit Updated', 'Visit', $visit->id, 'Visit details updated', $oldValues, $visit->toArray());
 
         return redirect()->route('visits.index')->with('success', app()->getLocale() === 'ar' ? 'تم تحديث الزيارة بنجاح.' : 'Visit updated successfully.');
     }
@@ -303,7 +336,10 @@ class VisitController extends Controller
         $visit->patient->update(['department_id' => $request->input('to_department_id')]);
 
         // 4. Update Visit to flag as transferred
+        $oldValues = $visit->getOriginal();
         $visit->update(['transferred_department_id' => $request->input('to_department_id')]);
+
+        ActivityLogger::log('Patient Transferred', 'Visit', $visit->id, 'Patient transferred to another department', $oldValues, $visit->toArray());
 
         // 5. Redirect back with success
         return redirect()->route('visits.create', [
@@ -319,7 +355,11 @@ class VisitController extends Controller
         // Check for dependencies? Invoices?
         // Usually forced delete or check
 
+        $oldValues = $visit->toArray();
         $visit->delete();
+
+        ActivityLogger::log('Visit Deleted', 'Visit', $visit->id, 'Visit record deleted', $oldValues, null);
+
         return redirect()->route('visits.index')->with('success', app()->getLocale() === 'ar' ? 'تم حذف الزيارة.' : 'Visit deleted.');
     }
 }
