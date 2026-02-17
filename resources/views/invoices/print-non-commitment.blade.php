@@ -58,13 +58,48 @@
         <p>{{ app()->getLocale() === 'ar' ? 'تم إثبات عدم تعهد المريض/الطرف المعني خطياً بسداد المبلغ المذكور أعلاه في التاريخ المبين، وذلك لعدم القدرة أو عدم الرغبة في التوقيع على محضر التعهد.' : 'This form records that the patient/concerned party has declined in writing to commit to paying the above amount on the stated date, due to inability or unwillingness to sign a commitment form.' }}</p>
     </div>
 
-    <div class="signature-block">
-        <div>
-            <span>{{ app()->getLocale() === 'ar' ? 'توقيع الموظف المسؤول' : 'Authorized staff signature' }}</span>
-            <div class="signature-line"></div>
+
+    {{-- Electronic Signatures Section --}}
+    <div class="signature-block" style="margin-top: 32px; display: flex; justify-content: space-around; gap: 24px; flex-wrap: wrap; page-break-inside: avoid;">
+        {{-- Employee Signature --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع الموظف' : 'Employee Signature' }}
+            </span>
+            @if (auth()->check() && auth()->user()->signature)
+                <img src="{{ asset('storage/' . auth()->user()->signature) }}"
+                     alt="Employee Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div class="signature-line"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ auth()->check() ? auth()->user()->name : '___________' }}
+            </div>
         </div>
-        <div>
-            <span>{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</span>
+
+        {{-- Manager Signature --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع المدير' : 'Manager Signature' }}
+            </span>
+            @if (isset($manager) && $manager && $manager->signature)
+                <img src="{{ asset('storage/' . $manager->signature) }}"
+                     alt="Manager Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div class="signature-line"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ isset($manager) && $manager ? $manager->name : '___________' }}
+            </div>
+        </div>
+
+        {{-- Date --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}
+            </span>
             <div class="signature-line"></div>
         </div>
     </div>

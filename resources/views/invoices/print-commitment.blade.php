@@ -58,14 +58,49 @@
         <p>{{ app()->getLocale() === 'ar' ? 'يتعهد الموقّع أدناه بسداد المبلغ أعلاه وفق الشروط المتفق عليها مع المنشأة.' : 'The undersigned commits to pay the above amount according to the terms agreed with the facility.' }}</p>
     </div>
 
-    <div class="signature-block">
-        <div>
-            <span>{{ app()->getLocale() === 'ar' ? 'توقيع المريض / الكفيل' : 'Patient / Sponsor signature' }}</span>
+
+    {{-- Electronic Signatures Section --}}
+    <div class="signature-block" style="margin-top: 32px; display: flex; justify-content: space-around; gap: 24px; flex-wrap: wrap; page-break-inside: avoid;">
+        {{-- Patient/Sponsor Signature (manual) --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع المريض / الكفيل' : 'Patient / Sponsor signature' }}
+            </span>
             <div class="signature-line"></div>
         </div>
-        <div>
-            <span>{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</span>
-            <div class="signature-line"></div>
+
+        {{-- Employee Signature (electronic) --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع الموظف' : 'Employee Signature' }}
+            </span>
+            @if (auth()->check() && auth()->user()->signature)
+                <img src="{{ asset('storage/' . auth()->user()->signature) }}"
+                     alt="Employee Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div class="signature-line"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ auth()->check() ? auth()->user()->name : '___________' }}
+            </div>
+        </div>
+
+        {{-- Manager Signature (electronic) --}}
+        <div style="flex: 1; min-width: 180px; text-align: center;">
+            <span style="font-weight: 600; display: block; margin-bottom: 10px;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع المدير' : 'Manager Signature' }}
+            </span>
+            @if (isset($manager) && $manager && $manager->signature)
+                <img src="{{ asset('storage/' . $manager->signature) }}"
+                     alt="Manager Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div class="signature-line"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ isset($manager) && $manager ? $manager->name : '___________' }}
+            </div>
         </div>
     </div>
 </body>

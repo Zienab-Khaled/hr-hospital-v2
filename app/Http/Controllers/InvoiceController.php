@@ -353,7 +353,8 @@ class InvoiceController extends Controller
         $this->authorize('invoices.view');
         $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
         $settings = \App\Models\Setting::first();
-        return view('invoices.print-commitment', compact('invoice', 'settings'));
+        $manager = \App\Models\User::getManagerForSignature();
+        return view('invoices.print-commitment', compact('invoice', 'settings', 'manager'));
     }
 
     /** طباعة محضر عدم تعهد خطي مرتبط بالفاتورة */
@@ -362,7 +363,8 @@ class InvoiceController extends Controller
         $this->authorize('invoices.view');
         $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
         $settings = \App\Models\Setting::first();
-        return view('invoices.print-non-commitment', compact('invoice', 'settings'));
+        $manager = \App\Models\User::getManagerForSignature();
+        return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
     /** إرسال الفاتورة لشركة التأمين / الجمعية الخيرية */

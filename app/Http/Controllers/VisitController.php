@@ -188,7 +188,8 @@ class VisitController extends Controller
             $services = is_array($request->input('services')) ? $request->input('services') : [];
         }
 
-        return view('visits.treatment-eligibility-print', compact('visit', 'services'));
+        $manager = User::getManagerForSignature();
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager'));
     }
 
     /**
@@ -213,7 +214,8 @@ class VisitController extends Controller
             $services = is_array($request->input('services')) ? $request->input('services') : [];
         }
 
-        return view('visits.price-inquiry-print', compact('visit', 'services'));
+        $manager = User::getManagerForSignature();
+        return view('visits.price-inquiry-print', compact('visit', 'services', 'manager'));
     }
 
     /**

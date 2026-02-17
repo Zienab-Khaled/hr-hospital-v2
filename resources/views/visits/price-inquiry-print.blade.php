@@ -165,9 +165,47 @@
         </div>
     @endif
 
+
     <div class="footer">
         <p>{{ app()->getLocale() === 'ar' ? '* هذا المستند للاستعلام فقط ولا يعتبر فاتورة رسمية أو التزام بالدفع' : '* This document is for inquiry purposes only and is not an official invoice or payment commitment' }}</p>
         <p>{{ app()->getLocale() === 'ar' ? '* الأسعار النهائية قد تختلف بناءً على الفحص الفعلي والخدمات المقدمة' : '* Final prices may vary based on actual examination and services provided' }}</p>
+    </div>
+
+    {{-- Electronic Signatures Section --}}
+    <div style="margin-top: 40px; display: flex; justify-content: space-around; gap: 30px; page-break-inside: avoid;">
+        {{-- Employee Signature --}}
+        <div style="flex: 1; text-align: center;">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع الموظف' : 'Employee Signature' }}
+            </div>
+            @if (auth()->check() && auth()->user()->signature)
+                <img src="{{ asset('storage/' . auth()->user()->signature) }}"
+                     alt="Employee Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div style="border-bottom: 1px solid #000; width: 150px; height: 50px; margin: 10px auto;"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ auth()->check() ? auth()->user()->name : '___________' }}
+            </div>
+        </div>
+
+        {{-- Manager Signature --}}
+        <div style="flex: 1; text-align: center;">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
+                {{ app()->getLocale() === 'ar' ? 'توقيع المدير' : 'Manager Signature' }}
+            </div>
+            @if (isset($manager) && $manager && $manager->signature)
+                <img src="{{ asset('storage/' . $manager->signature) }}"
+                     alt="Manager Signature"
+                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <div style="border-bottom: 1px solid #000; width: 150px; height: 50px; margin: 10px auto;"></div>
+            @endif
+            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
+                {{ isset($manager) && $manager ? $manager->name : '___________' }}
+            </div>
+        </div>
     </div>
 </body>
 </html>

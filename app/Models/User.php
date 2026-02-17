@@ -49,4 +49,18 @@ class User extends Authenticatable
     {
         return 'username';
     }
+
+    /**
+     * Get the manager user for electronic signatures on print documents
+     * Returns the first active user with 'manager' or 'admin' role
+     */
+    public static function getManagerForSignature(): ?User
+    {
+        return static::whereHas('roles', function ($query) {
+            $query->whereIn('name', ['manager', 'admin']);
+        })
+        ->where('status', 'active')
+        ->orderBy('id')
+        ->first();
+    }
 }
