@@ -358,7 +358,7 @@ class InvoiceController extends Controller
         return view('invoices.print-commitment', compact('invoice', 'settings', 'manager'));
     }
 
-    /** طباعة محضر عدم تعهد خطي مرتبط بالفاتورة */
+    /** طباعة محضر إقرار بعدم التوقيع مرتبط بالفاتورة */
     public function printNonCommitmentForm(Invoice $invoice)
     {
         $this->authorize('invoices.view');

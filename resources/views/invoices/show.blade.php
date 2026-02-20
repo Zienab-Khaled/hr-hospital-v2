@@ -31,7 +31,7 @@
                 </a>
                 <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
-                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم تعهد خطي' : 'Print non-commitment form' }}
+                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
                 @if($invoice->patient?->payment_type === 'charity')
                     <a href="{{ route('invoices.send-to-party', $invoice) }}"

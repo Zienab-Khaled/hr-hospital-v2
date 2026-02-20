@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>عدم تعهد خطي - {{ $invoice->invoice_number }}</title>
+    <title>إقرار بعدم التوقيع - {{ $invoice->invoice_number }}</title>
     <!-- Signature Pad Library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
@@ -239,7 +239,7 @@
     </div>
 
     <!-- ====== TITLE ====== -->
-    <div class="form-title">عدم تعهد خطي</div>
+    <div class="form-title">إقرار بعدم التوقيع</div>
 
     <!-- ====== MAIN BOX ====== -->
     <div class="pledge-box">
