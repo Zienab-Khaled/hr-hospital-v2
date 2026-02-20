@@ -106,8 +106,19 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('invoices/{invoice}/print-commitment', [InvoiceController::class, 'printCommitmentForm'])->name('invoices.print-commitment');
     Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
+    Route::get('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'showExecuteService'])->name('invoices.execute-service.show');
+    Route::post('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'executeService'])->name('invoices.execute-service');
+
+    // Charity Claims Management
+    Route::get('charity-claims', [App\Http\Controllers\CharityClaimController::class, 'index'])->name('charity-claims.index');
+    Route::get('charity-claims/create', [App\Http\Controllers\CharityClaimController::class, 'create'])->name('charity-claims.create');
+    Route::post('charity-claims', [App\Http\Controllers\CharityClaimController::class, 'store'])->name('charity-claims.store');
+    Route::get('charity-claims/{charityClaim}', [App\Http\Controllers\CharityClaimController::class, 'show'])->name('charity-claims.show');
+    Route::post('charity-claims/{charityClaim}/send', [App\Http\Controllers\CharityClaimController::class, 'send'])->name('charity-claims.send');
+    Route::post('charity-claims/{charityClaim}/update-status', [App\Http\Controllers\CharityClaimController::class, 'updateStatus'])->name('charity-claims.update-status');
     Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
+    Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');
     Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
     Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
     Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');

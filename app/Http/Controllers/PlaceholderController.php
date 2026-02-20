@@ -385,7 +385,7 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('departments.manage');
 
-        $query = Department::withCount('users');
+        $query = Department::withCount('users')->with('manager');
 
         $this->applyIndexFilters(
             $query,
@@ -404,7 +404,8 @@ class PlaceholderController extends Controller
     public function departmentsCreate()
     {
         Gate::authorize('departments.manage');
-        return view('departments.create');
+        $users = User::orderBy('name')->get();
+        return view('departments.create', compact('users'));
     }
 
     public function departmentsStore(Request $request)
@@ -415,12 +416,14 @@ class PlaceholderController extends Controller
             'name_ar' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:20|unique:departments,code',
             'is_active' => 'nullable|boolean',
+            'manager_id' => 'nullable|exists:users,id',
         ]);
         $dept = Department::create([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
+            'manager_id' => $request->input('manager_id'),
         ]);
         ActivityLogger::log('department_created', Department::class, $dept->id, __('Department created') . ': ' . $dept->name, null, $dept->toArray());
         return redirect()->route('departments.index')->with('success', __('Department created successfully.'));
@@ -435,7 +438,8 @@ class PlaceholderController extends Controller
     public function departmentsEdit(Department $department)
     {
         Gate::authorize('departments.manage');
-        return view('departments.edit', compact('department'));
+        $users = User::orderBy('name')->get();
+        return view('departments.edit', compact('department', 'users'));
     }
 
     public function departmentsUpdate(Request $request, Department $department)
@@ -446,12 +450,14 @@ class PlaceholderController extends Controller
             'name_ar' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:20|unique:departments,code,' . $department->id,
             'is_active' => 'nullable|boolean',
+            'manager_id' => 'nullable|exists:users,id',
         ]);
         $department->update([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
+            'manager_id' => $request->input('manager_id'),
         ]);
         return redirect()->route('departments.index')->with('success', __('Department updated successfully.'));
     }
@@ -755,8 +761,6 @@ class PlaceholderController extends Controller
         $username = $user->username;
         $userId = $user->id;
         DB::transaction(function () use ($user) {
-            $employeeId = $user->employee_id;
-
             // Delete user first (this will also delete roles via pivot table)
             $user->delete();
         });
@@ -893,7 +897,7 @@ class PlaceholderController extends Controller
     public function activityIndex()
     {
         Gate::authorize('activity.view');
-        $logs = ActivityLog::with('user.employee')
+        $logs = ActivityLog::with('user')
             ->orderByDesc('created_at')
             ->paginate(50);
         return view('activity.index', compact('logs'));

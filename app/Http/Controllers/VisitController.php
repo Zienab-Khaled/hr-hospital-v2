@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Service;
 use App\Models\Shift;
 use App\Models\Visit;
+use App\Models\User;
 use App\Traits\HasIndexFilters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -102,6 +103,14 @@ class VisitController extends Controller
         $request->validate(['patient_id' => 'required|exists:patients,id']);
 
         $patient = Patient::findOrFail($request->input('patient_id'));
+
+        // Validate charity approval document if patient is charity type
+        $validationRules = ['patient_id' => 'required|exists:patients,id'];
+        if ($patient->payment_type === 'charity') {
+            $validationRules['charity_approval_document'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
+        }
+        $request->validate($validationRules);
+
         $user = auth()->user();
         $departmentId = $user?->department_id;
         $currentShift = Shift::currentAt();
@@ -121,6 +130,12 @@ class VisitController extends Controller
             'notes' => null,
             'registered_by' => $user?->getKey(),
         ]);
+
+        // Upload charity approval document if provided
+        if ($request->hasFile('charity_approval_document')) {
+            $visit->addMedia($request->file('charity_approval_document'))
+                ->toMediaCollection('charity_approval');
+        }
 
         $patient->update(['department_id' => $departmentId]);
 
@@ -188,8 +203,16 @@ class VisitController extends Controller
             $services = is_array($request->input('services')) ? $request->input('services') : [];
         }
 
+        // Default manager: System Manager or Revenue Manager
         $manager = User::getManagerForSignature();
-        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager'));
+
+        // If a specific department is selected for eligibility, use its manager
+        $targetDepartment = null;
+        if ($request->filled('department_id')) {
+            $targetDepartment = Department::with('manager')->find($request->input('department_id'));
+        }
+
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment'));
     }
 
     /**
@@ -237,6 +260,15 @@ class VisitController extends Controller
         $user = auth()->user();
         $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
         $currentShift = Shift::currentAt();
+
+        // For admin/manager: if no filters at all, redirect with today + current shift as defaults
+        if ($isAdmin && !$request->hasAny(['date', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'page'])) {
+            $defaults = ['date' => today()->toDateString()];
+            if ($currentShift) {
+                $defaults['shift_id'] = $currentShift->id;
+            }
+            return redirect()->route('visits.index', $defaults);
+        }
 
         $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
 

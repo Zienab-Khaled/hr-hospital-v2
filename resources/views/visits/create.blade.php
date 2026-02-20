@@ -65,9 +65,97 @@
                     <div id="visit_selected_patient" class="hidden mt-4 p-4 rounded-lg border-2 border-slate-300 bg-white">
                         <p class="text-sm font-semibold text-slate-800" id="visit_selected_name"></p>
                         <p class="text-xs text-slate-600 mt-1" id="visit_selected_meta"></p>
-                        <form action="{{ route('visits.store') }}" method="POST">
+                        <form action="{{ route('visits.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="patient_id" id="visit_selected_patient_id">
+
+                            {{-- Charity Approval Document — Scan or Upload --}}
+                            <div id="charity_approval_section" class="hidden mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                                <label class="block text-sm font-semibold text-amber-900 mb-2">
+                                    {{ app()->getLocale() === 'ar' ? '📄 اعتماد الجمعية الخيرية' : '📄 Charity Approval Document' }}
+                                    <span class="text-red-600">*</span>
+                                </label>
+
+                                {{-- Real file input (receives both camera & file picker) --}}
+                                <input type="file" name="charity_approval_document" id="charity_approval_input"
+                                       accept="image/*,.pdf" class="hidden" onchange="charityApprovalPreview(this)">
+
+                                {{-- Camera-only input (opens rear camera on mobile) --}}
+                                <input type="file" id="charity_approval_camera"
+                                       accept="image/*" capture="environment" class="hidden"
+                                       onchange="charityApprovalFromCamera(this)">
+
+                                {{-- Action buttons --}}
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <button type="button" onclick="document.getElementById('charity_approval_camera').click()"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600  text-sm font-semibold hover:bg-amber-700 shadow-sm transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        {{ app()->getLocale() === 'ar' ? 'مسح / تصوير' : 'Scan / Camera' }}
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('charity_approval_input').click()"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-amber-400 text-amber-800 text-sm font-semibold hover:bg-amber-100 transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                        </svg>
+                                        {{ app()->getLocale() === 'ar' ? 'رفع ملف' : 'Upload File' }}
+                                    </button>
+                                    <button type="button" id="charity_approval_remove" onclick="charityApprovalClear()"
+                                            class="hidden inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-100 border border-red-300 text-red-700 text-sm font-semibold hover:bg-red-200 transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        {{ app()->getLocale() === 'ar' ? 'حذف' : 'Remove' }}
+                                    </button>
+                                </div>
+
+                                {{-- Preview --}}
+                                <div id="charity_approval_preview" class="hidden rounded-lg border border-amber-300 overflow-hidden bg-white">
+                                    <img id="charity_approval_img" src="" alt="preview" class="w-full max-h-52 object-contain p-1">
+                                    <p id="charity_approval_filename" class="text-xs text-center text-amber-800 py-1 border-t border-amber-200 truncate px-2"></p>
+                                </div>
+
+                                <p class="text-xs text-amber-700 mt-2">
+                                    {{ app()->getLocale() === 'ar'
+                                        ? 'صوّر خطاب الاعتماد أو ارفعه (صورة أو PDF — حد أقصى 5 ميجا)'
+                                        : 'Scan or upload the approval letter (image or PDF — max 5MB)' }}
+                                </p>
+                            </div>
+                            <script>
+                            function charityApprovalPreview(input) {
+                                var file = input.files[0]; if (!file) return;
+                                document.getElementById('charity_approval_filename').textContent = file.name;
+                                if (file.type.startsWith('image/')) {
+                                    var reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        var img = document.getElementById('charity_approval_img');
+                                        img.src = e.target.result; img.classList.remove('hidden');
+                                    };
+                                    reader.readAsDataURL(file);
+                                } else {
+                                    document.getElementById('charity_approval_img').classList.add('hidden');
+                                }
+                                document.getElementById('charity_approval_preview').classList.remove('hidden');
+                                document.getElementById('charity_approval_remove').classList.remove('hidden');
+                            }
+                            function charityApprovalFromCamera(cam) {
+                                var file = cam.files[0]; if (!file) return;
+                                var dt = new DataTransfer(); dt.items.add(file);
+                                var real = document.getElementById('charity_approval_input');
+                                real.files = dt.files;
+                                charityApprovalPreview(real);
+                            }
+                            function charityApprovalClear() {
+                                document.getElementById('charity_approval_input').value = '';
+                                document.getElementById('charity_approval_camera').value = '';
+                                document.getElementById('charity_approval_preview').classList.add('hidden');
+                                document.getElementById('charity_approval_remove').classList.add('hidden');
+                                document.getElementById('charity_approval_img').src = '';
+                            }
+                            </script>
+
                             <button type="submit" id="visit_go_btn" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-slate-50 font-semibold text-sm hover:bg-blue-700 shadow">
                                 {{ app()->getLocale() === 'ar' ? 'متابعة ← تسجيل دخول القسم' : 'Continue → Register to department' }}
                             </button>
@@ -127,7 +215,7 @@
                                         @endif
                                     </div>
                                     <a href="{{ route('visits.create', ['patient_id' => $patient->id, 'visit_id' => $v->id, 'registered' => 1]) }}"
-                                       class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold hover:bg-blue-700">
+                                       class="bg-blue-600  px-3 py-1.5 rounded text-sm font-semibold hover:bg-blue-700">
                                         {{ app()->getLocale() === 'ar' ? 'فتح الزيارة' : 'Open Visit' }}
                                     </a>
                                 </div>
@@ -338,7 +426,7 @@
                             <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                             <input type="hidden" name="visit_id" value="{{ $visitForPrint->id }}">
                             <input type="hidden" name="invoice_date" value="{{ today()->format('Y-m-d') }}">
-                            <input type="hidden" name="notes" value="Invoice created from visit eligibility">
+                            <input type="hidden" name="notes" value="__(Invoice created from visit eligibility)_">
                             <button type="button" id="visit_create_invoice_btn" class="bg-blue-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
                                 {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة' : 'Create Invoice' }}
                             </button>
@@ -373,13 +461,27 @@
             var searchBtn = document.getElementById('visit_search_btn');
             if (!input || !results) return;
 
-            function selectPatient(id, name, meta) {
+
+            function selectPatient(id, name, meta, paymentType) {
                 results.classList.add('hidden');
                 if (selectedName) selectedName.textContent = name;
                 if (selectedMeta) selectedMeta.textContent = meta;
                 if (selectedBox) selectedBox.classList.remove('hidden');
                 var hiddenInput = document.getElementById('visit_selected_patient_id');
                 if (hiddenInput) hiddenInput.value = id;
+
+                // Show/hide charity approval section based on payment type
+                var charitySection = document.getElementById('charity_approval_section');
+                var charityInput = document.getElementById('charity_approval_input');
+                if (charitySection && charityInput) {
+                    if (paymentType === 'charity') {
+                        charitySection.classList.remove('hidden');
+                        charityInput.setAttribute('required', 'required');
+                    } else {
+                        charitySection.classList.add('hidden');
+                        charityInput.removeAttribute('required');
+                    }
+                }
             }
             function showResults(items) {
                 results.innerHTML = '';
@@ -393,8 +495,9 @@
                     div.dataset.id = p.id;
                     div.dataset.name = (p.name_ar || p.name);
                     div.dataset.meta = (p.file_number || '') + ' — ' + (p.identity_value || '');
+                    div.dataset.paymentType = p.payment_type || '';
                     div.addEventListener('mousedown', function(e) { e.preventDefault(); });
-                    div.addEventListener('click', function() { selectPatient(this.dataset.id, this.dataset.name, this.dataset.meta); });
+                    div.addEventListener('click', function() { selectPatient(this.dataset.id, this.dataset.name, this.dataset.meta, this.dataset.paymentType); });
                     results.appendChild(div);
                 });
             }
@@ -618,8 +721,22 @@
                     });
                 }).catch(function() { resultsDiv.innerHTML = '<div class="p-3 text-red-600 text-sm">' + (document.documentElement.lang === 'ar' ? 'خطأ في البحث' : 'Search error') + '</div>'; resultsDiv.classList.remove('hidden'); });
             }
-            deptSelect.addEventListener('change', function() { clearResults(); });
+            deptSelect.addEventListener('change', function() { clearResults(); doEligibilitySearch(); });
             if (searchBtn) searchBtn.addEventListener('click', doEligibilitySearch);
+
+            // Live search: trigger automatically while typing (debounced 300ms)
+            var _debounceTimer = null;
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(_debounceTimer);
+                    _debounceTimer = setTimeout(function() {
+                        doEligibilitySearch();
+                    }, 300);
+                });
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); clearTimeout(_debounceTimer); doEligibilitySearch(); }
+                });
+            }
 
             // Handle Print Button
             if (printBtn && printForm) {
@@ -629,16 +746,36 @@
                     rows.forEach(function(r, i) {
                         var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
                         // Add insurance fields to hidden inputs
-                        ['code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
-                            var inp = document.createElement('input');
-                            inp.type = 'hidden';
-                            inp.name = 'services[' + i + '][' + k + ']';
-                            inp.value = k === 'name' ? nameDisplay : (k === 'total' ? r.total.toFixed(2) : (r[k] !== undefined ? r[k] : ''));
-                            printForm.appendChild(inp);
+                            var map = {
+                                'code': r.code || '',
+                                'name': nameDisplay,
+                                'quantity': r.qty || 1,
+                                'price': r.unit_price || 0, // Map unit_price to price
+                                'total': r.total.toFixed(2),
+                                'insurance_coverage_type': r.insurance_coverage_type || '',
+                                'insurance_coverage_value': r.insurance_coverage_value || 0
+                            };
+                            for (var k in map) {
+                                var inp = document.createElement('input');
+                                inp.type = 'hidden';
+                                inp.name = 'services[' + i + '][' + k + ']';
+                                inp.value = map[k];
+                                printForm.appendChild(inp);
+                            }
                         });
+
+                        // Add Department ID
+                        var deptId = document.getElementById('eligibility_dept_id').value;
+                        if(deptId) {
+                            var inpDept = document.createElement('input');
+                            inpDept.type = 'hidden';
+                            inpDept.name = 'department_id';
+                            inpDept.value = deptId;
+                            printForm.appendChild(inpDept);
+                        }
+
+                        printForm.submit();
                     });
-                    printForm.submit();
-                });
             }
 
             // Handle Invoice Button

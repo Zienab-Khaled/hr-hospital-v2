@@ -14,7 +14,7 @@
                 </a>
                 @can('invoices.edit')
                     <a href="{{ route('invoices.edit', $invoice) }}"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                        class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
                         {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
                     </a>
                 @endcan
@@ -33,12 +33,34 @@
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم تعهد خطي' : 'Print non-commitment form' }}
                 </a>
-                <a href="{{ route('invoices.send-to-party', $invoice) }}"
-                    class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                    {{ app()->getLocale() === 'ar' ? 'إرسال الفاتورة لشركة التأمين / الجمعية الخيرية' : 'Send invoice to insurance / charity' }}
-                </a>
+                @if($invoice->patient?->payment_type === 'charity')
+                    <a href="{{ route('invoices.send-to-party', $invoice) }}"
+                        class="inline-flex items-center gap-2 bg-emerald-600  px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                        {{ app()->getLocale() === 'ar' ? '✉️ إرسال الفاتورة للجمعية الخيرية' : '✉️ Send invoice to charity' }}
+                    </a>
+                @endif
+
+                {{-- زرار إشعار الجمعية باكتمال الخدمات — يظهر فقط لمرضى الجمعية بعد تنفيذ كل الخدمات --}}
+                @if($invoice->patient?->payment_type === 'charity' && $invoice->isFullyCompleted() && $invoice->patient?->charityEntity?->email)
+                    @can('invoices.edit')
+                        <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
+                              onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 bg-teal-600  px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 shadow-md ring-2 ring-teal-300 animate-pulse">
+                                ✉️ {{ app()->getLocale() === 'ar' ? 'إشعار الجمعية باكتمال الخدمات' : 'Notify charity of completion' }}
+                            </button>
+                        </form>
+                    @endcan
+                @elseif($invoice->patient?->payment_type === 'charity' && !$invoice->isFullyCompleted())
+                    <span class="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-2 rounded-lg font-semibold text-sm">
+                        ⏳ {{ app()->getLocale() === 'ar' ? 'في انتظار تنفيذ جميع الخدمات' : 'Waiting for all services to be executed' }}
+                        ({{ $invoice->items->where('status', 'completed')->count() }}/{{ $invoice->items->count() }})
+                    </span>
+                @endif
             </div>
         </div>
+
 
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             {{-- Invoice header --}}
@@ -106,6 +128,18 @@
             {{-- Services table (الخدمات المقدمة) --}}
             <div class="p-6">
                 <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخدمات المقدمة' : 'Provided Services' }}</h3>
+
+                @if(session('success'))
+                    <div class="mb-3 p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-medium">
+                        ✅ {{ session('success') }}
+                    </div>
+                @endif
+                @if($errors->has('error'))
+                    <div class="mb-3 p-3 rounded-lg bg-red-50 border border-red-300 text-red-800 text-sm font-medium">
+                        ⚠️ {{ $errors->first('error') }}
+                    </div>
+                @endif
+
                 <div class="overflow-x-auto border-2 border-slate-300 rounded-lg">
                     <table class="w-full border-collapse" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
                         <thead>
@@ -120,11 +154,14 @@
                                     <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المغطى' : 'Covered' }}</th>
                                     <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
                                 @endif
+                                @can('invoices.edit')
+                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'التنفيذ' : 'Execution' }}</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($invoice->items as $item)
-                                <tr class="border-b border-slate-300">
+                                <tr class="border-b border-slate-300 {{ $item->isCompleted() ? 'bg-emerald-50/40' : '' }}">
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">{{ $item->service?->code ?? '—' }}</td>
                                     <td class="border border-slate-300 px-2 py-2 text-sm">
                                         {{ app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : ($item->service?->name ?? '—') }}
@@ -150,10 +187,31 @@
                                         <td class="border border-slate-300 px-2 py-2 text-center text-sm text-emerald-700 font-medium">@currency($item->insurance_covered_amount)</td>
                                         <td class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">@currency($item->patient_amount)</td>
                                     @endif
+                                    @can('invoices.edit')
+                                        <td class="border border-slate-300 px-2 py-2 text-center text-sm">
+                                            @if($item->isCompleted())
+                                                <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-1 rounded-full border border-emerald-300">
+                                                    ✅ {{ app()->getLocale() === 'ar' ? 'منفذ' : 'Done' }}
+                                                </span>
+                                                @if($item->execution_date)
+                                                    <span class="block text-xs text-slate-500 mt-0.5">{{ $item->execution_date->format('Y-m-d') }}</span>
+                                                @endif
+                                                @if($item->completedByUser)
+                                                    <span class="block text-xs text-slate-400">{{ $item->completedByUser->name ?? $item->completedByUser->username }}</span>
+                                                @endif
+                                            @else
+                                                <button type="button"
+                                                    onclick="openExecuteModal({{ $item->id }}, '{{ route('invoices.execute-service', [$invoice, $item]) }}', '{{ addslashes(app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : ($item->service?->name ?? '')) }}')"
+                                                    class="inline-flex items-center gap-1 bg-blue-600  text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 shadow-sm">
+                                                    ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
+                                                </button>
+                                            @endif
+                                        </td>
+                                    @endcan
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $hasInsuranceCoverage ? 8 : 5 }}" class="border border-slate-300 p-4 text-center text-slate-500">
+                                    <td colspan="{{ $hasInsuranceCoverage ? 9 : 6 }}" class="border border-slate-300 p-4 text-center text-slate-500">
                                         {{ app()->getLocale() === 'ar' ? 'لا توجد بنود' : 'No items' }}
                                     </td>
                                 </tr>
@@ -162,6 +220,51 @@
                     </table>
                 </div>
             </div>
+
+            {{-- Execute Service Modal --}}
+            <div id="execute-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">{{ app()->getLocale() === 'ar' ? '▶ تنفيذ الخدمة' : '▶ Execute Service' }}</h3>
+                    <p id="execute-modal-service-name" class="text-slate-600 text-sm mb-4"></p>
+
+                    <form id="execute-modal-form" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                {{ app()->getLocale() === 'ar' ? 'تاريخ التنفيذ' : 'Execution Date' }} *
+                            </label>
+                            <input type="date" name="execution_date"
+                                   value="{{ date('Y-m-d') }}"
+                                   required
+                                   class="w-full rounded-lg border-2 border-slate-400 px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit"
+                                class="flex-1 bg-blue-600  px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow">
+                                ✅ {{ app()->getLocale() === 'ar' ? 'تأكيد التنفيذ' : 'Confirm Execution' }}
+                            </button>
+                            <button type="button" onclick="closeExecuteModal()"
+                                class="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300">
+                                {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script>
+                function openExecuteModal(itemId, actionUrl, serviceName) {
+                    document.getElementById('execute-modal-form').action = actionUrl;
+                    document.getElementById('execute-modal-service-name').textContent = serviceName;
+                    document.getElementById('execute-modal').classList.remove('hidden');
+                }
+                function closeExecuteModal() {
+                    document.getElementById('execute-modal').classList.add('hidden');
+                }
+                document.getElementById('execute-modal').addEventListener('click', function(e) {
+                    if (e.target === this) closeExecuteModal();
+                });
+            </script>
 
             {{-- Totals --}}
             <div class="px-6 pb-6">

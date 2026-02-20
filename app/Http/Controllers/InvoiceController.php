@@ -331,6 +331,7 @@ class InvoiceController extends Controller
             'patient.insuranceCompany',
             'patient.charityEntity',
             'items.service',
+            'items.completedByUser',
             'payments',
             'visit.registeredBy',
             'attachments'
@@ -453,6 +454,19 @@ class InvoiceController extends Controller
                 'status' => $patient->payment_type === 'insurance' ? 'sent_to_insurance' : 'sent_to_charity',
             ]);
 
+            // Auto-create CharityClaim when sending to charity
+            if ($patient->payment_type === 'charity' && $patient->charity_entity_id) {
+                \App\Models\CharityClaim::updateOrCreate(
+                    ['invoice_id' => $invoice->id],
+                    [
+                        'charity_entity_id' => $patient->charity_entity_id,
+                        'status'            => 'sent',
+                        'sent_date'         => today(),
+                        'sent_by'           => auth()->user()?->id,
+                    ]
+                );
+            }
+
             ActivityLogger::log('Invoice Sent', 'Invoice', $invoice->id, 'Invoice sent to ' . $partySend->recipient_name, null, $partySend->toArray());
 
             Storage::disk('local')->delete($pdfRelativePath);
@@ -467,11 +481,75 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.show', $invoice)->with('success', __('Professional email with price offer has been sent. The recipient can confirm or reject with written response.'));
     }
 
-    public function edit(Invoice $invoice)
+    /** عرض نموذج تنفيذ الخدمة (GET) — نعيد توجيه لصفحة الفاتورة */
+    public function showExecuteService(Invoice $invoice, \App\Models\InvoiceItem $item)
+    {
+        $this->authorize('invoices.edit');
+        return redirect()->route('invoices.show', $invoice);
+    }
+
+    /** تنفيذ الخدمة: تحديد تاريخ التنفيذ وتغيير الحالة إلى مكتملة */
+    public function executeService(Request $request, Invoice $invoice, \App\Models\InvoiceItem $item)
     {
         $this->authorize('invoices.edit');
 
-        $invoice->load('items.service');
+        if ($item->invoice_id !== $invoice->id) {
+            abort(404);
+        }
+
+        if (!$item->canBeCompleted()) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'الخدمة منفذة بالفعل.' : 'Service already executed.']);
+        }
+
+        $request->validate([
+            'execution_date' => 'required|date',
+        ]);
+
+        $item->markAsCompleted($request->input('execution_date'));
+
+        ActivityLogger::log('Service Executed', 'InvoiceItem', $item->id, 'Service marked as executed on ' . $request->input('execution_date'), null, $item->toArray());
+
+        return back()->with('success', app()->getLocale() === 'ar' ? 'تم تنفيذ الخدمة بنجاح.' : 'Service executed successfully.');
+    }
+
+    /** إرسال إيميل للجمعية بعد اكتمال تنفيذ جميع الخدمات */
+    public function notifyCharityCompleted(Invoice $invoice)
+    {
+        $this->authorize('invoices.edit');
+
+        $invoice->load(['patient.charityEntity', 'items.service', 'items.completedByUser']);
+
+        // التحقق أن المريض من نوع جمعية
+        if (!$invoice->patient || $invoice->patient->payment_type !== 'charity') {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'هذه الفاتورة ليست مرتبطة بمريض جمعية.' : 'This invoice is not linked to a charity patient.']);
+        }
+
+        // التحقق أن جميع الخدمات منفذة
+        if (!$invoice->isFullyCompleted()) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لم يتم تنفيذ جميع الخدمات بعد.' : 'Not all services have been executed yet.']);
+        }
+
+        $charityEntity = $invoice->patient->charityEntity;
+        if (!$charityEntity || !$charityEntity->email) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية.' : 'No email registered for the charity entity.']);
+        }
+
+        try {
+            Mail::to($charityEntity->email)->send(new \App\Mail\CharityServicesCompletedMail($invoice));
+            ActivityLogger::log('Charity Notified', 'Invoice', $invoice->id, 'Charity completion email sent to ' . $charityEntity->email, null, null);
+            return back()->with('success', app()->getLocale() === 'ar' ? 'تم إرسال إيميل الاكتمال للجمعية بنجاح.' : 'Charity completion email sent successfully.');
+        } catch (\Throwable $e) {
+            Log::error('Charity completion email failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إرسال الإيميل. حاول مرة أخرى.' : 'Failed to send email. Please try again.']);
+        }
+    }
+
+    public function edit(Invoice $invoice)
+
+    {
+        $this->authorize('invoices.edit');
+
+        $invoice->load(['items.service', 'items.completedByUser']);
         $patients = Patient::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
 

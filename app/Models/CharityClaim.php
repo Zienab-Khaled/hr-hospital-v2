@@ -36,4 +36,65 @@ class CharityClaim extends Model
     {
         return $this->belongsTo(User::class, 'sent_by');
     }
+
+    // Status Helper Methods
+    public function canBeSent(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function markAsSent(): void
+    {
+        $this->update([
+            'status' => 'sent',
+            'sent_date' => today(),
+            'sent_by' => auth()->id(),
+        ]);
+    }
+
+    public function markAsUnderReview(): void
+    {
+        $this->update(['status' => 'under_review']);
+    }
+
+    public function markAsApproved(float $approvedAmount = null): void
+    {
+        $this->update([
+            'status' => 'approved',
+            'approved_amount' => $approvedAmount ?? $this->invoice->total_amount,
+        ]);
+    }
+
+    public function markAsRejected(string $reason = null): void
+    {
+        $this->update([
+            'status' => 'rejected',
+            'entity_response_notes' => $reason,
+        ]);
+    }
+
+    public function markAsPaid(): void
+    {
+        $this->update(['status' => 'paid']);
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isSent(): bool
+    {
+        return $this->status === 'sent';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid';
+    }
 }

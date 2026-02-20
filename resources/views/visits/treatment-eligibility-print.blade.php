@@ -1,205 +1,397 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>{{ app()->getLocale() === 'ar' ? 'إحقاق علاج' : 'Treatment Eligibility' }}</title>
+    <title>نموذج أحقية علاج</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #000; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0; font-size: 14px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
-        .info-item { border: 1px solid #ccc; padding: 10px; border-radius: 4px; }
-        .info-label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 12px; color: #555; }
-        .info-value { font-size: 16px; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: center; }
-        th { background-color: #f0f0f0; }
-        .total-row td { border-top: 2px solid #000; font-weight: bold; }
-        .footer { margin-top: 50px; display: flex; justify-content: space-between; text-align: center; }
-        .sig-box { width: 200px; border-top: 1px solid #000; padding-top: 10px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
         @media print {
-            body { padding: 0; }
+            body { padding: 0; margin: 0; }
             .no-print { display: none; }
+            @page { margin: 1cm; size: A4; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .header-logo img {
+            max-width: 120px;
+        }
+        .header-text {
+            text-align: center;
+            flex-grow: 1;
+        }
+        .header-text h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .header-text p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+
+        h1.title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        /* Table Styling */
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #555;
+            margin-bottom: 30px;
+        }
+        table.info-table td {
+            border: 1px solid #777;
+            padding: 8px 10px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        table.info-table td.label-cell {
+            background-color: #d1d5db !important; /* Darker gray and forced */
+            font-weight: bold;
+            width: 120px;
+            white-space: nowrap;
+        }
+
+        /* Checkboxes */
+        .checkbox-box {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 1px solid #000;
+            margin-left: 5px;
+            vertical-align: middle;
+            position: relative;
+        }
+        .checkbox-box.checked::after {
+            content: "✔";
+            position: absolute;
+            top: -4px;
+            left: 2px;
+            font-size: 14px;
+        }
+
+        /* Eligibility Section */
+        .eligibility-section {
+            margin: 20px 40px;
+            text-align: right;
+            font-size: 16px;
+            line-height: 2.2;
+        }
+        .eligibility-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .eligibility-row label {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .eligibility-subtext {
+            display: block;
+            direction: ltr;
+            text-align: right;
+            font-size: 12px;
+            color: #444;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+        /* Interactive Inputs */
+        .big-checkbox-input {
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            accent-color: #000; /* For modern browsers */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .days-input {
+            font-family: inherit;
+            font-size: 16px;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        @media print {
+            .days-input::placeholder {
+                color: transparent;
+            }
+            /* Ensure inputs are visible */
+            input[type="text"], textarea {
+                border: none;
+                background: transparent;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 40px;
+        }
+        .footer-col {
+            text-align: center;
+        }
+        .footer-col h4 {
+            margin-bottom: 60px;
+            font-size: 16px;
+        }
+        .footer-col p {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        /* Watermark/Background Design similar to image */
+        .page-background {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            z-index: -1;
+            overflow: hidden;
+            opacity: 0.1;
+        }
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: #000;
+            border-radius: 100% 100% 0 0;
+        }
+
+        .note-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px dashed #999;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            color: #000;
+            resize: none;
+            overflow: hidden;
+            min-height: 30px;
+            margin-top: 5px;
+            outline: none;
+        }
+        @media print {
+            .note-input {
+                border-bottom: 1px dashed #ccc;
+                display: block; /* Ensure it is always displayed */
+            }
+            .note-input::placeholder {
+                color: transparent;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="no-print" style="margin-bottom: 20px; text-align: center;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #000; color: #fff; border: none; border-radius: 5px;">
-            {{ app()->getLocale() === 'ar' ? 'طباعة' : 'Print' }}
-        </button>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: #fff; cursor: pointer; border: none; border-radius: 4px;">طباعة النموذج</button>
     </div>
 
+    <!-- Header -->
     <div class="header">
-        <h1>{{ app()->getLocale() === 'ar' ? 'إحقاق علاج' : 'Treatment Eligibility' }}</h1>
-        <p>{{ date('Y-m-d H:i') }}</p>
-    </div>
-
-    <div class="info-grid">
-        <div class="info-item">
-            <span class="info-label">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</span>
-            <div class="info-value">{{ app()->getLocale() === 'ar' && $visit->patient->name_ar ? $visit->patient->name_ar : $visit->patient->name }}</div>
-            <div style="font-size: 12px; margin-top: 2px;">{{ $visit->patient->file_number }}</div>
-        </div>
-        <div class="info-item">
-            <span class="info-label">{{ app()->getLocale() === 'ar' ? 'العيادة / القسم' : 'Clinic / Department' }}</span>
-            <div class="info-value">{{ app()->getLocale() === 'ar' && $visit->department->name_ar ? $visit->department->name_ar : $visit->department->name }}</div>
-        </div>
-        <div class="info-item">
-            <span class="info-label">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment Type' }}</span>
-            <div class="info-value">
-                @if ($visit->patient->payment_type === 'cash') {{ app()->getLocale() === 'ar' ? 'نقد' : 'Cash' }}
-                @elseif ($visit->patient->payment_type === 'insurance') {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}
-                @elseif ($visit->patient->payment_type === 'charity') {{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}
-                @endif
-            </div>
-            @if ($visit->patient->insuranceCompany)
-                <div style="font-size: 12px;">{{ $visit->patient->insuranceCompany->name }}</div>
+        <div class="header-logo">
+            <!-- Placeholder for logo if needed -->
+            @if(App\Models\Setting::get('logo'))
+                <img src="{{ asset('storage/'.App\Models\Setting::get('logo')) }}" alt="Logo">
+            @else
+                <div style="width:80px; height:80px; border:1px dashed #ccc; display:flex; align-items:center; justify-content:center;">شعار</div>
             @endif
         </div>
-        <div class="info-item">
-            <span class="info-label">{{ app()->getLocale() === 'ar' ? 'الطبيب / المسؤول' : 'Doctor / Officer' }}</span>
-            <div class="info-value">{{ auth()->user()->name }}</div>
+        <div class="header-text">
+            <h2>مستشفى {{ App\Models\Setting::get('hospital_name', 'الأمير متعب بن عبد العزيز') }}</h2>
+            <p>{{ App\Models\Setting::get('hospital_name_en', 'Prince Muteb bin Abdulaziz Hospital') }}</p>
+            <p style="font-size: 11px; margin-top:2px;">{{ App\Models\Setting::get('health_cluster_name', 'تجمع الجوف الصحي') }} - {{ App\Models\Setting::get('health_cluster_name_en', 'Aljouf Health Cluster') }}</p>
+            <p style="font-weight: bold; margin-top: 5px;">إدارة تنمية الإيرادات</p>
+        </div>
+        <div style="width: 100px;"></div> <!-- Spacer for balance -->
+    </div>
+
+    <h1 class="title">نموذج أحقية علاج</h1>
+
+    <!-- Patient Info Table -->
+    <table class="info-table">
+        <tr>
+            <td colspan="2" class="label-cell">اسم المريض :</td>
+            <td colspan="4">{{ $visit->patient->name_ar ?? $visit->patient->name }}</td>
+            <td class="label-cell" style="width: 80px;">أنثى <div class="checkbox-box {{ $visit->patient->gender == 'female' ? 'checked' : '' }}"></div></td>
+            <td class="label-cell" style="width: 80px;">ذكر <div class="checkbox-box {{ $visit->patient->gender == 'male' ? 'checked' : '' }} {{ $visit->patient->gender == 'M' ? 'checked' : '' }}"></div></td>
+        </tr>
+        <tr>
+            <td colspan="2" class="label-cell">رقم الإقامة / جواز / تأشيرة :</td>
+            <td colspan="2">{{ $visit->patient->identity_value }}</td>
+            <td class="label-cell">الجنسية :</td>
+            <td colspan="3">{{ $visit->patient->country_of_origin ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td colspan="2" class="label-cell">مصدرها :</td>
+            <td colspan="6">—</td> <!-- Source not in db yet -->
+        </tr>
+        <tr>
+            <td colspan="2" class="label-cell">المهنة / صلة القرابة :</td>
+            <td colspan="2">—</td> <!-- Profession not in db yet -->
+            <td class="label-cell">اسم الكفيل</td>
+            <td colspan="3">{{ $visit->patient->sponsor_name ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td colspan="2" class="label-cell">رقم الملف :</td>
+            <td colspan="2">{{ $visit->patient->file_number }}</td>
+            <td class="label-cell">رقم الهاتف :</td>
+            <td colspan="3">{{ $visit->patient->phone }}</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="border-bottom: 0; border-left: 0;"></td>
+            <td class="label-cell">رقم السند :</td>
+            <td colspan="3">
+                {{-- If there is a paid invoice, show its receipt/reference number if available --}}
+                @php
+                    $invoice = $visit->invoices()->latest()->first();
+                    $receipt = $invoice ? $invoice->paymentReceipts()->latest()->first() : null;
+                @endphp
+                {{ $receipt ? $receipt->receipt_number : '—' }}
+            </td>
+        </tr>
+    </table>
+
+    <!-- Eligibility Checkboxes -->
+    <div class="eligibility-section">
+        <div style="text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 18px;">
+            @if(isset($targetDepartment) && $targetDepartment)
+                المكرم رئيس قسم {{ $targetDepartment->name_ar ?? $targetDepartment->name }} / {{ $targetDepartment->manager->name ?? '' }}
+            @else
+                المكرم رئيس قسم {{ $visit->department->name_ar ?? $visit->department->name }} / {{ $visit->department->manager->name ?? '' }}
+            @endif
+        </div>
+
+        <div class="eligibility-row">
+            <label>المريض له أحقية علاج.</label>
+            {{-- Fallback: if not insurance and not cash, assume eligible/charity --}}
+            <div class="big-checkbox {{ !in_array($visit->patient->payment_type, ['insurance', 'cash']) || $visit->case_type == 'emergency' ? 'checked' : '' }}"></div>
+        </div>
+        <textarea class="note-input" placeholder="ملاحظات..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+        <span class="eligibility-subtext">Patient is eligible for treatment in the hospital</span>
+
+        <div class="eligibility-row">
+            <label>المريض يحمل بطاقة تأمين ، عدد أيام التنويم ( &nbsp;&nbsp;&nbsp; ) .</label>
+            <div class="big-checkbox {{ $visit->patient->payment_type == 'insurance' ? 'checked' : '' }}"></div>
+        </div>
+        <textarea class="note-input" placeholder="ملاحظات..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+        <span class="eligibility-subtext">The patient has a health insurance card</span>
+
+        <div class="eligibility-row">
+            <label>مريض نقدي.</label>
+            <div class="big-checkbox {{ $visit->patient->payment_type == 'cash' ? 'checked' : '' }}"></div>
+        </div>
+        <textarea class="note-input" placeholder="ملاحظات..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+        <span class="eligibility-subtext">Patients treatment cash</span>
+    </div>
+
+    <!-- Footer Signatures -->
+    <div class="footer">
+        <div class="footer-col" style="text-align: right;">
+            <h4>مدير إدارة تنمية الإيرادات</h4>
+            @if (isset($manager) && $manager && $manager->signature)
+                <img src="{{ asset('storage/' . $manager->signature) }}" alt="Manager Signature" style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+                <p style="margin-top: 5px;">{{ $manager->name }}</p>
+            @else
+                <p style="margin-top: 40px;">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</p>
+            @endif
+        </div>
+
+        <div class="footer-col" style="text-align: left;">
+            <h4>الموظف المختص /</h4>
+            @if (auth()->check() && auth()->user()->signature)
+                <img src="{{ asset('storage/' . auth()->user()->signature) }}" alt="Employee Signature" style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
+            @else
+                <p style="margin-top: 40px;">التوقيع / _________________</p>
+            @endif
+            <p style="font-weight: normal; font-size: 12px; margin-top: 5px;">{{ auth()->user()->name }}</p>
         </div>
     </div>
 
-    @if (!empty($services))
-        <table>
-            @php
-                $isInsurance = $visit->patient->payment_type === 'insurance';
-            @endphp
+    <div style="position: fixed; bottom: 10px; left: 20px; font-size: 12px; color: #999;">
+        User: {{ auth()->user()->name }} | Date: {{ date('Y-m-d H:i') }}
+    </div>
+
+    {{-- Second Page: Services List (if available) --}}
+    @if(count($services) > 0)
+        <!-- Page Break -->
+        <div style="page-break-before: always; height: 0; margin: 0; padding: 0;"></div>
+
+        <!-- Header for 2nd page -->
+        <div class="header">
+            <div class="header-logo">
+                @if(App\Models\Setting::get('logo'))
+                    <img src="{{ asset('storage/'.App\Models\Setting::get('logo')) }}" alt="Logo">
+                @else
+                    <div style="width:80px; height:80px; border:1px dashed #ccc; display:flex; align-items:center; justify-content:center;">شعار</div>
+                @endif
+            </div>
+            <div class="header-text">
+                <h2>مستشفى {{ App\Models\Setting::get('hospital_name', 'الأمير متعب بن عبد العزيز') }}</h2>
+                <h3 style="font-weight: bold; margin-top: 15px; font-size: 16px;">قائمة الخدمات المطلوبة</h3>
+            </div>
+            <div style="width: 100px;"></div>
+        </div>
+
+        <table class="info-table" style="margin-top: 20px;">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>{{ app()->getLocale() === 'ar' ? 'الكود' : 'Code' }}</th>
-                    <th style="width: 40%;">{{ app()->getLocale() === 'ar' ? 'الخدمة' : 'Service' }}</th>
-                    <th>{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
-                    <th>{{ app()->getLocale() === 'ar' ? 'السعر' : 'Price' }}</th>
-                    <th>{{ app()->getLocale() === 'ar' ? 'المجموع' : 'Total' }}</th>
-                    @if ($isInsurance)
-                        <th>{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
-                    @endif
+                    <th class="label-cell" style="text-align: center; width: 50px;">#</th>
+                    <th class="label-cell" style="text-align: center;">كود الخدمة</th>
+                    <th class="label-cell" style="text-align: right;">اسم الخدمة</th>
+                    <th class="label-cell" style="text-align: center; width: 80px;">الكمية</th>
+                    <th class="label-cell" style="text-align: center;">السعر</th>
+                    <th class="label-cell" style="text-align: center;">الإجمالي</th>
                 </tr>
             </thead>
             <tbody>
-                @php
-                    $grandTotal = 0;
-                    $insuranceTotal = 0;
-                @endphp
-                @foreach ($services as $index => $s)
+                @php $total = 0; @endphp
+                @foreach($services as $index => $s)
                     @php
-                        $qty = floatval($s['qty'] ?? 1);
-                        $price = floatval($s['unit_price'] ?? 0);
-                        $total = floatval($s['total'] ?? ($qty * $price));
-                        $grandTotal += $total;
-
-                        $covType = $s['insurance_coverage_type'] ?? '';
-                        $covVal = floatval($s['insurance_coverage_value'] ?? 0);
-                        $covered = 0;
-
-                        if ($isInsurance && $covType && $total > 0) {
-                            if ($covType === 'percentage') {
-                                $covered = $total * min(100, max(0, $covVal)) / 100;
-                            } elseif ($covType === 'fixed') {
-                                $covered = min($covVal, $total);
-                            }
-                            $insuranceTotal += $covered;
-                        }
+                        $qty = $s['quantity'] ?? 1;
+                        $price = $s['price'] ?? 0;
+                        $subtotal = $qty * $price;
+                        $total += $subtotal;
                     @endphp
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $s['code'] ?? '' }}</td>
-                        <td style="text-align: {{ app()->getLocale() === 'ar' ? 'right' : 'left' }};">{{ $s['name'] ?? '' }}</td>
-                        <td>{{ $qty }}</td>
-                        <td>{{ number_format($price, 2) }}</td>
-                        <td>{{ number_format($total, 2) }}</td>
-                        @if ($isInsurance)
-                            <td>
-                                @if ($covType === 'percentage')
-                                    {{ $covVal }}%
-                                @elseif ($covType === 'fixed')
-                                    {{ number_format($covVal, 2) }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                        @endif
+                        <td style="text-align: center;">{{ $index + 1 }}</td>
+                        <td style="text-align: center;">{{ $s['code'] ?? '-' }}</td>
+                        <td>{{ $s['name'] ?? '-' }}</td>
+                        <td style="text-align: center;">{{ $qty }}</td>
+                        <td style="text-align: center;">{{ number_format($price, 2) }}</td>
+                        <td style="text-align: center;">{{ number_format($subtotal, 2) }}</td>
                     </tr>
                 @endforeach
-                <tr class="total-row">
-                    <td colspan="{{ $isInsurance ? 5 : 5 }}" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px;">
-                        {{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Grand Total:' }}
-                    </td>
-                    <td colspan="{{ $isInsurance ? 2 : 1 }}">{{ number_format($grandTotal, 2) }}</td>
+                <tr style="font-weight: bold; background-color: #f0f0f0;">
+                    <td colspan="5" style="text-align: left; padding-left: 15px;">الإجمالي الكلي</td>
+                    <td style="text-align: center;">{{ number_format($total, 2) }}</td>
                 </tr>
-                @if ($isInsurance)
-                @php $patientShare = max(0, $grandTotal - $insuranceTotal); @endphp
-                <tr class="total-row" style="background-color: #f0fff4;">
-                    <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px; color: #065f46;">
-                        {{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance Share:' }}
-                    </td>
-                    <td colspan="2" style="color: #065f46;">{{ number_format($insuranceTotal, 2) }}</td>
-                </tr>
-                <tr class="total-row" style="background-color: #fffbeb;">
-                    <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px; color: #92400e;">
-                        {{ app()->getLocale() === 'ar' ? 'تحمّل المريض:' : 'Patient Share:' }}
-                    </td>
-                    <td colspan="2" style="color: #92400e;">{{ number_format($patientShare, 2) }}</td>
-                </tr>
-                @endif
             </tbody>
         </table>
-    @else
-        <div style="text-align: center; border: 1px dashed #ccc; padding: 20px; color: #777; margin-bottom: 30px;">
-            {{ app()->getLocale() === 'ar' ? 'لا توجد خدمات محددة لهذا الإحقاق.' : 'No services specified for this eligibility.' }}
-        </div>
     @endif
 
-
-    {{-- Electronic Signatures Section --}}
-    <div class="footer" style="margin-top: 40px; display: flex; justify-content: space-around; gap: 30px;">
-        {{-- Employee Signature --}}
-        <div class="sig-box" style="flex: 1; text-align: center;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
-                {{ app()->getLocale() === 'ar' ? 'توقيع الموظف' : 'Employee Signature' }}
-            </div>
-            @if (auth()->check() && auth()->user()->signature)
-                <img src="{{ asset('storage/' . auth()->user()->signature) }}"
-                     alt="Employee Signature"
-                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
-            @else
-                <div style="border-bottom: 1px solid #000; width: 150px; height: 50px; margin: 10px auto;"></div>
-            @endif
-            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
-                {{ auth()->check() ? auth()->user()->name : '___________' }}
-            </div>
-        </div>
-
-        {{-- Manager Signature --}}
-        <div class="sig-box" style="flex: 1; text-align: center;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
-                {{ app()->getLocale() === 'ar' ? 'توقيع المدير' : 'Manager Signature' }}
-            </div>
-            @if (isset($manager) && $manager && $manager->signature)
-                <img src="{{ asset('storage/' . $manager->signature) }}"
-                     alt="Manager Signature"
-                     style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
-            @else
-                <div style="border-bottom: 1px solid #000; width: 150px; height: 50px; margin: 10px auto;"></div>
-            @endif
-            <div style="font-size: 0.85rem; color: #475569; margin-top: 5px;">
-                {{ isset($manager) && $manager ? $manager->name : '___________' }}
-            </div>
-        </div>
-
-        {{-- Stamp --}}
-        <div class="sig-box" style="flex: 1; text-align: center;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
-                {{ app()->getLocale() === 'ar' ? 'الختم' : 'Stamp' }}
-            </div>
-            <div style="border-bottom: 1px solid #000; width: 150px; height: 50px; margin: 10px auto;"></div>
-        </div>
-    </div>
 </body>
 </html>

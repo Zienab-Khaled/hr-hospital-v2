@@ -55,7 +55,7 @@
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'إنشاء زيارة' : 'Create Visit' }}</span>
                 </a> --}}
-                <a href="{{ route('shift-handovers.index') }}"
+                <!-- <a href="{{ route('shift-handovers.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('shift-handovers.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
                     <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
                             d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'تسليم الشيفت' : 'Hand Over Shift' }}</span>
-                </a>
+                </a> -->
                 @endif
 
                 <a href="{{ route('patients.section.charity') }}"
@@ -120,7 +120,7 @@
                     </svg>
                     <span>{{ __('Collection') }}</span>
                 </a>
-
+<!--
                 <a href="{{ route('patients.departments-list') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('patients.by-department*') || request()->routeIs('patients.departments-list') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
@@ -129,7 +129,7 @@
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'حسب القسم' : 'By Department' }}</span>
-                </a>
+                </a> -->
             </div>
         @endif
 
@@ -173,15 +173,15 @@
         @endif
 
         {{-- Claims --}}
-        @if ($user->can('claims.view') || $isManager)
-            <a href="{{ route('claims.index') }}"
+        @if ($user->can('invoices.view') || $isManager)
+            <a href="{{ route('charity-claims.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-               {{ request()->routeIs('claims.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+               {{ request()->routeIs('charity-claims.*') ? 'bg-red-600' : 'text-slate-700 hover:bg-slate-100' }}">
                 <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <span>{{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}</span>
+                <span>{{ app()->getLocale() === 'ar' ? 'المطالبات ' : ' Claims' }}</span>
             </a>
         @endif
 

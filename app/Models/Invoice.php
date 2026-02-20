@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
@@ -63,6 +64,11 @@ class Invoice extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
+    public function paymentReceipts(): HasManyThrough
+    {
+        return $this->hasManyThrough(PaymentReceipt::class, Payment::class);
+    }
+
     /** تسمية الحالة للعرض (عربي/إنجليزي) */
     public function getStatusLabelAttribute(): string
     {
@@ -86,5 +92,45 @@ class Invoice extends Model
         ];
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
         return $labels[$locale][$this->status] ?? $this->status ?? '—';
+    }
+
+    // Service Tracking Methods
+    public function completedItems()
+    {
+        return $this->items()->where('status', 'completed');
+    }
+
+    public function pendingItems()
+    {
+        return $this->items()->where('status', 'pending');
+    }
+
+    public function isFullyCompleted(): bool
+    {
+        return $this->items()->where('status', '!=', 'completed')->count() === 0;
+    }
+
+    public function completionPercentage(): float
+    {
+        $total = $this->items()->count();
+        if ($total === 0) return 0;
+        $completed = $this->completedItems()->count();
+        return round(($completed / $total) * 100, 1);
+    }
+
+    // Charity Claim Helpers
+    public function charityClaim()
+    {
+        return $this->charityClaims()->latest()->first();
+    }
+
+    public function hasCharityClaim(): bool
+    {
+        return $this->charityClaims()->exists();
+    }
+
+    public function canCreateCharityClaim(): bool
+    {
+        return $this->patient && $this->patient->payment_type === 'charity' && !$this->hasCharityClaim();
     }
 }

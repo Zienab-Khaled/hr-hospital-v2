@@ -12,6 +12,7 @@ class InvoiceItem extends Model
     protected $fillable = [
         'invoice_id', 'service_id', 'quantity', 'unit_price', 'total_price', 'description',
         'insurance_coverage_type', 'insurance_coverage_value',
+        'status', 'completed_at', 'completed_by', 'execution_date',
     ];
 
     protected function casts(): array
@@ -20,6 +21,8 @@ class InvoiceItem extends Model
             'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
             'insurance_coverage_value' => 'decimal:2',
+            'completed_at' => 'datetime',
+            'execution_date' => 'date',
         ];
     }
 
@@ -52,5 +55,47 @@ class InvoiceItem extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function completedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by');
+    }
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    // Helper Methods
+    public function canBeCompleted(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function markAsCompleted($executionDate = null): void
+    {
+        $this->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+            'completed_by' => auth()->user()?->id,
+            'execution_date' => $executionDate ?? today(),
+        ]);
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
     }
 }

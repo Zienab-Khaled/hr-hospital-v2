@@ -19,7 +19,8 @@
             <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الاسم' : 'Name' }}</th>
-                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الكود' : 'Code' }}</th>
+
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'مدير القسم' : 'Manager' }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'عدد الموظفين' : 'Employees' }}</th>
                     @can('departments.manage')
                         <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الإجراءات' : 'Actions' }}</th>
@@ -30,7 +31,16 @@
                 @foreach ($departments as $d)
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-3">{{ app()->getLocale() === 'ar' ? ($d->name_ar ?: $d->name) : $d->name }}</td>
-                        <td class="p-3">{{ $d->code }}</td>
+
+                        <td class="p-3">
+                            @if($d->manager)
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-slate-800">{{ $d->manager->name }}</span>
+                                </div>
+                            @else
+                                <span class="text-slate-400">—</span>
+                            @endif
+                        </td>
                         <td class="p-3">{{ $d->users_count }}</td>
                         @can('departments.manage')
                             <td class="p-3">
