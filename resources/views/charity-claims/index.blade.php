@@ -8,6 +8,12 @@
         <h2 class="text-2xl font-bold text-slate-800">
             📋 {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
         </h2>
+        @if($activeTab === 'insurance')
+            <a href="{{ route('insurance-claims.create') }}"
+               class="bg-red-600 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 shadow-md transition-all flex items-center gap-2">
+                ➕ {{ app()->getLocale() === 'ar' ? 'إنشاء مطالبة تأمين' : 'Create Insurance Claim' }}
+            </a>
+        @endif
     </div>
 
     {{-- Tabs --}}
@@ -129,8 +135,21 @@
                                 <td class="p-3">{{ $claim->insuranceCompany?->name_ar ?? $claim->insuranceCompany?->name ?? '—' }}</td>
                                 <td class="p-3">{{ $claim->sent_date?->format('Y-m-d') ?? '—' }}</td>
                                 <td class="p-3 font-medium">{{ $claim->approved_amount ? number_format((float)$claim->approved_amount, 2) : '—' }}</td>
-                                <td class="p-3"><span class="inline-block px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ $claim->status ?? '—' }}</span></td>
-                                <td class="p-3"><a href="{{ route('invoices.show', $claim->invoice) }}" class="inline-flex items-center gap-1 bg-slate-600 text-xs px-3 py-1.5 rounded-lg hover:bg-slate-700 font-semibold">{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}</a></td>
+                                <td class="p-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ $claim->status ?? '—' }}</span>
+                                        @if($claim->getFirstMediaUrl('arqos_file'))
+                                            <a href="{{ $claim->getFirstMediaUrl('arqos_file') }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'تحميل ملف اركوس' : 'Download Arqos File' }}" class="text-red-500 hover:text-red-700">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ route('invoices.show', $claim->invoice) }}" class="inline-flex items-center gap-1 bg-slate-600 text-white text-[10px] px-2 py-1 rounded hover:bg-slate-700 font-semibold">{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}</a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="7" class="p-8 text-center text-slate-500">{{ app()->getLocale() === 'ar' ? 'لا توجد مطالبات تأمين' : 'No insurance claims yet' }}</td></tr>

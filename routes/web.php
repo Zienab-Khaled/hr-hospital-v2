@@ -116,6 +116,13 @@ Route::middleware('auth')->group(function () {
     Route::get('charity-claims/{charityClaim}', [App\Http\Controllers\CharityClaimController::class, 'show'])->name('charity-claims.show');
     Route::post('charity-claims/{charityClaim}/send', [App\Http\Controllers\CharityClaimController::class, 'send'])->name('charity-claims.send');
     Route::post('charity-claims/{charityClaim}/update-status', [App\Http\Controllers\CharityClaimController::class, 'updateStatus'])->name('charity-claims.update-status');
+
+    // Insurance Claims
+    Route::get('insurance-claims/create', [App\Http\Controllers\InsuranceClaimController::class, 'create'])->name('insurance-claims.create');
+    Route::post('insurance-claims', [App\Http\Controllers\InsuranceClaimController::class, 'store'])->name('insurance-claims.store');
+    Route::get('insurance-claims/patients-search', [App\Http\Controllers\InsuranceClaimController::class, 'searchPatients'])->name('insurance-claims.patients-search');
+    Route::get('insurance-claims/get-invoices/{patient}', [App\Http\Controllers\InsuranceClaimController::class, 'getInvoices'])->name('insurance-claims.get-invoices');
+    Route::get('insurance-claims/get-items/{invoice}', [App\Http\Controllers\InsuranceClaimController::class, 'getItems'])->name('insurance-claims.get-items');
     Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');

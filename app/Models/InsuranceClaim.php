@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class InsuranceClaim extends Model
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class InsuranceClaim extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use SoftDeletes, InteractsWithMedia;
+
     protected $fillable = [
         'invoice_id', 'insurance_company_id', 'sent_date', 'sent_by', 'status',
         'approved_amount', 'notes', 'company_response_notes',
@@ -35,5 +39,11 @@ class InsuranceClaim extends Model
     public function sentByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('arqos_file')
+            ->singleFile();
     }
 }
