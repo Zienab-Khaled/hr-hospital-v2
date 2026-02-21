@@ -639,4 +639,49 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoices.index')->with('success', __('Invoice deleted successfully.'));
     }
+
+    public function uploadSignedDocument(Request $request, Invoice $invoice)
+    {
+        $this->authorize('invoices.edit');
+
+        $request->validate([
+            'document_type' => 'required|string|in:signed_commitment,signed_non_commitment,signed_other',
+            'signed_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // 10MB
+        ]);
+
+        $collection = $request->input('document_type');
+        $file = $request->file('signed_file');
+
+        try {
+            // If it's single file collection, Spatie will handle replacing the old one
+            $media = $invoice->addMedia($file)
+                ->toMediaCollection($collection);
+
+            ActivityLogger::log('Signed Document Uploaded', 'Invoice', $invoice->id, 'Signed document uploaded to collection: ' . $collection, null, [
+                'file_name' => $media->file_name,
+                'collection' => $collection,
+                'mime_type' => $media->mime_type,
+            ]);
+
+            return back()->with('success', app()->getLocale() === 'ar' ? 'تم رفع المستند بنجاح.' : 'Document uploaded successfully.');
+        } catch (\Exception $e) {
+            Log::error('Signed document upload failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل رفع المستند. حاول مرة أخرى.' : 'Failed to upload document. Please try again.']);
+        }
+    }
+
+    public function deleteSignedDocument(Invoice $invoice, $mediaId)
+    {
+        $this->authorize('invoices.edit');
+
+        $media = $invoice->media()->findOrFail($mediaId);
+        $media->delete();
+
+        ActivityLogger::log('Signed Document Deleted', 'Invoice', $invoice->id, 'Signed document deleted: ' . $media->file_name, [
+            'file_name' => $media->file_name,
+            'collection' => $media->collection_name,
+        ], null);
+
+        return back()->with('success', app()->getLocale() === 'ar' ? 'تم حذف المستند بنجاح.' : 'Document deleted successfully.');
+    }
 }

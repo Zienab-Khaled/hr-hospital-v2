@@ -449,6 +449,91 @@
                 @endif
             </div>
         </div>
+
+        {{-- Signed Documents Section --}}
+        <div class="mt-6 bg-white rounded-lg shadow-lg overflow-hidden border-2 border-emerald-200">
+            <div class="p-4 bg-emerald-50 border-b border-emerald-200 flex justify-between items-center">
+                <h3 class="font-bold text-emerald-900">
+                    {{ app()->getLocale() === 'ar' ? '📁 المستندات الموقعة (بعد توقيع المريض)' : '📁 Signed Documents (Post-Signature)' }}
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {{-- Upload Form --}}
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-700 mb-4">{{ app()->getLocale() === 'ar' ? 'رفع مستند جديد:' : 'Upload new document:' }}</h4>
+                        <form action="{{ route('invoices.upload-signed-document', $invoice) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'نوع المستند:' : 'Document Type:' }}</label>
+                                <select name="document_type" required class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500">
+                                    <option value="signed_commitment">{{ app()->getLocale() === 'ar' ? 'تعهد موقع' : 'Signed Commitment' }}</option>
+                                    <option value="signed_non_commitment">{{ app()->getLocale() === 'ar' ? 'إقرار عدم توقيع موقع' : 'Signed Non-commitment' }}</option>
+                                    <option value="signed_other">{{ app()->getLocale() === 'ar' ? 'مستند آخر موقع' : 'Other Signed Document' }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الملف (PDF أو صورة):' : 'File (PDF or Image):' }}</label>
+                                <input type="file" name="signed_file" required accept=".pdf,image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 text-slate-50 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow transition-colors">
+                                {{ app()->getLocale() === 'ar' ? '⬆️ رفع المستند' : '⬆️ Upload Document' }}
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- List of Documents --}}
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-bold text-slate-700 mb-4">{{ app()->getLocale() === 'ar' ? 'المستندات المرفوعة حالياً:' : 'Currently uploaded documents:' }}</h4>
+                        @php
+                            $collections = [
+                                'signed_commitment' => ['ar' => 'تعهد موقع', 'en' => 'Signed Commitment'],
+                                'signed_non_commitment' => ['ar' => 'إقرار عدم توقيع موقع', 'en' => 'Signed Non-commitment'],
+                                'signed_other' => ['ar' => 'مستند آخر موقع', 'en' => 'Other Signed Document']
+                            ];
+                        @endphp
+
+                        @php $hasDocs = false; @endphp
+                        @foreach($collections as $col => $labels)
+                            @foreach($invoice->getMedia($col) as $media)
+                                @php $hasDocs = true; @endphp
+                                <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg group">
+                                    <div class="flex items-center gap-3">
+                                        <div class="bg-emerald-100 text-emerald-700 p-2 rounded">
+                                            @if(str_contains($media->mime_type, 'pdf'))
+                                                📄
+                                            @else
+                                                🖼️
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? $labels['ar'] : $labels['en'] }}</p>
+                                            <a href="{{ $media->getUrl() }}" target="_blank" class="text-[10px] text-blue-600 hover:underline truncate max-w-[150px] inline-block">
+                                                {{ $media->file_name }}
+                                            </a>
+                                            <span class="text-[10px] text-slate-400 block">{{ $media->created_at->format('Y-m-d H:i') }}</span>
+                                        </div>
+                                    </div>
+                                    <form action="{{ route('invoices.delete-signed-document', [$invoice, $media]) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete?' }}')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            🗑️
+                                        </button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        @endforeach
+
+                        @if(!$hasDocs)
+                            <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
+                                <p class="text-sm text-slate-400 italic">{{ app()->getLocale() === 'ar' ? 'لا توجد مستندات موقعة مرفوعة حالياً' : 'No signed documents uploaded yet' }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Payment Recording Modal --}}

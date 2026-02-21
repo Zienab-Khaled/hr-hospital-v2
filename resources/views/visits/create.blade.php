@@ -340,16 +340,6 @@
                     @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
                     <div class="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-gradient-to-br from-blue-50 to-slate-50">
                         <h3 class="text-xl font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility' }}</h3>
-                        <div class="mb-4 p-3 bg-blue-100 border-s-4 border-blue-500 text-blue-800 text-sm rounded">
-                            <p class="font-bold mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'ℹ️ توضيح هام:' : 'ℹ️ Important Note:' }}
-                            </p>
-                            <p>
-                                {{ app()->getLocale() === 'ar'
-                                    ? 'هذا القسم مخصص للاستعلام وطلب موافقة العلاج فقط. طباعة "أحقية العلاج" لا تسجل إيرادات مالية في الحسابات. لتسجيل الإيراد المالي، يجب تحويل هذه الخدمات إلى فاتورة رسمية.'
-                                    : 'This section is for inquiry and treatment approval requests only. Printing "Treatment Eligibility" does NOT record financial revenue. To record revenue, these services must be converted into an official invoice.' }}
-                            </p>
-                        </div>
                         <p class="text-slate-600 text-sm mb-4">{{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو الكود وأضف الخدمات. يمكنك اختيار قسم معين أو البحث في كل الخدمات.' : 'Search by name or code and add services. You can select a specific department or search all services.' }}</p>
 
                         <div class="mb-4">

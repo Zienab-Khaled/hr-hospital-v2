@@ -25,7 +25,7 @@
             @page { margin: 1cm; size: A4; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .sig-canvas-wrap { display: none !important; }
-            .sig-preview { display: block !important; }
+            .sig-preview { display: block; }
         }
 
         /* ====== PRINT BUTTON ====== */

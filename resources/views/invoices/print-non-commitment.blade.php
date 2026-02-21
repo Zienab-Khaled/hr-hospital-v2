@@ -22,7 +22,7 @@
         @media print {
             body { padding: 0; margin: 0; }
             .sig-canvas-wrap { display: none !important; }
-            .sig-preview { display: block !important; }
+            .sig-preview { display: block; }
             .no-print { display: none !important; }
             @page { margin: 1cm; size: A4; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }

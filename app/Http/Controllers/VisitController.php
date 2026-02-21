@@ -8,11 +8,17 @@ use App\Models\Service;
 use App\Models\Shift;
 use App\Models\Visit;
 use App\Models\User;
+use App\Models\Invoice;
+use App\Models\Approval;
+use App\Mail\ApprovalRequestMail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Helpers\ActivityLogger;
 use App\Traits\HasIndexFilters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
-use App\Helpers\ActivityLogger;
 class VisitController extends Controller
 {
     use HasIndexFilters;
@@ -210,6 +216,80 @@ class VisitController extends Controller
             'printed_eligibility_at' => now(),
             'last_eligibility_services' => $services
         ]);
+
+        // Auto-create Invoice if services are provided
+        if (!empty($services)) {
+            DB::beginTransaction();
+            try {
+                $patient = $visit->patient;
+                $totalAmount = 0;
+                foreach ($services as $s) {
+                    $totalAmount += (float) ($s['total'] ?? 0);
+                }
+
+                $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+
+                $invoice = Invoice::create([
+                    'patient_id' => $patient->id,
+                    'visit_id' => $visit->id,
+                    'invoice_number' => $invoiceNumber,
+                    'invoice_date' => now(),
+                    'total_amount' => $totalAmount,
+                    'paid_amount' => 0,
+                    'remaining_amount' => $totalAmount,
+                    'deposit_amount' => 0,
+                    'status' => 'pending',
+                    'notes' => 'Auto-created from Eligibility Print',
+                ]);
+
+                foreach ($services as $s) {
+                    $invoice->items()->create([
+                        'service_id' => $s['service_id'] ?? null,
+                        'quantity' => (int) round((float) ($s['qty'] ?? $s['quantity'] ?? 1)),
+                        'unit_price' => (float) ($s['unit_price'] ?? $s['price'] ?? 0),
+                        'total_price' => (float) ($s['total'] ?? $s['total_price'] ?? 0),
+                        'insurance_coverage_type' => isset($s['insurance_coverage_type']) && in_array($s['insurance_coverage_type'], ['percentage', 'fixed']) ? $s['insurance_coverage_type'] : null,
+                        'insurance_coverage_value' => isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null,
+                        'description' => $s['name'] ?? null,
+                    ]);
+                }
+
+                // Approval request
+                if (in_array($patient->payment_type, ['insurance', 'charity'])) {
+                    $approval = Approval::create([
+                        'invoice_id' => $invoice->id,
+                        'patient_id' => $patient->id,
+                        'approval_type' => $patient->payment_type,
+                        'insurance_company_id' => $patient->insurance_company_id,
+                        'charity_entity_id' => $patient->charity_entity_id,
+                        'requested_amount' => $totalAmount,
+                        'status' => 'pending',
+                        'requested_by' => auth()->user()?->getKey(),
+                    ]);
+
+                    $recipientEmail = null;
+                    if ($patient->payment_type === 'insurance' && $patient->insuranceCompany) {
+                        $recipientEmail = $patient->insuranceCompany->email;
+                    } elseif ($patient->payment_type === 'charity' && $patient->charityEntity) {
+                        $recipientEmail = $patient->charityEntity->email;
+                    }
+
+                    if ($recipientEmail) {
+                        try {
+                            Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
+                        } catch (\Exception $e) {
+                            Log::error('Failed to send auto-approval email: ' . $e->getMessage());
+                        }
+                    }
+                }
+
+                DB::commit();
+                ActivityLogger::log('Invoice Auto-Created', 'Invoice', $invoice->id, 'Invoice created automatically from Eligibility Print for patient: ' . ($patient->name_ar ?? $patient->name), null, $invoice->toArray());
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Auto-invoice creation failed: ' . $e->getMessage());
+            }
+        }
 
         // Log the action
         ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
