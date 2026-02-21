@@ -78,13 +78,6 @@ class VisitController extends Controller
         }
 
         $eligibilityDepartments = Department::where('is_active', true)
-            ->where(function ($q) {
-                $q->where('name_ar', 'LIKE', '%مختبر%')
-                  ->orWhere('name_ar', 'LIKE', '%أشعة%')
-                  ->orWhere('name_ar', 'LIKE', '%تنويم%')
-                  ->orWhere('name_ar', 'LIKE', '%عيادات%')
-                  ->orWhere('name_ar', 'LIKE', '%طوار%');
-            })
             ->orderBy('name')
             ->get();
 

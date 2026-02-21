@@ -550,22 +550,30 @@
                 if (resultsDiv) { resultsDiv.innerHTML = ''; resultsDiv.classList.add('hidden'); }
             }
             function addRow(service) {
-                var qty = 1;
-                // Fix: use default_price from API response
-                var unitPrice = parseFloat(service.default_price) || 0;
-                var total = qty * unitPrice;
-                var row = {
-                    id: service.id,
-                    code: service.code || '',
-                    name: service.name || '',
-                    name_ar: service.name_ar || '',
-                    qty: qty,
-                    unit_price: unitPrice,
-                    total: total,
-                    insurance_coverage_type: '',
-                    insurance_coverage_value: 0
-                };
-                rows.push(row);
+                // Check if service already exists in rows
+                var existingIndex = rows.findIndex(function(r) { return r.id == service.id; });
+
+                if (existingIndex !== -1) {
+                    // Increment quantity if found
+                    rows[existingIndex].qty += 1;
+                    rows[existingIndex].total = rows[existingIndex].qty * rows[existingIndex].unit_price;
+                } else {
+                    var qty = 1;
+                    var unitPrice = parseFloat(service.default_price) || 0;
+                    var total = qty * unitPrice;
+                    var row = {
+                        id: service.id,
+                        code: service.code || '',
+                        name: service.name || '',
+                        name_ar: service.name_ar || '',
+                        qty: qty,
+                        unit_price: unitPrice,
+                        total: total,
+                        insurance_coverage_type: '',
+                        insurance_coverage_value: 0
+                    };
+                    rows.push(row);
+                }
                 renderRows();
             }
             function removeRow(index) {
@@ -680,7 +688,12 @@
                 var deptId = deptSelect.value;
                 var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
 
-                // Allow searching without department selection (search all services)
+                // Require at least 2 characters to search
+                if (q.length < 2) {
+                    clearResults();
+                    return;
+                }
+
                 var url = searchUrl + '?';
                 if (deptId) {
                     url += 'department_id=' + encodeURIComponent(deptId);
@@ -721,7 +734,13 @@
                     });
                 }).catch(function() { resultsDiv.innerHTML = '<div class="p-3 text-red-600 text-sm">' + (document.documentElement.lang === 'ar' ? 'خطأ في البحث' : 'Search error') + '</div>'; resultsDiv.classList.remove('hidden'); });
             }
-            deptSelect.addEventListener('change', function() { clearResults(); doEligibilitySearch(); });
+            deptSelect.addEventListener('change', function() {
+                clearResults();
+                var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+                if (q.length >= 2) {
+                    doEligibilitySearch();
+                }
+            });
             if (searchBtn) searchBtn.addEventListener('click', doEligibilitySearch);
 
             // Live search: trigger automatically while typing (debounced 300ms)
