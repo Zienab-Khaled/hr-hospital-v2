@@ -45,10 +45,6 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
-    public function getAuthIdentifierName(): string
-    {
-        return 'username';
-    }
 
     /**
      * Get the manager user for electronic signatures on print documents

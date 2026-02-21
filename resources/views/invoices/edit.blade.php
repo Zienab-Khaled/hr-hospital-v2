@@ -54,8 +54,8 @@
                     </div>
                 </div>
 
-                {{-- Invoice Date & Notes --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Invoice Date & Status & Notes --}}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
                             {{ app()->getLocale() === 'ar' ? 'تاريخ الفاتورة' : 'Invoice Date' }} *
@@ -63,6 +63,29 @@
                         <input type="date" name="invoice_date"
                                value="{{ old('invoice_date', $invoice->invoice_date?->format('Y-m-d')) }}"
                                required class="{{ $inputClass }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            {{ app()->getLocale() === 'ar' ? 'حالة الفاتورة' : 'Invoice Status' }} *
+                        </label>
+                        <select name="status" required class="{{ $inputClass }}">
+                            @php
+                                $statuses = [
+                                    'pending' => ['ar' => 'قيد الانتظار', 'en' => 'Pending'],
+                                    'sent_to_insurance' => ['ar' => 'مرسل لشركة التأمين', 'en' => 'Sent to insurance'],
+                                    'sent_to_charity' => ['ar' => 'مرسل للجمعية', 'en' => 'Sent to charity'],
+                                    'approved' => ['ar' => 'معتمد', 'en' => 'Approved'],
+                                    'rejected' => ['ar' => 'مرفوض', 'en' => 'Rejected'],
+                                    'paid' => ['ar' => 'مدفوعة', 'en' => 'Paid'],
+                                ];
+                                $currentLocale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+                            @endphp
+                            @foreach($statuses as $val => $labels)
+                                <option value="{{ $val }}" {{ old('status', $invoice->status) === $val ? 'selected' : '' }}>
+                                    {{ $labels[$currentLocale] }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">

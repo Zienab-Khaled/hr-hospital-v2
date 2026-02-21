@@ -596,6 +596,7 @@ class InvoiceController extends Controller
 
         $validated = $request->validate([
             'invoice_date' => 'required|date',
+            'status' => 'required|string|in:pending,sent_to_insurance,sent_to_charity,approved,rejected,paid',
             'notes' => 'nullable|string',
             'services' => 'required|array|min:1',
             'services.*.service_id' => 'required|exists:services,id',
@@ -613,6 +614,7 @@ class InvoiceController extends Controller
             // Update invoice
             $invoice->update([
                 'invoice_date' => $validated['invoice_date'],
+                'status' => $validated['status'],
                 'total_amount' => $totalAmount,
                 'remaining_amount' => $totalAmount - $invoice->paid_amount,
                 'notes' => $validated['notes'],
