@@ -436,19 +436,36 @@ class VisitController extends Controller
 
     public function update(Request $request, Visit $visit)
     {
-        $this->authorize('visits.delete');
+        // Require invoices.create permission to update visit status/notes from create page
+        // Or visits.delete for general edit
+        // We'll allow invoices.create since it's the main role using this.
+        if (!auth()->user()->can('invoices.create') && !auth()->user()->can('visits.delete')) {
+            abort(403);
+        }
 
         $valid = $request->validate([
-            'department_id' => 'required|exists:departments,id',
-            'shift_id' => 'required|exists:shifts,id',
-            'visit_date' => 'required|date',
+            'department_id' => 'nullable|exists:departments,id',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'visit_date' => 'nullable|date',
+            'case_type' => 'required|string|in:clinics,emergency',
             'notes' => 'nullable|string',
         ]);
 
         $oldValues = $visit->getOriginal();
-        $visit->update($valid);
+
+        // Filter out null values to prevent overwriting with null if only partial update
+        $updateData = array_filter($valid, fn($v) => !is_null($v));
+        $visit->update($updateData);
 
         ActivityLogger::log('Visit Updated', 'Visit', $visit->id, 'Visit details updated', $oldValues, $visit->toArray());
+
+        if ($request->boolean('redirect_to_create')) {
+            return redirect()->route('visits.create', [
+                'patient_id' => $visit->patient_id,
+                'visit_id' => $visit->id,
+                'registered' => 1
+            ])->with('success', app()->getLocale() === 'ar' ? 'تم تحديث بيانات الزيارة.' : 'Visit data updated.');
+        }
 
         return redirect()->route('visits.index')->with('success', app()->getLocale() === 'ar' ? 'تم تحديث الزيارة بنجاح.' : 'Visit updated successfully.');
     }

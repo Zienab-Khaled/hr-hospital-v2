@@ -268,6 +268,40 @@
 
                     {{-- Actions Buttons --}}
 
+                        {{-- Visit Details Section (Always visible) --}}
+                        <div class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                <span>📋</span>
+                                {{ app()->getLocale() === 'ar' ? 'بيانات الزيارة والمتابعة' : 'Visit Details & Follow-up' }}
+                            </h3>
+                            <form action="{{ route('visits.update', $visitForPrint ?? $visit) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="redirect_to_create" value="1">
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'حالة الزيارة (نوع الحالة)' : 'Visit Case Type' }}</label>
+                                        <select name="case_type" class="{{ $inputClass }}">
+                                            <option value="clinics" {{ ($visitForPrint->case_type ?? '') === 'clinics' ? 'selected' : '' }}>
+                                                {{ app()->getLocale() === 'ar' ? 'عيادات' : 'Clinics' }}
+                                            </option>
+                                            <option value="emergency" {{ ($visitForPrint->case_type ?? '') === 'emergency' ? 'selected' : '' }}>
+                                                {{ app()->getLocale() === 'ar' ? 'طوارئ' : 'Emergency' }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'ملاحظات المتابعة' : 'Follow-up Notes' }}</label>
+                                        <textarea name="notes" rows="1" class="{{ $inputClass }}">{{ $visitForPrint->notes ?? '' }}</textarea>
+                                    </div>
+                                </div>
+                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
+                                    {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
+                                </button>
+                            </form>
+                        </div>
+
                         <div id="visit_actions_container" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-slate-50">
                             <h3 class="text-lg font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
                             <div class="flex flex-wrap gap-3">
