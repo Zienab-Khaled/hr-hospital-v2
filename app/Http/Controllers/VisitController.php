@@ -205,8 +205,11 @@ class VisitController extends Controller
             $targetDepartment = Department::with('manager')->find($request->input('department_id'));
         }
 
-        // Update tracking flag
-        $visit->update(['printed_eligibility_at' => now()]);
+        // Update tracking flag and save services
+        $visit->update([
+            'printed_eligibility_at' => now(),
+            'last_eligibility_services' => $services
+        ]);
 
         // Log the action
         ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
@@ -237,14 +240,18 @@ class VisitController extends Controller
         }
 
         $manager = User::getManagerForSignature();
+        $printTitle = $request->get('print_title', 'price_quotation');
 
-        // Update tracking flag
-        $visit->update(['printed_price_inquiry_at' => now()]);
+        // Update tracking flag and save services
+        $visit->update([
+            'printed_price_inquiry_at' => now(),
+            'last_price_inquiry_services' => $services
+        ]);
 
         // Log the action
-        ActivityLogger::log('Print Price Inquiry', 'Visit', $visit->id, 'Price inquiry form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
+        ActivityLogger::log('Print Price Inquiry', 'Visit', $visit->id, 'Price inquiry form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, ['title' => $printTitle]);
 
-        return view('visits.price-inquiry-print', compact('visit', 'services', 'manager'));
+        return view('visits.price-inquiry-print', compact('visit', 'services', 'manager', 'printTitle'));
     }
 
     /**

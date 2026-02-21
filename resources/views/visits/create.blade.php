@@ -273,28 +273,28 @@
                             <h3 class="text-lg font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
                             <div class="flex flex-wrap gap-3">
                                 <a href="{{ route('patients.show', $patient) }}" target="_blank"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-slate-400 bg-slate-100 text-slate-800 font-medium hover:bg-slate-200 text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'ملف المريض' : 'Patient Profile' }}
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-600  font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
+                                    {{ app()->getLocale() === 'ar' ? '👤 ملف المريض' : '👤 Patient Profile' }}
                                 </a>
 
                                 @if (!$isTransferred)
                                 <button type="button" id="btn_show_transfer"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium hover:bg-purple-100 text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'تحويل إلى قسم آخر' : 'Transfer to another department' }}
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
+                                    {{ app()->getLocale() === 'ar' ? '🔄 تحويل إلى قسم آخر' : '🔄 Transfer to another department' }}
                                 </button>
                                 @endif
 
                                 @if ($visitForPrint)
                                     <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
-                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-amber-500 bg-amber-50 text-amber-800 font-medium hover:bg-amber-100 text-sm">
-                                        {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج (بدون خدمات)' : 'Print eligibility (no services)' }}
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 text-sm shadow-sm transition-colors">
+                                        {{ app()->getLocale() === 'ar' ? '📄 طباعة إحقاق علاج (بدون خدمات)' : '📄 Print eligibility (no services)' }}
                                     </a>
                                 @endif
 
                                 @if (!$isTransferred)
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-blue-600 bg-blue-600 text-slate-50 font-medium hover:bg-blue-700 text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'تقديم خدمات و إنشاء فاتورة' : 'Add services & create invoice' }}
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm shadow-sm transition-colors">
+                                    {{ app()->getLocale() === 'ar' ? '💰 تقديم خدمات و إنشاء فاتورة' : '💰 Add services & create invoice' }}
                                 </a>
                                 @endif
                             </div>
@@ -340,6 +340,16 @@
                     @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
                     <div class="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-gradient-to-br from-blue-50 to-slate-50">
                         <h3 class="text-xl font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility' }}</h3>
+                        <div class="mb-4 p-3 bg-blue-100 border-s-4 border-blue-500 text-blue-800 text-sm rounded">
+                            <p class="font-bold mb-1">
+                                {{ app()->getLocale() === 'ar' ? 'ℹ️ توضيح هام:' : 'ℹ️ Important Note:' }}
+                            </p>
+                            <p>
+                                {{ app()->getLocale() === 'ar'
+                                    ? 'هذا القسم مخصص للاستعلام وطلب موافقة العلاج فقط. طباعة "أحقية العلاج" لا تسجل إيرادات مالية في الحسابات. لتسجيل الإيراد المالي، يجب تحويل هذه الخدمات إلى فاتورة رسمية.'
+                                    : 'This section is for inquiry and treatment approval requests only. Printing "Treatment Eligibility" does NOT record financial revenue. To record revenue, these services must be converted into an official invoice.' }}
+                            </p>
+                        </div>
                         <p class="text-slate-600 text-sm mb-4">{{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو الكود وأضف الخدمات. يمكنك اختيار قسم معين أو البحث في كل الخدمات.' : 'Search by name or code and add services. You can select a specific department or search all services.' }}</p>
 
                         <div class="mb-4">
@@ -360,6 +370,11 @@
                                 <button type="button" id="eligibility_service_btn" class="bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
                                     {{ app()->getLocale() === 'ar' ? 'بحث' : 'Search' }}
                                 </button>
+                                @if ($visitForPrint && $visitForPrint->last_eligibility_services)
+                                    <button type="button" id="btn_reload_eligibility" class="bg-slate-500 px-4 text-slate-50 py-3 rounded-lg font-bold text-sm hover:bg-slate-600 shadow">
+                                        {{ app()->getLocale() === 'ar' ? '🔄 استعادة آخر خدمات مطبوعة' : '🔄 Reload last printed services' }}
+                                    </button>
+                                @endif
                             </div>
                             <div id="eligibility_service_results" class="mt-2 hidden border-2 border-slate-300 rounded-lg bg-white max-h-52 overflow-y-auto"></div>
                         </div>
@@ -422,9 +437,20 @@
 
                         <form id="price_inquiry_print_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline ms-2">
                             @csrf
+                            <input type="hidden" name="print_title" id="print_title_hidden" value="price_quotation">
                             <div class="inline-flex flex-col items-start gap-1">
-                                <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700">
-                                    {{ app()->getLocale() === 'ar' ? '📋 طباعة عرض سعر استعلامي' : '📋 Print price inquiry' }}
+                                <div class="flex items-center gap-3 mb-1 p-1 px-2 bg-purple-50 rounded border border-purple-200">
+                                    <label class="inline-flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" name="title_choice" value="price_quotation" checked onchange="document.getElementById('print_title_hidden').value=this.value" class="text-purple-600 focus:ring-purple-500">
+                                        <span class="text-xs font-bold text-purple-900">{{ app()->getLocale() === 'ar' ? 'عرض سعر' : 'Price Quotation' }}</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1 cursor-pointer">
+                                        <input type="radio" name="title_choice" value="detailed_invoice" onchange="document.getElementById('print_title_hidden').value=this.value" class="text-purple-600 focus:ring-purple-500">
+                                        <span class="text-xs font-bold text-purple-900">{{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed Invoice' }}</span>
+                                    </label>
+                                </div>
+                                <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow">
+                                    {{ app()->getLocale() === 'ar' ? '📋 طباعة' : '📋 Print' }}
                                 </button>
                                 @if($visitForPrint->printed_price_inquiry_at)
                                     <span class="text-[10px] text-slate-500 italic">
@@ -542,6 +568,8 @@
     @if ($patient && $showEligibilitySection)
     <script>
         window.visitPatientIsInsurance = @json($patientIsInsurance);
+        window.lastEligibilityServices = @json($visitForPrint->last_eligibility_services ?? []);
+        window.lastPriceInquiryServices = @json($visitForPrint->last_price_inquiry_services ?? []);
         (function() {
             var deptSelect = document.getElementById('eligibility_department_id');
             var searchInput = document.getElementById('eligibility_service_search');
@@ -779,15 +807,16 @@
                     rows.forEach(function(r, i) {
                         var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
                         // Add insurance fields to hidden inputs
-                            var map = {
-                                'code': r.code || '',
-                                'name': nameDisplay,
-                                'quantity': r.qty || 1,
-                                'price': r.unit_price || 0, // Map unit_price to price
-                                'total': r.total.toFixed(2),
-                                'insurance_coverage_type': r.insurance_coverage_type || '',
-                                'insurance_coverage_value': r.insurance_coverage_value || 0
-                            };
+                                var map = {
+                                    'service_id': r.id || '',
+                                    'code': r.code || '',
+                                    'name': nameDisplay,
+                                    'quantity': r.qty || 1,
+                                    'price': r.unit_price || 0, // Map unit_price to price
+                                    'total': r.total.toFixed(2),
+                                    'insurance_coverage_type': r.insurance_coverage_type || '',
+                                    'insurance_coverage_value': r.insurance_coverage_value || 0
+                                };
                             for (var k in map) {
                                 var inp = document.createElement('input');
                                 inp.type = 'hidden';
@@ -862,7 +891,7 @@
                     rows.forEach(function(r, i) {
                         var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
                         // Add same fields as treatment eligibility print
-                        ['code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
+                        ['service_id', 'code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
                             var inp = document.createElement('input');
                             inp.type = 'hidden';
                             inp.name = 'services[' + i + '][' + k + ']';
@@ -871,6 +900,33 @@
                         });
                     });
                     priceInquiryForm.submit();
+                });
+            }
+
+            // Handle Reload Last Eligibility Services
+            var reloadBtn = document.getElementById('btn_reload_eligibility');
+            if (reloadBtn) {
+                reloadBtn.addEventListener('click', function() {
+                    if (rows.length > 0 && !confirm(document.documentElement.lang === 'ar' ? 'هذا سيمسح الخدمات الحالية ويستبدلها بآخر خدمات مطبوعة. هل أنت متأكد؟' : 'This will clear current services and replace them with the last printed services. Are you sure?')) {
+                        return;
+                    }
+                    rows = [];
+                    if (window.lastEligibilityServices && Array.isArray(window.lastEligibilityServices)) {
+                        window.lastEligibilityServices.forEach(function(s) {
+                            rows.push({
+                                id: s.service_id || '',
+                                code: s.code || '',
+                                name: (document.documentElement.lang === 'ar' && s.name_ar) ? s.name_ar : (s.name || ''),
+                                name_ar: s.name_ar || '',
+                                qty: parseFloat(s.quantity) || parseFloat(s.qty) || 1,
+                                unit_price: parseFloat(s.price) || parseFloat(s.unit_price) || 0,
+                                total: parseFloat(s.total) || 0,
+                                insurance_coverage_type: s.insurance_coverage_type || '',
+                                insurance_coverage_value: parseFloat(s.insurance_coverage_value) || 0
+                            });
+                        });
+                    }
+                    renderRows();
                 });
             }
         })();

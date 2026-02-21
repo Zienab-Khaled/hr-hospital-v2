@@ -2,7 +2,13 @@
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <title>{{ app()->getLocale() === 'ar' ? 'عرض سعر استعلامي' : 'Price Inquiry' }}</title>
+    <title>
+        @if(isset($printTitle) && $printTitle === 'detailed_invoice')
+            {{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed Invoice' }}
+        @else
+            {{ app()->getLocale() === 'ar' ? 'عرض سعر استعلامي' : 'Price Inquiry' }}
+        @endif
+    </title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #000; }
         .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 120px; color: rgba(200, 200, 200, 0.15); font-weight: bold; z-index: -1; white-space: nowrap; }
@@ -40,7 +46,13 @@
     </div>
 
     <div class="header">
-        <h1>{{ app()->getLocale() === 'ar' ? '📋 عرض سعر استعلامي' : '📋 Price Inquiry' }}</h1>
+        <h1>
+            @if(isset($printTitle) && $printTitle === 'detailed_invoice')
+                {{ app()->getLocale() === 'ar' ? '📋 فاتورة تفصيلية' : '📋 Detailed Invoice' }}
+            @else
+                {{ app()->getLocale() === 'ar' ? '📋 عرض سعر استعلامي' : '📋 Price Inquiry' }}
+            @endif
+        </h1>
         <p>{{ date('Y-m-d H:i') }}</p>
     </div>
 
