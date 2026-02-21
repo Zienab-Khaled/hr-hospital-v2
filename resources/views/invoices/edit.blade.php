@@ -164,10 +164,10 @@
                     {{-- Total --}}
                     <div class="mt-6 pt-6 border-t-2 border-slate-300">
                         <div class="flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg shadow-lg">
-                            <span class="text-xl font-bold text-white">
+                            <span class="text-xl font-bold ">
                                 {{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Total Amount:' }}
                             </span>
-                            <span id="grand-total" class="text-3xl font-bold text-white">
+                            <span id="grand-total" class="text-3xl font-bold ">
                                 {{ number_format($invoice->total_amount, 2) }}
                             </span>
                         </div>

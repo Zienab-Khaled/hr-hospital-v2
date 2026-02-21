@@ -19,6 +19,7 @@ class Invoice extends Model implements HasMedia
         'patient_id', 'visit_id', 'invoice_number', 'total_amount', 'paid_amount', 'remaining_amount',
         'deposit_amount', 'status', 'invoice_date', 'notes', 'print_media_ids',
         'sent_to_charity_mail_at', 'printed_commitment_at', 'printed_non_commitment_at',
+        'payment_type', 'invoice_type',
     ];
 
     protected function casts(): array
@@ -33,6 +34,8 @@ class Invoice extends Model implements HasMedia
             'sent_to_charity_mail_at' => 'datetime',
             'printed_commitment_at' => 'datetime',
             'printed_non_commitment_at' => 'datetime',
+            'payment_type' => 'string',
+            'invoice_type' => 'string',
         ];
     }
 
@@ -104,6 +107,22 @@ class Invoice extends Model implements HasMedia
         ];
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
         return $labels[$locale][$this->status] ?? $this->status ?? '—';
+    }
+
+    public function getInvoiceTypeLabelAttribute(): string
+    {
+        $labels = [
+            'ar' => [
+                'regular' => 'فاتورة عادية',
+                'eligibility' => 'أحقية علاج',
+            ],
+            'en' => [
+                'regular' => 'Regular Invoice',
+                'eligibility' => 'Treatment Eligibility',
+            ],
+        ];
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        return $labels[$locale][$this->invoice_type ?? 'regular'] ?? $this->invoice_type ?? '—';
     }
 
     // Service Tracking Methods

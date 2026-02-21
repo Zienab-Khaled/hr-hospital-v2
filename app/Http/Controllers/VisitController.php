@@ -53,6 +53,9 @@ class VisitController extends Controller
 
             if ($visitId) {
                 $visit = $todayVisits->where('id', $visitId)->first();
+                if ($visit) {
+                    $visit->load('invoices');
+                }
             } elseif ($request->boolean('new_visit')) {
                 // إجبار إنشاء زيارة جديدة
                 $visit = null;
@@ -106,7 +109,7 @@ class VisitController extends Controller
         // Validate charity approval document if patient is charity type
         $validationRules = ['patient_id' => 'required|exists:patients,id'];
         if ($patient->payment_type === 'charity') {
-            $validationRules['charity_approval_document'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $validationRules['charity_approval_document'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
         }
         $request->validate($validationRules);
 
@@ -229,6 +232,18 @@ class VisitController extends Controller
 
                 $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
 
+                // Determine initial payment_type for the auto-created invoice
+                $finalPaymentType = $patient->payment_type;
+                if ($patient->payment_type === 'charity') {
+                    // Check for approval document on visit or patient profile
+                    $hasApprovalOnVisit = $visit->hasMedia('charity_approval');
+                    $hasApprovalOnPatient = $patient->hasMedia('charity-approvals');
+
+                    if (!$hasApprovalOnVisit && !$hasApprovalOnPatient) {
+                        $finalPaymentType = 'cash';
+                    }
+                }
+
                 $invoice = Invoice::create([
                     'patient_id' => $patient->id,
                     'visit_id' => $visit->id,
@@ -239,7 +254,9 @@ class VisitController extends Controller
                     'remaining_amount' => $totalAmount,
                     'deposit_amount' => 0,
                     'status' => 'pending',
-                    'notes' => 'Auto-created from Eligibility Print',
+                    'notes' => app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility',
+                    'payment_type' => $finalPaymentType,
+                    'invoice_type' => 'eligibility',
                 ]);
 
                 foreach ($services as $s) {

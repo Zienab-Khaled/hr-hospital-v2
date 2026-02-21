@@ -33,7 +33,7 @@
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
-                @if($invoice->patient?->payment_type === 'charity')
+                @if(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity')
                     <a href="{{ route('invoices.send-to-party', $invoice) }}"
                         class="inline-flex items-center gap-2 bg-emerald-600  px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
                         {{ app()->getLocale() === 'ar' ? '✉️ إرسال الفاتورة للجمعية الخيرية' : '✉️ Send invoice to charity' }}
@@ -49,10 +49,10 @@
                 @endif
 
                 {{-- زرار إشعار الجمعية باكتمال الخدمات — يظهر فقط لمرضى الجمعية بعد تنفيذ كل الخدمات --}}
-                @if($invoice->patient?->payment_type === 'charity' && $invoice->isFullyCompleted() && $invoice->patient?->charityEntity?->email)
+                @if(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity' && $invoice->isFullyCompleted() && $invoice->patient?->charityEntity?->email)
                     @can('invoices.edit')
                         <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
-                               onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
+                                onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
                             @csrf
                             <button type="submit"
                                 class="inline-flex items-center gap-2 bg-teal-600  px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 shadow-md ring-2 ring-teal-300 animate-pulse">
@@ -60,7 +60,7 @@
                             </button>
                         </form>
                     @endcan
-                @elseif($invoice->patient?->payment_type === 'charity' && !$invoice->isFullyCompleted())
+                @elseif(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity' && !$invoice->isFullyCompleted())
                     <span class="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-2 rounded-lg font-semibold text-sm">
                         ⏳ {{ app()->getLocale() === 'ar' ? 'في انتظار تنفيذ جميع الخدمات' : 'Waiting for all services to be executed' }}
                         ({{ $invoice->items->where('status', 'completed')->count() }}/{{ $invoice->items->count() }})
@@ -154,7 +154,24 @@
                     </div>
                     <div>
                         <span class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'الحالة:' : 'Status:' }}</span>
-                        <p class="text-lg font-medium text-slate-900">{{ $invoice->status_label }}</p>
+                        <p class="text-lg font-medium text-slate-900">
+                            {{ $invoice->status_label }}
+                            @if($invoice->invoice_type === 'eligibility')
+                                <span class="ms-2 bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-bold">{{ $invoice->invoice_type_label }}</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'طريقة الدفع:' : 'Payment Type:' }}</span>
+                        <p class="text-lg font-bold text-slate-900">
+                            @if($invoice->payment_type === 'charity')
+                                <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}</span>
+                            @elseif($invoice->payment_type === 'insurance')
+                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
+                            @else
+                                <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</span>
+                            @endif
+                        </p>
                     </div>
                     @if($invoice->visit?->referral_number)
                         <div>

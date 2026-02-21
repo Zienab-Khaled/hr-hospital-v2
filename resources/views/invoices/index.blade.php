@@ -57,7 +57,19 @@
                         <td class="p-3">@currency($inv->total_amount)</td>
                         <td class="p-3">@currency($inv->remaining_amount)</td>
                         <td class="p-3">
-                            <div>{{ $inv->status_label }}</div>
+                            <div class="flex flex-col gap-1">
+                                <span class="font-medium text-slate-900">{{ $inv->status_label }}</span>
+                                @if($inv->invoice_type === 'eligibility')
+                                    <span class="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit uppercase">{{ $inv->invoice_type_label }}</span>
+                                @endif
+                                @if($inv->payment_type === 'charity')
+                                    <span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}</span>
+                                @elseif($inv->payment_type === 'insurance')
+                                    <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
+                                @else
+                                    <span class="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</span>
+                                @endif
+                            </div>
                             <div class="flex gap-1 mt-1">
                                 @if($inv->sent_to_charity_mail_at)
                                     <span title="{{ app()->getLocale() === 'ar' ? 'تم إرسال ميل للجمعية: ' . $inv->sent_to_charity_mail_at : 'Mail sent to charity: ' . $inv->sent_to_charity_mail_at }}" class="cursor-help">📧</span>

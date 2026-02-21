@@ -73,7 +73,6 @@
                             <div id="charity_approval_section" class="hidden mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg">
                                 <label class="block text-sm font-semibold text-amber-900 mb-2">
                                     {{ app()->getLocale() === 'ar' ? '📄 اعتماد الجمعية الخيرية' : '📄 Charity Approval Document' }}
-                                    <span class="text-red-600">*</span>
                                 </label>
 
                                 {{-- Real file input (receives both camera & file picker) --}}
@@ -297,8 +296,76 @@
                                     {{ app()->getLocale() === 'ar' ? '💰 تقديم خدمات و إنشاء فاتورة' : '💰 Add services & create invoice' }}
                                 </a>
                                 @endif
-                            </div>
                         </div>
+
+                        {{-- Invoices for this visit --}}
+                        @php
+                            $visitInvoices = ($visitForPrint ?? $visit)?->invoices ?? collect();
+                        @endphp
+
+                        @if ($visitInvoices->isNotEmpty())
+                            <div class="border-2 border-emerald-300 rounded-lg p-5 mb-6 bg-emerald-50 shadow-sm">
+                                <h3 class="text-lg font-bold text-emerald-800 mb-3 flex items-center gap-2">
+                                    <span>💰</span>
+                                    {{ app()->getLocale() === 'ar' ? 'الفواتير المرتبطة بهذه الزيارة' : 'Invoices for this visit' }}
+                                </h3>
+                                <div class="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
+                                    <table class="w-full text-sm text-right">
+                                        <thead>
+                                            <tr class="bg-emerald-100/50 border-b border-emerald-200 text-emerald-900">
+                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
+                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
+                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'نوع الفاتورة' : 'Type' }}</th>
+                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
+                                                <th class="p-3 font-bold text-center">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-emerald-50">
+                                            @foreach ($visitInvoices as $inv)
+                                                <tr class="hover:bg-emerald-50/50 transition-colors">
+                                                    <td class="p-3 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
+                                                    <td class="p-3 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
+                                                    <td class="p-3">
+                                                        @if($inv->invoice_type === 'eligibility')
+                                                            <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                        @else
+                                                            <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="p-3 font-bold text-slate-900">@currency($inv->total_amount)</td>
+                                                    <td class="p-3">
+                                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                                            {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                                                            {{ $inv->status_label }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="p-3">
+                                                        <div class="flex justify-center gap-2">
+                                                            <a href="{{ route('invoices.show', $inv) }}" target="_blank"
+                                                               class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}">
+                                                                👁️ {{ app()->getLocale() === 'ar' ? 'عرض التفاصيل' : 'View Details' }}
+                                                            </a>
+                                                            @if($inv->payment_type === 'charity')
+                                                                <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
+                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر تعهد' : 'Print Commitment' }}">
+                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'تعهد' : 'Commitment' }}
+                                                                </a>
+                                                            @else
+                                                                <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
+                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
+                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
+                                                                </a>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
 
                         {{-- Transfer Form (Hidden by default) --}}
                         @if (!$isTransferred)
@@ -414,8 +481,8 @@
                         <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                             @csrf
                             <div class="inline-flex flex-col items-start gap-1">
-                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-amber-700">
-                                    {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج' : 'Print treatment eligibility' }}
+                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-bold hover:bg-amber-700 shadow-md">
+                                    {{ app()->getLocale() === 'ar' ? '✅ اعتماد الخدمات وطباعة الأحقية' : '✅ Submit Services & Print Eligibility' }}
                                 </button>
                                 @if($visitForPrint->printed_eligibility_at)
                                     <span class="text-[10px] text-slate-500 italic">
@@ -450,17 +517,7 @@
                             </div>
                         </form>
 
-                        <form id="visit_create_invoice_form" method="POST" action="{{ route('invoices.store') }}" class="inline ms-2">
 
-                            @csrf
-                            <input type="hidden" name="patient_id" value="{{ $patient->id }}">
-                            <input type="hidden" name="visit_id" value="{{ $visitForPrint->id }}">
-                            <input type="hidden" name="invoice_date" value="{{ today()->format('Y-m-d') }}">
-                            <input type="hidden" name="notes" value="__(Invoice created from visit eligibility)_">
-                            <button type="button" id="visit_create_invoice_btn" class="bg-blue-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                                {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة' : 'Create Invoice' }}
-                            </button>
-                        </form>
                     </div>
                     @endif
 
@@ -506,10 +563,8 @@
                 if (charitySection && charityInput) {
                     if (paymentType === 'charity') {
                         charitySection.classList.remove('hidden');
-                        charityInput.setAttribute('required', 'required');
                     } else {
                         charitySection.classList.add('hidden');
-                        charityInput.removeAttribute('required');
                     }
                 }
             }
@@ -571,8 +626,6 @@
             var patientShareEl = document.getElementById('eligibility_patient_share');
             var printForm = document.getElementById('eligibility_print_form');
             var printBtn = document.getElementById('eligibility_print_btn');
-            var invoiceForm = document.getElementById('visit_create_invoice_form');
-            var invoiceBtn = document.getElementById('visit_create_invoice_btn');
             var searchUrl = '{{ route('visits.eligibility-services-search') }}';
             var rows = [];
 
@@ -817,12 +870,11 @@
                         });
 
                         // Add Department ID
-                        var deptId = document.getElementById('eligibility_dept_id').value;
-                        if(deptId) {
+                        if(deptSelect && deptSelect.value) {
                             var inpDept = document.createElement('input');
                             inpDept.type = 'hidden';
                             inpDept.name = 'department_id';
-                            inpDept.value = deptId;
+                            inpDept.value = deptSelect.value;
                             printForm.appendChild(inpDept);
                         }
 
@@ -830,42 +882,6 @@
                     });
             }
 
-            // Handle Invoice Button
-            if (invoiceBtn && invoiceForm) {
-                invoiceBtn.addEventListener('click', function() {
-                    if (rows.length === 0) {
-                        alert(document.documentElement.lang === 'ar' ? 'يرجى إضافة خدمات أولاً' : 'Please add services first');
-                        return;
-                    }
-                    if (!confirm(document.documentElement.lang === 'ar' ? 'هل أنت متأكد من إنشاء الفاتورة؟' : 'Are you sure you want to create the invoice?')) return;
-
-                    var existing = invoiceForm.querySelectorAll('input[name^="services"]');
-                    existing.forEach(function(el) { el.remove(); });
-                    rows.forEach(function(r, i) {
-                        var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
-                        // Add required fields for InvoiceController::store
-                        // 'services.*.service_id', 'quantity', 'unit_price', 'total_price', 'description'
-                        // + insurance fields
-                        var map = {
-                            'service_id': r.id,
-                            'quantity': r.qty,
-                            'unit_price': r.unit_price,
-                            'total_price': r.total,
-                            'description': nameDisplay,
-                            'insurance_coverage_type': r.insurance_coverage_type,
-                            'insurance_coverage_value': r.insurance_coverage_value
-                        };
-                        for (var k in map) {
-                            var inp = document.createElement('input');
-                            inp.type = 'hidden';
-                            inp.name = 'services[' + i + '][' + k + ']';
-                            inp.value = map[k] !== undefined ? map[k] : '';
-                            invoiceForm.appendChild(inp);
-                        }
-                    });
-                    invoiceForm.submit();
-                });
-            }
 
             // Handle Price Inquiry Print Button
             var priceInquiryBtn = document.getElementById('price_inquiry_print_btn');

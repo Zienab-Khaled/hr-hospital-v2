@@ -224,6 +224,18 @@ class InvoiceController extends Controller
             $patientMediaIds = $patient->getMedia('documents')->merge($patient->getMedia('medical-reports'))->pluck('id')->all();
             $printMediaIds = isset($validated['print_media_ids']) ? array_values(array_intersect(array_map('intval', $validated['print_media_ids']), $patientMediaIds)) : null;
 
+            // Determine initial payment_type for the invoice
+            $finalPaymentType = $patient->payment_type;
+            if ($patient->payment_type === 'charity') {
+                // Check for approval document on visit or patient profile
+                $hasApprovalOnVisit = $visit && $visit->hasMedia('charity_approval');
+                $hasApprovalOnPatient = $patient->hasMedia('charity-approvals');
+
+                if (!$hasApprovalOnVisit && !$hasApprovalOnPatient) {
+                    $finalPaymentType = 'cash';
+                }
+            }
+
             // Create invoice
             $invoice = Invoice::create([
                 'patient_id' => $patient->id,
@@ -237,6 +249,7 @@ class InvoiceController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'],
                 'print_media_ids' => $printMediaIds ?: null,
+                'payment_type' => $finalPaymentType,
             ]);
 
             // Create invoice items (quantity: ensure integer for DB; optional insurance coverage per line)

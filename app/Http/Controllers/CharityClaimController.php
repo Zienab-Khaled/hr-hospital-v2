@@ -70,11 +70,11 @@ class CharityClaimController extends Controller
                     : 'This invoice already has a claim']);
             }
 
-            // Check if patient is charity type
-            if ($invoice->patient->payment_type !== 'charity') {
+            // Check if patient is charity type using invoice's payment_type
+            if ($invoice->payment_type !== 'charity') {
                 return back()->withErrors(['invoice_id' => app()->getLocale() === 'ar'
-                    ? 'هذا المريض ليس من نوع جمعية خيرية'
-                    : 'This patient is not a charity type']);
+                    ? 'هذه الفاتورة ليست مطالبة جمعية خيرية (ربما تم تسجيلها كـ كاش لعدم وجود اعتماد)'
+                    : 'This invoice is not a charity claim (maybe it was recorded as cash due to missing approval)']);
             }
         }
 
@@ -95,11 +95,11 @@ class CharityClaimController extends Controller
 
         $invoice = Invoice::with('patient')->findOrFail($request->invoice_id);
 
-        // Validate charity patient
-        if ($invoice->patient->payment_type !== 'charity') {
+        // Validate charity invoice
+        if ($invoice->payment_type !== 'charity') {
             return back()->withErrors(['invoice_id' => app()->getLocale() === 'ar'
-                ? 'هذا المريض ليس من نوع جمعية خيرية'
-                : 'This patient is not a charity type']);
+                ? 'هذه الفاتورة ليست مطالبة جمعية خيرية (ربما تم تسجيلها كـ كاش لعدم وجود اعتماد)'
+                : 'This invoice is not a charity claim (maybe it was recorded as cash due to missing approval)']);
         }
 
         // Check if claim already exists

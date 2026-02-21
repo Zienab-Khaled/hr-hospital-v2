@@ -43,9 +43,9 @@
 
         h1.title {
             text-align: center;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0;
         }
 
         /* Table Styling */
@@ -53,7 +53,7 @@
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #555;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
         table.info-table td {
             border: 1px solid #777;
@@ -88,16 +88,16 @@
 
         /* Eligibility Section */
         .eligibility-section {
-            margin: 20px 40px;
+            margin: 10px 40px;
             text-align: right;
-            font-size: 16px;
-            line-height: 2.2;
+            font-size: 15px;
+            line-height: 1.6;
         }
         .eligibility-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         .eligibility-row label {
             font-weight: bold;
@@ -107,15 +107,15 @@
             display: block;
             direction: ltr;
             text-align: right;
-            font-size: 12px;
+            font-size: 11px;
             color: #444;
-            margin-top: -5px;
-            margin-bottom: 10px;
+            margin-top: -3px;
+            margin-bottom: 5px;
         }
         /* Interactive Inputs */
         .big-checkbox-input {
-            width: 25px;
-            height: 25px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
             accent-color: #000; /* For modern browsers */
             -webkit-print-color-adjust: exact;
