@@ -108,6 +108,7 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
     Route::get('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'showExecuteService'])->name('invoices.execute-service.show');
     Route::post('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'executeService'])->name('invoices.execute-service');
+    Route::post('payment-receipts', [App\Http\Controllers\PaymentReceiptController::class, 'store'])->name('payment-receipts.store');
 
     // Charity Claims Management
     Route::get('charity-claims', [App\Http\Controllers\CharityClaimController::class, 'index'])->name('charity-claims.index');

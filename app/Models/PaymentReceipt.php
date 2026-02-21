@@ -34,7 +34,7 @@ class PaymentReceipt extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($receipt) {
             if (empty($receipt->receipt_number)) {
                 $receipt->receipt_number = 'RCP-' . date('Ymd') . '-' . str_pad(static::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
@@ -61,9 +61,20 @@ class PaymentReceipt extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
-    
+
     public function collectionOrder(): HasOne
     {
         return $this->hasOne(CollectionOrder::class);
+    }
+
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        $labels = [
+            'cash' => app()->getLocale() === 'ar' ? 'كاش' : 'Cash',
+            'card' => app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card',
+            'bank_transfer' => app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
+            'cheque' => app()->getLocale() === 'ar' ? 'شيك' : 'Cheque',
+        ];
+        return $labels[$this->payment_method] ?? $this->payment_method;
     }
 }

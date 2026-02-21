@@ -205,6 +205,12 @@ class VisitController extends Controller
             $targetDepartment = Department::with('manager')->find($request->input('department_id'));
         }
 
+        // Update tracking flag
+        $visit->update(['printed_eligibility_at' => now()]);
+
+        // Log the action
+        ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
+
         return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment'));
     }
 
@@ -231,6 +237,13 @@ class VisitController extends Controller
         }
 
         $manager = User::getManagerForSignature();
+
+        // Update tracking flag
+        $visit->update(['printed_price_inquiry_at' => now()]);
+
+        // Log the action
+        ActivityLogger::log('Print Price Inquiry', 'Visit', $visit->id, 'Price inquiry form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
+
         return view('visits.price-inquiry-print', compact('visit', 'services', 'manager'));
     }
 
@@ -263,7 +276,7 @@ class VisitController extends Controller
             return redirect()->route('visits.index', $defaults);
         }
 
-        $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
+        $query = Visit::with(['patient', 'department', 'shift', 'registeredBy', 'invoices.partySends']);
 
         if (!$isAdmin) {
             $deptId = $user->department_id;

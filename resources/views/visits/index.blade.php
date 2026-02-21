@@ -98,6 +98,35 @@
                             @if ($v->patient)
                                 <a href="{{ route('patients.show', $v->patient) }}" class="text-blue-600 hover:underline font-medium">{{ $v->patient->name }}</a>
                                 <span class="text-slate-500 text-xs block">{{ $v->patient->file_number }}</span>
+                                <div class="flex gap-1 mt-1">
+                                    @if($v->printed_eligibility_at)
+                                        <span title="{{ app()->getLocale() === 'ar' ? 'تم طباعة أحقية العلاج: ' . $v->printed_eligibility_at : 'Eligibility printed: ' . $v->printed_eligibility_at }}" class="cursor-help text-xs">📄</span>
+                                    @endif
+                                    @if($v->printed_price_inquiry_at)
+                                        <span title="{{ app()->getLocale() === 'ar' ? 'تم طباعة عرض السعر: ' . $v->printed_price_inquiry_at : 'Price inquiry printed: ' . $v->printed_price_inquiry_at }}" class="cursor-help text-xs">💰</span>
+                                    @endif
+
+                                    {{-- Charity/Insurance Communication Indicators --}}
+                                    @php
+                                        $hasSent = false; $hasConfirmed = false; $hasRejected = false;
+                                        foreach($v->invoices as $inv) {
+                                            foreach($inv->partySends as $ps) {
+                                                $hasSent = true;
+                                                if($ps->response_action === 'confirmed') $hasConfirmed = true;
+                                                if($ps->response_action === 'rejected') $hasRejected = true;
+                                            }
+                                        }
+                                    @endphp
+                                    @if($hasSent)
+                                        <span title="{{ app()->getLocale() === 'ar' ? 'تم إرسال إيميل للجمعية/التأمين' : 'Email sent to charity/insurance' }}" class="cursor-help text-xs">📧</span>
+                                    @endif
+                                    @if($hasConfirmed)
+                                        <span title="{{ app()->getLocale() === 'ar' ? 'تمت الموافقة من الطرف الآخر' : 'Response confirmed by party' }}" class="cursor-help text-xs">✅</span>
+                                    @endif
+                                    @if($hasRejected)
+                                        <span title="{{ app()->getLocale() === 'ar' ? 'تم الرفض من الطرف الآخر' : 'Response rejected by party' }}" class="cursor-help text-xs">❌</span>
+                                    @endif
+                                </div>
                             @else
                                 —
                             @endif

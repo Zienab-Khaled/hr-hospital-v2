@@ -56,6 +56,44 @@ class OfficialCodesImporter
         return [$this->created, $this->updated];
     }
 
+    /**
+     * Count total rows in CSV or Excel file (including header).
+     */
+    public function countTotalRows(string $path, string $extension): int
+    {
+        $ext = strtolower($extension);
+        if ($ext === 'csv' || $ext === 'txt') {
+            $count = 0;
+            $handle = fopen($path, 'r');
+            if ($handle) {
+                while (!feof($handle)) {
+                    $line = fgets($handle);
+                    if (trim((string)$line) !== '') {
+                        $count++;
+                    }
+                }
+                fclose($handle);
+            }
+            return $count;
+        }
+
+        // For Excel
+        try {
+            $reader = ($ext === 'xls')
+                ? new \PhpOffice\PhpSpreadsheet\Reader\Xls()
+                : new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+            $reader->setReadDataOnly(true);
+            $spreadsheetInfo = $reader->listWorksheetInfo($path);
+            $totalRows = 0;
+            foreach ($spreadsheetInfo as $info) {
+                $totalRows += $info['totalRows'];
+            }
+            return $totalRows;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
     private function processCsv(string $path): void
     {
         $handle = fopen($path, 'r');

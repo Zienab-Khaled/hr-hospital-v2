@@ -29,10 +29,14 @@
 <body>
     <div class="watermark">{{ app()->getLocale() === 'ar' ? 'استعلام فقط' : 'INQUIRY ONLY' }}</div>
 
-    <div class="no-print" style="margin-bottom: 20px; text-align: center;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #1e40af; color: #fff; border: none; border-radius: 5px;">
+    <div class="no-print" style="margin-bottom: 20px; text-align: center; display: flex; justify-content: center; gap: 10px; align-items: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #1e40af; color: #fff; border: none; border-radius: 5px; font-weight: bold;">
             {{ app()->getLocale() === 'ar' ? 'طباعة' : 'Print' }}
         </button>
+        <a href="{{ route('visits.create', ['patient_id' => $visit->patient_id, 'visit_id' => $visit->id, 'registered' => 1]) }}"
+           style="padding: 10px 20px; background: #475569; color: #fff; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold;">
+           {{ app()->getLocale() === 'ar' ? 'العودة لتفاصيل الزيارة' : 'Back to Visit Details' }}
+        </a>
     </div>
 
     <div class="header">

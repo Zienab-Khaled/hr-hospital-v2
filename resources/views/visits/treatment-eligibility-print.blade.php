@@ -206,8 +206,12 @@
     </style>
 </head>
 <body>
-    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
-        <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: #fff; cursor: pointer; border: none; border-radius: 4px;">طباعة النموذج</button>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: #fff; cursor: pointer; border: none; border-radius: 4px; font-weight: bold;">طباعة النموذج</button>
+        <a href="{{ route('visits.create', ['patient_id' => $visit->patient_id, 'visit_id' => $visit->id, 'registered' => 1]) }}"
+           style="padding: 10px 20px; background: #475569; color: #fff; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: bold;">
+           {{ app()->getLocale() === 'ar' ? 'العودة لتفاصيل الزيارة' : 'Back to Visit Details' }}
+        </a>
     </div>
 
     <!-- Header -->

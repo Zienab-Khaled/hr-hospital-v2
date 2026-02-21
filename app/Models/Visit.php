@@ -13,11 +13,19 @@ class Visit extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
 
-    protected $fillable = ['patient_id', 'department_id', 'visit_date', 'shift_id', 'case_type', 'notes', 'referral_number', 'transferred_department_id', 'registered_by'];
+    protected $fillable = [
+        'patient_id', 'department_id', 'visit_date', 'shift_id', 'case_type', 'notes',
+        'referral_number', 'transferred_department_id', 'registered_by',
+        'printed_eligibility_at', 'printed_price_inquiry_at'
+    ];
 
     protected function casts(): array
     {
-        return ['visit_date' => 'date'];
+        return [
+            'visit_date' => 'date',
+            'printed_eligibility_at' => 'datetime',
+            'printed_price_inquiry_at' => 'datetime',
+        ];
     }
 
     public function registerMediaCollections(): void

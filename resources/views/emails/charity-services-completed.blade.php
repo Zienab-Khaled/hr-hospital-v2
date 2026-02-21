@@ -106,6 +106,28 @@
             نأمل أن تجدوا في ذلك ما يُفيد، ونحن على أتم الاستعداد لتزويدكم بأي معلومات إضافية تحتاجونها.
             <br>مع خالص التقدير والاحترام.
         </p>
+
+        <!-- Signature & Stamp Section -->
+        <div style="margin-top: 40px; display: table; width: 100%;">
+            <div style="display: table-cell; text-align: right; vertical-align: bottom;">
+                <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1e293b;">مدير الإدارة</p>
+                <p style="margin: 5px 0 0; font-size: 13px; color: #64748b;">{{ $manager->name ?? $settings['manager_name'] ?? '' }}</p>
+
+                @php
+                    $signaturePath = $manager->signature ?? $settings['manager_signature'];
+                @endphp
+
+                @if($signaturePath && file_exists(storage_path('app/public/' . $signaturePath)))
+                    <img src="{{ $message->embed(storage_path('app/public/' . $signaturePath)) }}" alt="توقيع المدير" style="max-height: 80px; margin-top: 10px;">
+                @endif
+            </div>
+
+            @if(!empty($settings['stamp']) && file_exists(storage_path('app/public/' . $settings['stamp'])))
+                <div style="display: table-cell; text-align: left; vertical-align: bottom;">
+                    <img src="{{ $message->embed(storage_path('app/public/' . $settings['stamp'])) }}" alt="ختم المستشفى" style="max-height: 120px;">
+                </div>
+            @endif
+        </div>
     </div>
 
     <div class="footer">

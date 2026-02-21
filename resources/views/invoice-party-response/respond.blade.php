@@ -24,7 +24,7 @@
                     <p class="text-sm text-slate-600"><strong>{{ app()->getLocale() === 'ar' ? 'المريض:' : 'Patient:' }}</strong> {{ $partySend->invoice->patient?->name }}</p>
                     <p class="text-sm text-slate-600"><strong>{{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Total:' }}</strong> {{ number_format((float) $partySend->invoice->total_amount, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</p>
                 </div>
-                <form action="{{ route('invoice-party-response.process', $partySend->token) }}" method="POST" class="space-y-4">
+                <form action="{{ route('invoice-party-response.process', $partySend->token) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     <input type="hidden" name="action" value="{{ $action }}">
                     <div>
@@ -40,6 +40,17 @@
                             placeholder="{{ $action === 'confirm' ? (app()->getLocale() === 'ar' ? 'أؤكد التزامنا بدفع المبلغ...' : 'We confirm our commitment to pay...') : (app()->getLocale() === 'ar' ? 'سبب الرفض...' : 'Reason for rejection...') }}">{{ old('response_text') }}</textarea>
                         @error('response_text')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
+
+                    @if($action === 'confirm')
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-2">
+                            {{ app()->getLocale() === 'ar' ? 'إرفاق ملف الاعتماد / الموافقة (اختياري)' : 'Attach approval document (optional)' }}
+                        </label>
+                        <input type="file" name="approval_document" accept="image/*,application/pdf"
+                            class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        @error('approval_document')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    @endif
                     <button type="submit" class="w-full py-3 rounded-lg font-bold text-lg {{ $action === 'confirm' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white' }}">
                         @if($action === 'confirm')
                             {{ app()->getLocale() === 'ar' ? 'إرسال التأكيد' : 'Submit confirmation' }}

@@ -788,7 +788,14 @@ class PlaceholderController extends Controller
         $managerSignaturePath = Setting::get('manager_signature', '');
         $departmentManagerName = Setting::get('department_manager_name', '');
         $departmentManagerSignaturePath = Setting::get('department_manager_signature', '');
-        return view('settings.index', compact('hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn', 'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress', 'accountNumber', 'ibanNumber', 'bankName', 'stampPath', 'managerSignaturePath', 'departmentManagerName', 'departmentManagerSignaturePath'));
+        $shifts = Shift::orderBy('sort_order')->get();
+
+        return view('settings.index', compact(
+            'hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn',
+            'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress',
+            'accountNumber', 'ibanNumber', 'bankName', 'stampPath', 'managerSignaturePath',
+            'departmentManagerName', 'departmentManagerSignaturePath', 'shifts'
+        ));
     }
 
     public function settingsUpdate(Request $request)
@@ -811,6 +818,12 @@ class PlaceholderController extends Controller
             'manager_signature_data' => 'nullable|string',
             'department_manager_name' => 'nullable|string|max:255',
             'department_manager_signature_data' => 'nullable|string',
+            'shifts' => 'nullable|array',
+            'shifts.*.id' => 'nullable|exists:shifts,id',
+            'shifts.*.name' => 'required|string|max:255',
+            'shifts.*.name_ar' => 'nullable|string|max:255',
+            'shifts.*.start_time' => 'required',
+            'shifts.*.end_time' => 'required',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
         Setting::set('hospital_name_en', $request->input('hospital_name_en', ''), 'general');
@@ -861,6 +874,28 @@ class PlaceholderController extends Controller
             Setting::set('department_manager_signature', $deptManagerSigPath, 'general');
         }
 
+        // --- Handle Dynamic Shifts ---
+        $providedShifts = $request->input('shifts', []);
+        $providedIds = collect($providedShifts)->pluck('id')->filter()->toArray();
+
+        // Delete shifts not in the request
+        Shift::whereNotIn('id', $providedIds)->delete();
+
+        // Update/Create shifts
+        foreach ($providedShifts as $index => $shiftData) {
+            Shift::updateOrCreate(
+                ['id' => $shiftData['id'] ?? null],
+                [
+                    'name' => $shiftData['name'],
+                    'name_ar' => $shiftData['name_ar'] ?: $shiftData['name'],
+                    'start_time' => $shiftData['start_time'],
+                    'end_time' => $shiftData['end_time'],
+                    'is_active' => true,
+                    'sort_order' => $index,
+                ]
+            );
+        }
+
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
 
         return back()->with('success', __('Saved successfully.'));
@@ -887,6 +922,13 @@ class PlaceholderController extends Controller
         $path = $file->getRealPath();
 
         $importer = new OfficialCodesImporter();
+
+        // Check Row Limit (40 records)
+        $rowCount = $importer->countTotalRows($path, $extension);
+        if ($rowCount > 41) { // 40 data rows + 1 header row
+            return back()->withErrors(['file' => app()->getLocale() === 'ar' ? 'عذراً، الحد الأقصى للملف الواحد هو 40 سجلاً فقط.' : 'Sorry, the maximum number of records per file is 40 only.']);
+        }
+
         [$created, $updated] = $importer->import($path, $extension);
 
         ActivityLogger::log('codes_uploaded', null, null, __('Upload official codes') . " (created: {$created}, updated: {$updated})", null, ['created' => $created, 'updated' => $updated]);

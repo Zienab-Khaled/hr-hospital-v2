@@ -154,5 +154,8 @@ class Patient extends Model implements HasMedia
         $this->addMediaCollection('profile-photo')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg']);
+
+        $this->addMediaCollection('charity-approvals')
+            ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
     }
 }

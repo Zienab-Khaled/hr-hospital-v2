@@ -334,7 +334,8 @@ class InvoiceController extends Controller
             'items.completedByUser',
             'payments',
             'visit.registeredBy',
-            'attachments'
+            'attachments',
+            'partySends'
         ]);
 
         $printMedia = collect();
@@ -355,6 +356,13 @@ class InvoiceController extends Controller
         $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
         $settings = \App\Models\Setting::first();
         $manager = \App\Models\User::getManagerForSignature();
+
+        // Update tracking flag
+        $invoice->update(['printed_commitment_at' => now()]);
+
+        // Log the action
+        ActivityLogger::log('Print Commitment', 'Invoice', $invoice->id, 'Commitment form printed for invoice: ' . $invoice->invoice_number, null, null);
+
         return view('invoices.print-commitment', compact('invoice', 'settings', 'manager'));
     }
 
@@ -365,6 +373,13 @@ class InvoiceController extends Controller
         $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
         $settings = \App\Models\Setting::first();
         $manager = \App\Models\User::getManagerForSignature();
+
+        // Update tracking flag
+        $invoice->update(['printed_non_commitment_at' => now()]);
+
+        // Log the action
+        ActivityLogger::log('Print Non-Commitment', 'Invoice', $invoice->id, 'Non-commitment form printed for invoice: ' . $invoice->invoice_number, null, null);
+
         return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
@@ -536,6 +551,10 @@ class InvoiceController extends Controller
 
         try {
             Mail::to($charityEntity->email)->send(new \App\Mail\CharityServicesCompletedMail($invoice));
+
+            // Update tracking flag
+            $invoice->update(['sent_to_charity_mail_at' => now()]);
+
             ActivityLogger::log('Charity Notified', 'Invoice', $invoice->id, 'Charity completion email sent to ' . $charityEntity->email, null, null);
             return back()->with('success', app()->getLocale() === 'ar' ? 'تم إرسال إيميل الاكتمال للجمعية بنجاح.' : 'Charity completion email sent successfully.');
         } catch (\Throwable $e) {

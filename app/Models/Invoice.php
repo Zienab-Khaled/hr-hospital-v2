@@ -15,6 +15,7 @@ class Invoice extends Model
     protected $fillable = [
         'patient_id', 'visit_id', 'invoice_number', 'total_amount', 'paid_amount', 'remaining_amount',
         'deposit_amount', 'status', 'invoice_date', 'notes', 'print_media_ids',
+        'sent_to_charity_mail_at', 'printed_commitment_at', 'printed_non_commitment_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,9 @@ class Invoice extends Model
             'remaining_amount' => 'decimal:2',
             'deposit_amount' => 'decimal:2',
             'print_media_ids' => 'array',
+            'sent_to_charity_mail_at' => 'datetime',
+            'printed_commitment_at' => 'datetime',
+            'printed_non_commitment_at' => 'datetime',
         ];
     }
 
@@ -57,6 +61,11 @@ class Invoice extends Model
     public function charityClaims(): HasMany
     {
         return $this->hasMany(CharityClaim::class);
+    }
+
+    public function partySends(): HasMany
+    {
+        return $this->hasMany(InvoicePartySend::class);
     }
 
     public function attachments(): MorphMany

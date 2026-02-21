@@ -3,6 +3,8 @@
 namespace App\Mail;
 
 use App\Models\Invoice;
+use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -32,9 +34,22 @@ class CharityServicesCompletedMail extends Mailable
 
     public function content(): Content
     {
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'stamp' => Setting::get('stamp', ''),
+        ];
+
+        $manager = User::getManagerForSignature();
+
         return new Content(
             view: 'emails.charity-services-completed',
-            with: ['invoice' => $this->invoice],
+            with: [
+                'invoice' => $this->invoice,
+                'settings' => $settings,
+                'manager' => $manager,
+            ],
         );
     }
 

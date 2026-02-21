@@ -120,6 +120,82 @@
         </div>
 
         <div class="mb-4 pt-4 border-t border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'إدارة الورديات' : 'Shifts Management' }}</h3>
+                <button type="button" onclick="addShiftRow()" class="text-xs bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700">
+                    {{ app()->getLocale() === 'ar' ? '+ إضافة وردية' : '+ Add Shift' }}
+                </button>
+            </div>
+            <div id="shifts-container" class="space-y-3">
+                @foreach($shifts as $index => $shift)
+                    <div class="shift-row bg-slate-50 p-3 rounded border border-slate-200 relative group">
+                        <input type="hidden" name="shifts[{{ $index }}][id]" value="{{ $shift->id }}">
+                        <div class="grid grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'اسم الوردية' : 'Shift Name' }}</label>
+                                <input type="text" name="shifts[{{ $index }}][name]" value="{{ $shift->name }}" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (AR)' }}</label>
+                                <input type="text" name="shifts[{{ $index }}][name_ar]" value="{{ $shift->name_ar }}" class="w-full text-sm rounded border-slate-300 px-2 py-1">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'وقت البدء' : 'Start Time' }}</label>
+                                <input type="time" name="shifts[{{ $index }}][start_time]" value="{{ $shift->start_time }}" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'وقت النهاية' : 'End Time' }}</label>
+                                <input type="time" name="shifts[{{ $index }}][end_time]" value="{{ $shift->end_time }}" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                        </div>
+                        <button type="button" onclick="this.closest('.shift-row').remove()" class="absolute top-2 left-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                @endforeach
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2 italic">{{ app()->getLocale() === 'ar' ? '* يتم ترتيب الورديات تلقائياً حسب ترتيبها هنا.' : '* Shifts are sorted automatically based on their order here.' }}</p>
+        </div>
+
+        <script>
+            let shiftIndex = {{ count($shifts) }};
+            function addShiftRow() {
+                const container = document.getElementById('shifts-container');
+                const html = `
+                    <div class="shift-row bg-slate-50 p-3 rounded border border-slate-200 relative group">
+                        <div class="grid grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'اسم الوردية' : 'Shift Name' }}</label>
+                                <input type="text" name="shifts[${shiftIndex}][name]" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (AR)' }}</label>
+                                <input type="text" name="shifts[${shiftIndex}][name_ar]" class="w-full text-sm rounded border-slate-300 px-2 py-1">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'وقت البدء' : 'Start Time' }}</label>
+                                <input type="time" name="shifts[${shiftIndex}][start_time]" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-500">{{ app()->getLocale() === 'ar' ? 'وقت النهاية' : 'End Time' }}</label>
+                                <input type="time" name="shifts[${shiftIndex}][end_time]" class="w-full text-sm rounded border-slate-300 px-2 py-1" required>
+                            </div>
+                        </div>
+                        <button type="button" onclick="this.closest('.shift-row').remove()" class="absolute top-2 left-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+                shiftIndex++;
+            }
+        </script>
+
+        <div class="mb-4 pt-4 border-t border-slate-200">
             <h3 class="text-sm font-semibold text-slate-700 mb-3">{{ app()->getLocale() === 'ar' ? 'بيانات الاتصال بالشركة' : 'Company contact' }}</h3>
             <div class="space-y-4">
                 <div>

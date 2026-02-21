@@ -56,7 +56,20 @@
                         <td class="p-3">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
                         <td class="p-3">@currency($inv->total_amount)</td>
                         <td class="p-3">@currency($inv->remaining_amount)</td>
-                        <td class="p-3">{{ $inv->status_label }}</td>
+                        <td class="p-3">
+                            <div>{{ $inv->status_label }}</div>
+                            <div class="flex gap-1 mt-1">
+                                @if($inv->sent_to_charity_mail_at)
+                                    <span title="{{ app()->getLocale() === 'ar' ? 'تم إرسال ميل للجمعية: ' . $inv->sent_to_charity_mail_at : 'Mail sent to charity: ' . $inv->sent_to_charity_mail_at }}" class="cursor-help">📧</span>
+                                @endif
+                                @if($inv->printed_commitment_at)
+                                    <span title="{{ app()->getLocale() === 'ar' ? 'تم طباعة محضر التعهد: ' . $inv->printed_commitment_at : 'Commitment form printed: ' . $inv->printed_commitment_at }}" class="cursor-help">📄</span>
+                                @endif
+                                @if($inv->printed_non_commitment_at)
+                                    <span title="{{ app()->getLocale() === 'ar' ? 'تم طباعة إقرار بعدم التوقيع: ' . $inv->printed_non_commitment_at : 'Non-commitment form printed: ' . $inv->printed_non_commitment_at }}" class="cursor-help">📝</span>
+                                @endif
+                            </div>
+                        </td>
                         <td class="p-3">
                             <div class="flex items-center gap-2">
                                 @can('invoices.view')

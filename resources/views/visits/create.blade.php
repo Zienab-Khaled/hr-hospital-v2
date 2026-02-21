@@ -408,16 +408,30 @@
                         </div>
                         <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                             @csrf
-                            <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-amber-700">
-                                {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج' : 'Print treatment eligibility' }}
-                            </button>
+                            <div class="inline-flex flex-col items-start gap-1">
+                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-amber-700">
+                                    {{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج' : 'Print treatment eligibility' }}
+                                </button>
+                                @if($visitForPrint->printed_eligibility_at)
+                                    <span class="text-[10px] text-slate-500 italic">
+                                        {{ app()->getLocale() === 'ar' ? 'آخر طباعة: ' : 'Last print: ' }} {{ $visitForPrint->printed_eligibility_at->format('Y-m-d H:i') }}
+                                    </span>
+                                @endif
+                            </div>
                         </form>
 
                         <form id="price_inquiry_print_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline ms-2">
                             @csrf
-                            <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700">
-                                {{ app()->getLocale() === 'ar' ? '📋 طباعة عرض سعر استعلامي' : '📋 Print price inquiry' }}
-                            </button>
+                            <div class="inline-flex flex-col items-start gap-1">
+                                <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700">
+                                    {{ app()->getLocale() === 'ar' ? '📋 طباعة عرض سعر استعلامي' : '📋 Print price inquiry' }}
+                                </button>
+                                @if($visitForPrint->printed_price_inquiry_at)
+                                    <span class="text-[10px] text-slate-500 italic">
+                                        {{ app()->getLocale() === 'ar' ? 'آخر طباعة: ' : 'Last print: ' }} {{ $visitForPrint->printed_price_inquiry_at->format('Y-m-d H:i') }}
+                                    </span>
+                                @endif
+                            </div>
                         </form>
 
                         <form id="visit_create_invoice_form" method="POST" action="{{ route('invoices.store') }}" class="inline ms-2">
