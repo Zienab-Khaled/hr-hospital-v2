@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ContactReportController;
+use App\Http\Controllers\DashboardApiController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DebtInventoryController;
 use App\Http\Controllers\InvoiceController;
@@ -42,6 +43,19 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Dashboard Dynamic Modals API
+    Route::prefix('api/dashboard')->group(function () {
+        Route::get('/patients-search', [DashboardApiController::class, 'searchPatients'])->name('api.dashboard.patients-search');
+        Route::get('/patient-invoices', [DashboardApiController::class, 'getPatientInvoices'])->name('api.dashboard.patient-invoices');
+        Route::get('/get-details', [DashboardApiController::class, 'getRecordDetails'])->name('api.dashboard.get-details');
+        Route::post('/patient/store', [DashboardApiController::class, 'storePatient'])->name('api.dashboard.patient.store');
+        Route::post('/visit/store', [DashboardApiController::class, 'storeVisit'])->name('api.dashboard.visit.store');
+        Route::post('/written-commitment', [DashboardApiController::class, 'storeWrittenCommitment'])->name('api.dashboard.written-commitment.store');
+        Route::post('/non-commitment-report', [DashboardApiController::class, 'storeNonCommitmentReport'])->name('api.dashboard.non-commitment-report.store');
+        Route::post('/contact-report', [DashboardApiController::class, 'storeContactReport'])->name('api.dashboard.contact-report.store');
+        Route::post('/debt-inventory', [DashboardApiController::class, 'storeDebtInventory'])->name('api.dashboard.debt-inventory.store');
+    });
 
     Route::get('patients/search', [PatientController::class, 'search'])->name('patients.search');
     Route::get('patients/check-insurance', [PatientController::class, 'checkInsurance'])->name('patients.check-insurance');

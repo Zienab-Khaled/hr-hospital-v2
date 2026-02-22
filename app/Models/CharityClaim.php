@@ -27,6 +27,11 @@ class CharityClaim extends Model
         return $this->belongsTo(Invoice::class);
     }
 
+    public function patient()
+    {
+        return $this->hasOneThrough(Patient::class, Invoice::class, 'id', 'id', 'invoice_id', 'patient_id');
+    }
+
     public function charityEntity(): BelongsTo
     {
         return $this->belongsTo(CharityEntity::class, 'charity_entity_id');

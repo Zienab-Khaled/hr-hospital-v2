@@ -21,25 +21,21 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        $recentContactReports = ContactReport::with(['patient', 'employee'])
+        $recentVisits = \App\Models\Visit::with(['patient', 'department', 'shift'])
             ->latest()
-            ->take(5)
+            ->take(10)
             ->get();
 
-        $recentWrittenCommitments = WrittenCommitment::with('patient')
+        $recentInvoices = \App\Models\Invoice::with(['patient'])
             ->latest()
-            ->take(5)
+            ->take(10)
             ->get();
 
-        $recentNonCommitmentReports = NonCommitmentReport::with('patient')
-            ->latest()
-            ->take(5)
-            ->get();
+        // Combined Insurance and Charity Claims
+        $insuranceClaims = \App\Models\InsuranceClaim::with(['patient', 'invoice'])->latest()->take(5)->get();
+        $charityClaims = \App\Models\CharityClaim::with(['patient', 'invoice'])->latest()->take(5)->get();
 
-        $recentDebtInventories = DebtInventory::with('patient')
-            ->latest()
-            ->take(5)
-            ->get();
+        $recentClaims = $insuranceClaims->concat($charityClaims)->sortByDesc('created_at')->take(10);
 
         $totalInvoiced = (float) Invoice::sum('total_amount');
         $totalCollected = (float) Payment::sum('amount');
@@ -47,10 +43,9 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'recentPatients',
-            'recentContactReports',
-            'recentWrittenCommitments',
-            'recentNonCommitmentReports',
-            'recentDebtInventories',
+            'recentVisits',
+            'recentInvoices',
+            'recentClaims',
             'totalInvoiced',
             'totalCollected',
             'totalRemaining'

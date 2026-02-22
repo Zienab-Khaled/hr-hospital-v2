@@ -31,6 +31,11 @@ class InsuranceClaim extends Model implements HasMedia
         return $this->belongsTo(Invoice::class);
     }
 
+    public function patient()
+    {
+        return $this->hasOneThrough(Patient::class, Invoice::class, 'id', 'id', 'invoice_id', 'patient_id');
+    }
+
     public function insuranceCompany(): BelongsTo
     {
         return $this->belongsTo(InsuranceCompany::class, 'insurance_company_id');

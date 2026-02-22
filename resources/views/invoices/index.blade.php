@@ -16,21 +16,36 @@
 
     {{-- Search and Filter using Global Component --}}
     <x-index-filters :action="route('invoices.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'رقم الفاتورة، اسم المريض...' : 'Invoice no, patient name...'">
+        @if ($isAdmin)
+            <div class="w-36">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</label>
+                <select name="shift_id" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    @foreach ($shifts as $s)
+                        <option value="{{ $s->id }}" {{ request('shift_id') == $s->id ? 'selected' : '' }}>
+                            {{ app()->getLocale() === 'ar' && $s->name_ar ? $s->name_ar : $s->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+        <div class="w-40">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</label>
+            <input type="date" name="date" value="{{ request('date', date('Y-m-d')) }}"
+                class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
+        </div>
         <div class="w-32">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                 {{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}
             </label>
             <select name="status"
-                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>
-                    {{ app()->getLocale() === 'ar' ? 'مدفوعة' : 'Paid' }}</option>
-                <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>
-                    {{ app()->getLocale() === 'ar' ? 'غير مدفوعة' : 'Unpaid' }}</option>
-                <option value="sent_to_insurance" {{ request('status') === 'sent_to_insurance' ? 'selected' : '' }}>
-                    {{ app()->getLocale() === 'ar' ? 'مرسل لشركة التأمين' : 'Sent to insurance' }}</option>
-                <option value="sent_to_charity" {{ request('status') === 'sent_to_charity' ? 'selected' : '' }}>
-                    {{ app()->getLocale() === 'ar' ? 'مرسل للجمعية' : 'Sent to charity' }}</option>
+                <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'مدفوعة' : 'Paid' }}</option>
+                <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'غير مدفوعة' : 'Unpaid' }}</option>
+                <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'معتمد' : 'Approved' }}</option>
+                <option value="sent_to_insurance" {{ request('status') === 'sent_to_insurance' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'مرسل لشركة التأمين' : 'Sent to insurance' }}</option>
+                <option value="sent_to_charity" {{ request('status') === 'sent_to_charity' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'مرسل للجمعية' : 'Sent to charity' }}</option>
             </select>
         </div>
     </x-index-filters>

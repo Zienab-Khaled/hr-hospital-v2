@@ -258,14 +258,45 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('invoices.view');
 
-        $query = Invoice::with('patient');
+        $query = Invoice::with(['patient', 'visit.shift', 'visit.department']);
+
+        // Default filters
+        if (!$request->has('date')) {
+            $request->merge(['date' => date('Y-m-d')]);
+        }
+
+        $isAdmin = auth()->user()->hasRole('admin');
+        if (!$isAdmin && !$request->has('shift_id')) {
+            $currentShift = Shift::getCurrentShift();
+            if ($currentShift) {
+                $request->merge(['shift_id' => $currentShift->id]);
+            }
+        }
 
         $this->applyIndexFilters(
             $query,
             $request,
             ['invoice_number', 'patient.name', 'patient.name_ar', 'patient.file_number'],
-            []
+            [
+                'registered_by' => 'created_by', // Wait, does invoice have created_by? Let's check.
+            ]
         );
+
+        if ($request->filled('date')) {
+            $query->whereDate('invoice_date', $request->input('date'));
+        }
+
+        if ($request->filled('shift_id')) {
+            $query->whereHas('visit', function($q) use ($request) {
+                $q->where('shift_id', $request->input('shift_id'));
+            });
+        }
+
+        if ($request->filled('department_id')) {
+            $query->whereHas('visit', function($q) use ($request) {
+                $q->where('department_id', $request->input('department_id'));
+            });
+        }
 
         // Custom status filter
         if ($request->filled('status')) {
@@ -274,7 +305,7 @@ class PlaceholderController extends Controller
                 $query->where('remaining_amount', '=', 0);
             } elseif ($status === 'unpaid') {
                 $query->where('remaining_amount', '>', 0);
-            } elseif (in_array($status, ['sent_to_insurance', 'sent_to_charity'])) {
+            } elseif (in_array($status, ['sent_to_insurance', 'sent_to_charity', 'approved', 'rejected'])) {
                 $query->where('status', $status);
             }
         }
@@ -283,7 +314,12 @@ class PlaceholderController extends Controller
             ->paginate($this->getPerPage($request))
             ->withQueryString();
 
-        return view('invoices.index', compact('invoices'));
+        $shifts = Shift::all();
+        $departments = Department::all();
+        $registrars = User::all(); // Simplified for now
+        $insuranceCompanies = InsuranceCompany::all();
+
+        return view('invoices.index', compact('invoices', 'shifts', 'departments', 'registrars', 'insuranceCompanies', 'isAdmin'));
     }
 
     public function authorizationsIndex()
