@@ -8,10 +8,10 @@
     <a href="{{ route('authorizations.index') }}" class="px-4 py-2 rounded-t bg-slate-100 text-slate-600 text-sm hover:bg-slate-200">{{ __("Authorizations") }}</a>
 
     {{-- Quick Action Tabs --}}
-    <button onclick="openDashboardModal('visit')" class="ml-4 px-4 py-2 rounded-t bg-green-600 text-white text-sm font-bold hover:bg-green-700 flex items-center gap-1">
+    <button onclick="openDashboardModal('visit')" class="ml-4 px-4 py-2 rounded-t bg-green-600  text-sm font-bold hover:bg-green-700 flex items-center gap-1">
         <span>🩺</span> {{ app()->getLocale() === 'ar' ? 'إضافة زيارة' : 'Add Visit' }}
     </button>
-    <button onclick="openDashboardModal('invoice')" class="ml-1 px-4 py-2 rounded-t bg-orange-500 text-white text-sm font-bold hover:bg-orange-600 flex items-center gap-1">
+    <button onclick="openDashboardModal('invoice')" class="ml-1 px-4 py-2 rounded-t bg-amber-600 text-sm font-bold hover:bg-orange-600 flex items-center gap-1">
         <span>💰</span> {{ app()->getLocale() === 'ar' ? 'إضافة فاتورة' : 'Add Invoice' }}
     </button>
 @endsection
@@ -76,7 +76,7 @@
                 <span>🩺</span> {{ __("Visits") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="openDashboardModal('visit')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</button>
+                <button onclick="openDashboardModal('visit')" class="bg-green-600  px-4 py-2 rounded text-sm bg-amber-600 font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</button>
                 <a href="{{ route('visits.create') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
             <div class="overflow-x-auto">
@@ -103,7 +103,7 @@
                 <span>💰</span> {{ __("Invoices") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="openDashboardModal('invoice')" class="bg-orange-500 text-white px-4 py-2 rounded text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</button>
+                <button onclick="openDashboardModal('invoice')" class="bg-orange-500  px-4 py-2 rounded  bg-amber-600 text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</button>
                 <a href="{{ route('invoices.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
             <div class="overflow-x-auto">
@@ -130,7 +130,7 @@
                 <span>📑</span> {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <a href="{{ route('charity-claims.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'مطالبة جديدة' : 'New Claim' }}</a>
+                <a href="{{ route('insurance-claims.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'مطالبة جديدة' : 'New Claim' }}</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-slate-600">
