@@ -7,14 +7,60 @@
     Development')
 
 @section('content')
-    <div class="space-y-4" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+    <div class="space-y-6" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
-        {{-- مؤشرات الأداء: كلهم في صف واحد جنب بعض --}}
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <form action="{{ route('reports.index') }}" method="GET" class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'من' : 'From' }}</label>
+                        <input type="date" name="start_date" value="{{ request('start_date', date('Y-m-d')) }}"
+                               class="rounded-lg border-slate-200 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ app()->getLocale() === 'ar' ? 'إلى' : 'To' }}</label>
+                        <input type="date" name="end_date" value="{{ request('end_date', date('Y-m-d')) }}"
+                               class="rounded-lg border-slate-200 text-sm focus:ring-blue-500 focus:border-blue-500 text-slate-900">
+                    </div>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md shadow-blue-100 transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z"/></svg>
+                        {{ app()->getLocale() === 'ar' ? 'تصفية' : 'Filter' }}
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                    @php
+                        $today = date('Y-m-d');
+                        $thisWeek = date('Y-m-d', strtotime('monday this week'));
+                        $thisMonth = date('Y-m-01');
+                        $thisYear = date('Y-01-01');
+                    @endphp
+                    <a href="{{ route('reports.index', ['start_date' => $today, 'end_date' => $today]) }}"
+                       class="px-3 py-1.5 rounded-full text-xs font-bold transition-all {{ request('start_date') == $today ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                        {{ app()->getLocale() === 'ar' ? 'اليوم' : 'Today' }}
+                    </a>
+                    <a href="{{ route('reports.index', ['start_date' => $thisWeek, 'end_date' => $today]) }}"
+                       class="px-3 py-1.5 rounded-full text-xs font-bold transition-all {{ request('start_date') == $thisWeek ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                        {{ app()->getLocale() === 'ar' ? 'هذا الأسبوع' : 'This Week' }}
+                    </a>
+                    <a href="{{ route('reports.index', ['start_date' => $thisMonth, 'end_date' => $today]) }}"
+                       class="px-3 py-1.5 rounded-full text-xs font-bold transition-all {{ request('start_date') == $thisMonth ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                        {{ app()->getLocale() === 'ar' ? 'هذا الشهر' : 'This Month' }}
+                    </a>
+                    <a href="{{ route('reports.index', ['start_date' => $thisYear, 'end_date' => $today]) }}"
+                       class="px-3 py-1.5 rounded-full text-xs font-bold transition-all {{ request('start_date') == $thisYear ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                        {{ app()->getLocale() === 'ar' ? 'هذه السنة' : 'This Year' }}
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {{-- مؤشرات الأداء: كلهم في صف واحد جنب بعض (التصميم الأصلي) --}}
         <div class="flex flex-nowrap gap-4 overflow-x-auto pb-2">
             <div class="flex-1 min-w-[200px] bg-green-100 border border-green-300 rounded-xl p-5 shadow text-center">
                 <p class="text-2xl font-bold text-green-800 mb-1">@currency($revenueToday)</p>
                 <p class="text-sm text-green-700 font-semibold">
-                    {{ app()->getLocale() === 'ar' ? 'الإيرادات اليوم' : "Today's Revenue" }}</p>
+                    {{ request('start_date') ? (app()->getLocale() === 'ar' ? 'إيرادات الفترة' : 'Period Revenue') : (app()->getLocale() === 'ar' ? 'الإيرادات اليوم' : "Today's Revenue") }}</p>
             </div>
             <div class="flex-1 min-w-[200px] bg-blue-100 border border-blue-300 rounded-xl p-5 shadow text-center">
                 <p class="text-2xl font-bold text-blue-800 mb-1">@currency($totalCollected)</p>
@@ -38,73 +84,163 @@
             </div>
         </div>
 
-        {{-- الصف الأول: 3 كروت --}}
-        <div class="grid grid-cols-1 p-4 lg:grid-cols-3 gap-4">
-            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-800 mb-4 text-base">
-                    {{ app()->getLocale() === 'ar' ? 'توزيع الإيرادات' : 'Revenue Distribution' }}</h3>
-                <div class="h-52 flex items-center justify-center mb-3">
+        {{-- Row of 3 Analytics Cards --}}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {{-- Card 1: أداء الأقسام (Pie Chart) --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden relative min-h-[400px]">
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <span class="p-2 bg-slate-100 rounded-lg text-lg">🏥</span>
+                    {{ request('start_date') ? (app()->getLocale() === 'ar' ? 'أداء الأقسام (الفترة)' : 'Department Performance (Period)') : (app()->getLocale() === 'ar' ? 'أداء الأقسام (اليوم)' : 'Department Performance (Today)') }}
+                </h3>
+
+                <div class="h-52 flex items-center justify-center mb-6">
+                    <canvas id="deptPerformancePieChart" width="220" height="220"></canvas>
+                </div>
+
+                <div class="space-y-2 text-xs font-bold overflow-y-auto max-h-48 pr-2">
+                    @foreach($deptPerformance as $dept)
+                    <p class="flex justify-between items-center group cursor-pointer hover:bg-slate-50 p-1.5 rounded transition-colors" onclick="showDeptDetails({{ json_encode($dept) }})">
+                        <span class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background-color: {{ $dept->color }}"></span>
+                            <span class="text-slate-600 truncate max-w-[120px]">{{ $dept->name_ar }}</span>
+                        </span>
+                        <span class="font-black text-slate-800 underline">@currency($dept->total)</span>
+                    </p>
+                    @endforeach
+                </div>
+
+                {{-- Detail Overlay --}}
+                <div id="deptOverlay" class="hidden absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex items-center justify-center p-6 transition-all rounded-2xl">
+                    <button onclick="closeDeptDetails()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-2xl transition-colors">✕</button>
+                    <div class="text-center space-y-4 max-w-sm w-full">
+                        <div id="deptDetailIcon" class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-slate-200"></div>
+                        <h2 id="deptDetailName" class="text-xl font-black text-slate-800"></h2>
+                        <div id="deptDetailLevel" class="inline-block px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase"></div>
+
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <p class="text-[10px] text-slate-500 mb-1 font-bold uppercase">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Transactions' }}</p>
+                                <p id="deptDetailPatients" class="text-xl font-black text-slate-700"></p>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <p class="text-[10px] text-slate-500 mb-1 font-bold uppercase">{{ app()->getLocale() === 'ar' ? 'إجمالي التحصيل' : 'Total Amount' }}</p>
+                                <p id="deptDetailTotal" class="text-xl font-black text-blue-600"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card 2: توزيع الإيرادات الكلي --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[400px]">
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <span class="p-2 bg-slate-100 rounded-lg text-lg">🍰</span>
+                    {{ app()->getLocale() === 'ar' ? 'توزيع الإيرادات الكلي' : 'Total Revenue Distribution' }}
+                </h3>
+                <div class="h-52 flex items-center justify-center mb-6">
                     <canvas id="revenuePieChart" width="220" height="220"></canvas>
                 </div>
-                <div class="space-y-2 text-sm font-medium">
-                    <p class="flex justify-between">
-                        <span>{{ app()->getLocale() === 'ar' ? 'جمعيات' : 'Charities' }}</span>
-                        <span class="font-bold">{{ $revenueCharity }}%</span>
-                    </p>
-                    <p class="flex justify-between">
-                        <span>{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
-                        <span class="font-bold">{{ $revenueInsurance }}%</span>
-                    </p>
-                    <p class="flex justify-between">
-                        <span>{{ app()->getLocale() === 'ar' ? 'نقدي' : 'Cash' }}</span>
-                        <span class="font-bold">{{ $revenueCash }}%</span>
-                    </p>
+                <div class="space-y-3 text-xs font-bold">
+                    <div class="flex justify-between items-center p-2 bg-emerald-50 rounded-lg">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 bg-emerald-500 rounded-sm"></div>{{ app()->getLocale() === 'ar' ? 'جمعيات' : 'Charities' }}</span>
+                        <span class="text-emerald-700">{{ $revenueCharity }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-orange-50 rounded-lg">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 bg-orange-500 rounded-sm"></div>{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
+                        <span class="text-orange-700">{{ $revenueInsurance }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-blue-50 rounded-lg">
+                        <span class="flex items-center gap-2"><div class="w-3 h-3 bg-blue-500 rounded-sm"></div>{{ app()->getLocale() === 'ar' ? 'نقدي' : 'Cash' }}</span>
+                        <span class="text-blue-700">{{ $revenueCash }}%</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-800 mb-4 text-base">
-                    {{ app()->getLocale() === 'ar' ? 'نمو الإيرادات الشهرية' : 'Monthly Revenue Growth' }}</h3>
-                <div class="h-52">
-                    <canvas id="monthlyLineChart" height="200"></canvas>
+            {{-- Card 3: حالة الديون --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 min-h-[400px]">
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <span class="p-2 bg-slate-100 rounded-lg text-lg">💳</span>
+                    {{ app()->getLocale() === 'ar' ? 'حالة الديون' : 'Debt Status' }}
+                </h3>
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl flex justify-between items-center">
+                        <span class="font-bold text-slate-600">{{ app()->getLocale() === 'ar' ? 'إجمالي الديون' : 'Total Debts' }}</span>
+                        <span class="text-xl font-black text-rose-600">@currency($totalDebts)</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 border-b text-sm">
+                        <span class="text-slate-500 font-medium">{{ app()->getLocale() === 'ar' ? 'متأخر 30 يوم' : 'Overdue 30 days' }}</span>
+                        <span class="font-bold text-amber-600">@currency($overdue30)</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 border-b text-sm">
+                        <span class="text-slate-500 font-medium">{{ app()->getLocale() === 'ar' ? 'متأخر 60 يوم' : 'Overdue 60 days' }}</span>
+                        <span class="font-bold text-orange-600">@currency($overdue60)</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 text-sm">
+                        <span class="text-slate-500 font-medium">{{ app()->getLocale() === 'ar' ? 'متأخر 90 يوم' : 'Overdue 90 days' }}</span>
+                        <span class="font-bold text-rose-600">@currency($overdue90)</span>
+                    </div>
+                    <a href="{{ route('patients.section.collection') }}" class="w-full mt-2 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-center font-bold block shadow-md shadow-rose-100 transition-all">
+                        {{ app()->getLocale() === 'ar' ? 'إجراءات التحصيل' : 'Collection Actions' }}
+                    </a>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-800 mb-4 text-base">
-                    {{ app()->getLocale() === 'ar' ? 'حالة الديون' : 'Debt Status' }}</h3>
-                <table class="w-full text-sm">
-                    <tbody>
-                        <tr class="border-b">
-                            <td class="py-2.5 font-medium">
-                                {{ app()->getLocale() === 'ar' ? 'إجمالي الديون' : 'Total Debts' }}</td>
-                            <td class="py-2.5 text-end font-bold">@currency($totalDebts)</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-2.5 font-medium">
-                                {{ app()->getLocale() === 'ar' ? 'متأخر 30 يوم' : 'Overdue 30 days' }}</td>
-                            <td class="py-2.5 text-end font-bold text-amber-600">@currency($overdue30)</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-2.5 font-medium">
-                                {{ app()->getLocale() === 'ar' ? 'متأخر 60 يوم' : 'Overdue 60 days' }}</td>
-                            <td class="py-2.5 text-end font-bold text-orange-600">@currency($overdue60)</td>
-                        </tr>
-                        <tr class="border-b">
-                            <td class="py-2.5 font-medium">
-                                {{ app()->getLocale() === 'ar' ? 'متأخر 90 يوم' : 'Overdue 90 days' }}</td>
-                            <td class="py-2.5 text-end font-bold text-red-600">@currency($overdue90)</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <a href="{{ route('patients.section.collection') }}"
-                    class="mt-4 inline-block w-full text-center   bg-green-100  p-4 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 shadow">
-                    {{ app()->getLocale() === 'ar' ? 'عرض الحالات الحرجة' : 'Show Critical Cases' }}
-                </a>
             </div>
         </div>
 
-        {{-- الصف الثاني: 3 كروت --}}
+        {{-- Row for Monthly Growth --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <span class="p-2 bg-slate-100 rounded-lg text-lg">📉</span>
+                {{ app()->getLocale() === 'ar' ? 'نمو الإيرادات الشهرية' : 'Monthly Revenue Growth' }}
+            </h3>
+            <div class="h-64">
+                <canvas id="monthlyLineChart"></canvas>
+            </div>
+        </div>
+
+        {{-- إحصائيات الأكثر تعاملاً --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
+                <h4 class="font-bold text-slate-800 mb-3 text-sm flex items-center gap-2">
+                    🏢 {{ app()->getLocale() === 'ar' ? 'شركات التأمين (الأعلى)' : 'Top Insurance' }}
+                </h4>
+                <div class="space-y-2">
+                    @foreach($topInsurances as $item)
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-600 truncate max-w-[140px]">{{ $item->name }}</span>
+                        <span class="font-bold text-blue-600">@currency($item->total)</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
+                <h4 class="font-bold text-slate-800 mb-3 text-sm flex items-center gap-2">
+                    🤝 {{ app()->getLocale() === 'ar' ? 'أكثر الجمعيات' : 'Top Charities' }}
+                </h4>
+                <div class="space-y-2">
+                    @foreach($topCharities as $item)
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-600 truncate max-w-[140px]">{{ $item->name }}</span>
+                        <span class="font-bold text-emerald-600">@currency($item->total)</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
+                <h4 class="font-bold text-slate-800 mb-3 text-sm flex items-center gap-2">
+                    🔬 {{ app()->getLocale() === 'ar' ? 'الخدمات الطبية الأكثر طلباً' : 'Top Services' }}
+                </h4>
+                <div class="space-y-2">
+                    @foreach($topServices as $item)
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-600 truncate max-w-[140px]">{{ $item->name }}</span>
+                        <span class="font-bold text-amber-600">{{ $item->qty }} {{ app()->getLocale() === 'ar' ? 'طلب' : 'Req' }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- باقى كروت التصميم الأصلي --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
                 <h3 class="font-bold text-slate-800 mb-4 text-base">
@@ -118,11 +254,6 @@
                         <span
                             class="font-medium">{{ app()->getLocale() === 'ar' ? 'تحصيل الشهر' : 'Month collected' }}</span>
                         <span class="font-bold">@currency($collectionMonth)</span>
-                    </p>
-                    <p class="flex justify-between">
-                        <span
-                            class="font-medium">{{ app()->getLocale() === 'ar' ? 'الأسماء الأخرى بتحصيل' : 'Other items' }}</span>
-                        <span class="font-bold">-</span>
                     </p>
                 </div>
                 <a href="{{ route('payments.index') }}" class="text-sm text-blue-600 hover:underline font-semibold">
@@ -156,37 +287,33 @@
                         @endif
                     @endforeach
                 </ul>
-
             </div>
         </div>
 
-        {{-- أزرار التقارير والتصدير --}}
+        {{-- أزرار التصدير --}}
         <div class="flex flex-wrap items-center gap-3 p-4 border-t-2 border-slate-200">
-            <a href="{{ route('reports.index') }}"
-                class="px-6 p-3 py-2.5 bg-blue-600  rounded-lg text-sm font-bold hover:bg-blue-700 shadow">
+            <!-- <a href="{{ route('reports.index') }}"
+                class="px-6 p-3 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow">
                 {{ app()->getLocale() === 'ar' ? 'تقرير شهري' : 'Monthly Report' }}
-            </a>
-            <a href="{{ route('reports.index') }}"
+            </a> -->
+            <!-- <a href="{{ route('reports.index') }}"
                 class="px-6 p-3 py-2.5 bg-green-600  rounded-lg text-sm font-bold hover:bg-green-700 shadow">
                 {{ app()->getLocale() === 'ar' ? 'تقرير ربعي' : 'Quarterly Report' }}
-            </a>
+            </a> -->
             <a href="{{ route('patients.section.collection') }}"
-                class="px-6 p-3 py-2.5 bg-blue-600  rounded-lg text-sm font-bold hover:bg-blue-700 shadow">
+                class="px-6 p-3 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow">
                 {{ app()->getLocale() === 'ar' ? 'تقرير الديون' : 'Debts Report' }}
             </a>
-            <a href="{{ route('reports.upload-cluster') }}"
-                class="px-6 p-3 py-2.5 bg-green-600  rounded-lg text-sm font-bold hover:bg-green-700 shadow">
-                {{ app()->getLocale() === 'ar' ? 'التجمع الصحي' : 'Health Cluster' }}
-            </a>
+
 
             <div class="hidden md:block w-px h-8 bg-slate-300 mx-2"></div>
 
-            <a href="{{ route('reports.index') }}"
+            <a href="{{ route('reports.export.pdf', request()->query()) }}"
                 class="inline-flex items-center justify-center gap-2 px-6 p-3 py-2.5 bg-red-700 rounded-lg text-sm font-bold hover:bg-red-800 shadow">
                 <span class="text-base">📄</span>
                 <span>{{ app()->getLocale() === 'ar' ? 'تصدير PDF' : 'Export PDF' }}</span>
             </a>
-            <a href="{{ route('reports.index') }}"
+            <a href="{{ route('reports.export.excel', request()->query()) }}"
                 class="inline-flex items-center justify-center gap-2 px-6 p-3 py-2.5 bg-green-700  rounded-lg text-sm font-bold hover:bg-green-800 shadow">
                 <span class="text-base">📊</span>
                 <span>{{ app()->getLocale() === 'ar' ? 'تصدير Excel' : 'Export Excel' }}</span>
@@ -198,17 +325,56 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const isRtl = document.documentElement.dir === 'rtl' || document.documentElement.lang === 'ar';
+            const deptData = @json($deptPerformance);
 
-            // توزيع الإيرادات (دائري)
+            // 1. Pie Chart - أداء الأقسام
+            const deptCtx = document.getElementById('deptPerformancePieChart').getContext('2d');
+            const hasDeptData = deptData.some(d => d.total > 0);
+
+            const deptCharts = new Chart(deptCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: hasDeptData ? deptData.map(d => d.name_ar) : ['No Data'],
+                    datasets: [{
+                        data: hasDeptData ? deptData.map(d => d.total) : [1],
+                        backgroundColor: hasDeptData ? deptData.map(d => d.color) : ['#f1f5f9'],
+                        borderWidth: hasDeptData ? 2 : 0,
+                        borderColor: '#fff',
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: hasDeptData,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + new Intl.NumberFormat('ar-SA').format(context.raw) + ' ريال';
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (hasDeptData && elements.length > 0) {
+                            const index = elements[0].index;
+                            showDeptDetails(deptData[index]);
+                        }
+                    }
+                }
+            });
+
+            // 2. توزيع الإيرادات الكلي
             const pieCtx = document.getElementById('revenuePieChart').getContext('2d');
             new Chart(pieCtx, {
                 type: 'pie',
                 data: {
                     labels: isRtl ? ['جمعيات', 'تأمين', 'نقدي'] : ['Charities', 'Insurance', 'Cash'],
                     datasets: [{
-                        data: [{{ $revenueCharity }}, {{ $revenueInsurance }},
-                            {{ $revenueCash }}
-                        ],
+                        data: [{{ $revenueCharity }}, {{ $revenueInsurance }}, {{ $revenueCash }}],
                         backgroundColor: ['#22c55e', '#f97316', '#3b82f6'],
                     }]
                 },
@@ -218,19 +384,13 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: {
-                                font: {
-                                    size: 13,
-                                    weight: 'bold'
-                                },
-                                padding: 15
-                            }
+                            labels: { font: { size: 12, weight: 'bold' } }
                         }
                     }
                 }
             });
 
-            // نمو الإيرادات الشهرية (خط)
+            // 3. نمو الإيرادات الشهرية
             const lineCtx = document.getElementById('monthlyLineChart').getContext('2d');
             const months = @json($monthlyRevenue->pluck('month'));
             const totals = @json($monthlyRevenue->pluck('total'));
@@ -244,39 +404,44 @@
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
-                        tension: 0.4,
-                        borderWidth: 3
+                        tension: 0.4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: {
-                                    size: 11,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         });
+
+        function showDeptDetails(dept) {
+            const overlay = document.getElementById('deptOverlay');
+            const nameEl = document.getElementById('deptDetailName');
+            const iconEl = document.getElementById('deptDetailIcon');
+            const patientsEl = document.getElementById('deptDetailPatients');
+            const totalEl = document.getElementById('deptDetailTotal');
+            const levelEl = document.getElementById('deptDetailLevel');
+
+            nameEl.textContent = dept.name_ar;
+            patientsEl.textContent = dept.patient_count;
+            totalEl.textContent = new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(dept.total);
+
+            iconEl.style.backgroundColor = dept.color;
+            iconEl.textContent = dept.level === 'high' ? '⭐' : (dept.level === 'medium' ? '⚡' : '📉');
+
+            levelEl.textContent = dept.level.toUpperCase();
+            levelEl.style.backgroundColor = dept.color + '20';
+            levelEl.style.color = dept.color;
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        function closeDeptDetails() {
+            const overlay = document.getElementById('deptOverlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
     </script>
 @endsection

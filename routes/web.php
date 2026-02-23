@@ -43,6 +43,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('manager/dashboard', [DashboardController::class, 'managerDashboard'])->name('manager.dashboard');
 
     // Dashboard Dynamic Modals API
     Route::prefix('api/dashboard')->group(function () {
@@ -151,6 +152,8 @@ Route::middleware('auth')->group(function () {
     Route::post('payments/{payment}/approve', [PlaceholderController::class, 'paymentApprove'])->name('payments.approve');
     Route::get('claims', [PlaceholderController::class, 'claimsIndex'])->name('claims.index');
     Route::get('reports', [PlaceholderController::class, 'reportsIndex'])->name('reports.index');
+    Route::get('reports/export/pdf', [App\Http\Controllers\ReportExportController::class, 'exportPdf'])->name('reports.export.pdf');
+    Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadCluster'])->name('reports.upload-cluster');
     Route::post('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadClusterStore'])->name('reports.upload-cluster.store');
 
