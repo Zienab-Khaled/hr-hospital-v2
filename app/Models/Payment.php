@@ -11,7 +11,7 @@ class Payment extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-        'invoice_id', 'payment_type', 'amount', 'received_date', 'received_by', 'approved_by', 'approved_at', 'reference_no', 'status', 'notes',
+        'invoice_id', 'payment_type', 'amount', 'received_date', 'received_by', 'approved_by', 'approved_at', 'reference_no', 'status', 'notes', 'audit_status',
     ];
 
     protected function casts(): array
@@ -20,6 +20,7 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'received_date' => 'date',
             'approved_at' => 'datetime',
+            'audit_status' => 'string',
         ];
     }
 

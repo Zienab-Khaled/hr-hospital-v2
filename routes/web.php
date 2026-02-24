@@ -11,6 +11,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PlaceholderController;
 use App\Http\Controllers\ShiftHandoverController;
 use App\Http\Controllers\VisitController;
+use App\Http\Controllers\RevenueWorkflowController;
 use App\Http\Controllers\WrittenCommitmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -153,6 +154,13 @@ Route::middleware('auth')->group(function () {
     Route::get('claims', [PlaceholderController::class, 'claimsIndex'])->name('claims.index');
     Route::get('reports', [PlaceholderController::class, 'reportsIndex'])->name('reports.index');
     Route::get('reports/export/pdf', [App\Http\Controllers\ReportExportController::class, 'exportPdf'])->name('reports.export.pdf');
+    // Revenue Workflow (Control Room)
+    Route::prefix('revenue')->name('revenue.')->group(function () {
+        Route::get('/control-room', [RevenueWorkflowController::class, 'controlRoom'])->name('control-room');
+        Route::post('/invoices/{invoice}/match', [RevenueWorkflowController::class, 'match'])->name('invoices.match');
+        Route::post('/invoices/{invoice}/reject', [RevenueWorkflowController::class, 'reject'])->name('invoices.reject');
+        Route::post('/invoices/{invoice}/ready', [RevenueWorkflowController::class, 'markReadyForDeposit'])->name('invoices.ready');
+    });
     Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadCluster'])->name('reports.upload-cluster');
     Route::post('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadClusterStore'])->name('reports.upload-cluster.store');

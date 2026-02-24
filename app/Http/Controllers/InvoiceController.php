@@ -250,6 +250,7 @@ class InvoiceController extends Controller
                 'notes' => $validated['notes'],
                 'print_media_ids' => $printMediaIds ?: null,
                 'payment_type' => $finalPaymentType,
+                'audit_status' => 'under_review',
             ]);
 
             // Create invoice items (quantity: ensure integer for DB; optional insurance coverage per line)

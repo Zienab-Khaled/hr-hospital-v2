@@ -18,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Use Tailwind pagination views
         Paginator::useTailwind();
-        
+
         Gate::before(function ($user, $ability) {
             if (method_exists($user, 'hasPermissionTo') && $user->hasPermissionTo($ability)) {
                 return true;

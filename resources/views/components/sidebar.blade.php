@@ -30,14 +30,14 @@
         </a>
 
         @if($isManager)
-        <a href="{{ route('manager.dashboard') }}"
+        <!-- <a href="{{ route('manager.dashboard') }}"
             class="flex items-center gap-2.5 px-3 py-1.5 mb-2 rounded-md text-sm font-bold transition-colors
            {{ request()->routeIs('manager.dashboard') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-indigo-50 border border-slate-200' }}">
             <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <span>{{ app()->getLocale() === 'ar' ? 'لوحة تحكم المدير' : 'Analytics Dashboard' }}</span>
-        </a>
+        </a> -->
         @endif
 
         {{-- Patients Section --}}
@@ -286,7 +286,15 @@
 
         {{-- Reports --}}
         @if ($user->can('reports.view') || $isManager)
-            <a href="{{ route('reports.index') }}"
+                <a href="{{ route('revenue.control-room') }}"
+                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                   {{ request()->routeIs('revenue.control-room') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'فواتير المحاسب (Control Room)' : 'Accountant Invoices (Control Room)' }}</span>
+                </a>
+                <a href="{{ route('reports.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('reports.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
                 <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"

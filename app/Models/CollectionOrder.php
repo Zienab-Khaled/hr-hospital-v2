@@ -30,7 +30,7 @@ class CollectionOrder extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($order) {
             if (empty($order->order_number)) {
                 $order->order_number = 'COL-' . date('Ymd') . '-' . str_pad(static::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
