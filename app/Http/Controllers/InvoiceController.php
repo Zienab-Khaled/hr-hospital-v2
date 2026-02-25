@@ -235,15 +235,6 @@ class InvoiceController extends Controller
 
             // Determine initial payment_type for the invoice
             $finalPaymentType = $patient->payment_type;
-            if ($patient->payment_type === 'charity') {
-                // Check for approval document on visit or patient profile
-                $hasApprovalOnVisit = $visit && $visit->hasMedia('charity_approval');
-                $hasApprovalOnPatient = $patient->hasMedia('charity-approvals');
-
-                if (!$hasApprovalOnVisit && !$hasApprovalOnPatient) {
-                    $finalPaymentType = 'cash';
-                }
-            }
 
             // Create invoice
             $invoice = Invoice::create([
@@ -309,6 +300,19 @@ class InvoiceController extends Controller
                     'notes' => $validated['notes'] ?? 'Immediate collection upon creation',
                 ]);
 
+                // Prepare selected items data for receipt snapshot (Digital q-1)
+                $selectedItemsData = [];
+                foreach ($validated['services'] as $sData) {
+                    $s = \App\Models\Service::find($sData['service_id']);
+                    $selectedItemsData[] = [
+                        'id' => $sData['service_id'],
+                        'name' => $s?->name_ar ?? $s?->name ?? '—',
+                        'qty' => (int) round((float) $sData['quantity']),
+                        'unit_price' => (float) $sData['unit_price'],
+                        'total' => (float) $sData['total_price'],
+                    ];
+                }
+
                 // 2. Create Payment Receipt (Digital q-1)
                 $receipt = \App\Models\PaymentReceipt::create([
                     'payment_id' => $payment->id,
@@ -322,6 +326,7 @@ class InvoiceController extends Controller
                     'collected_by' => auth()->user()->id,
                     'collected_at' => now(),
                     'notes' => $validated['notes'],
+                    'selected_items' => $selectedItemsData,
                 ]);
 
                 // 3. Attach Proof Documents (Spatie Media Library)

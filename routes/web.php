@@ -144,6 +144,8 @@ Route::middleware('auth')->group(function () {
     Route::get('insurance-claims/patients-search', [App\Http\Controllers\InsuranceClaimController::class, 'searchPatients'])->name('insurance-claims.patients-search');
     Route::get('insurance-claims/get-invoices/{patient}', [App\Http\Controllers\InsuranceClaimController::class, 'getInvoices'])->name('insurance-claims.get-invoices');
     Route::get('insurance-claims/get-items/{invoice}', [App\Http\Controllers\InsuranceClaimController::class, 'getItems'])->name('insurance-claims.get-items');
+    Route::get('insurance-claims/{insuranceClaim}', [App\Http\Controllers\InsuranceClaimController::class, 'show'])->name('insurance-claims.show');
+    Route::post('insurance-claims/{insuranceClaim}/update-status', [App\Http\Controllers\InsuranceClaimController::class, 'updateStatus'])->name('insurance-claims.update-status');
     Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');

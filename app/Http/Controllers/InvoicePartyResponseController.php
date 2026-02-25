@@ -62,7 +62,7 @@ class InvoicePartyResponseController extends Controller
             $claim = \App\Models\CharityClaim::where('invoice_id', $partySend->invoice_id)->first();
             if ($claim) {
                 if ($validated['action'] === 'confirm') {
-                    $claim->markAsApproved($partySend->invoice->total_amount);
+                    $claim->markAsApproved($partySend->invoice->total_amount, $validated['response_text']);
                 } else {
                     $claim->markAsRejected($validated['response_text']);
                 }

@@ -283,12 +283,11 @@
                                     <div>
                                         <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'حالة الزيارة (نوع الحالة)' : 'Visit Case Type' }}</label>
                                         <select name="case_type" class="{{ $inputClass }}">
-                                            <option value="clinics" {{ ($visitForPrint->case_type ?? '') === 'clinics' ? 'selected' : '' }}>
-                                                {{ app()->getLocale() === 'ar' ? 'عيادات' : 'Clinics' }}
-                                            </option>
-                                            <option value="emergency" {{ ($visitForPrint->case_type ?? '') === 'emergency' ? 'selected' : '' }}>
-                                                {{ app()->getLocale() === 'ar' ? 'طوارئ' : 'Emergency' }}
-                                            </option>
+                                            @foreach($departments as $dept)
+                                                <option value="{{ $dept->name_ar ?? $dept->name }}" {{ ($visit->case_type ?? '') === ($dept->name_ar ?? $dept->name) ? 'selected' : '' }}>
+                                                    {{ $dept->name_ar ?? $dept->name }}
+                                                </option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div>

@@ -166,22 +166,40 @@ class CharityClaimController extends Controller
             'status' => 'required|in:under_review,approved,rejected,paid',
             'approved_amount' => 'nullable|numeric|min:0',
             'entity_response_notes' => 'nullable|string|max:1000',
+            'approval_document' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
+
+        // Handle Approval Document upload if status is approved or under_review
+        if ($request->hasFile('approval_document') && $charityClaim->invoice?->patient) {
+            $charityClaim->invoice->patient->addMedia($request->file('approval_document'))
+                ->toMediaCollection('charity-approvals');
+        }
 
         $oldStatus = $charityClaim->status;
 
         switch ($request->status) {
             case 'under_review':
-                $charityClaim->markAsUnderReview();
+                $charityClaim->markAsUnderReview($request->entity_response_notes);
                 break;
             case 'approved':
-                $charityClaim->markAsApproved($request->approved_amount);
+                $charityClaim->markAsApproved($request->approved_amount, $request->entity_response_notes);
                 break;
             case 'rejected':
                 $charityClaim->markAsRejected($request->entity_response_notes);
                 break;
             case 'paid':
                 $charityClaim->markAsPaid();
+
+                // Notify Accountants of the new revenue
+                $accountants = \App\Models\User::role('accountant')->get();
+                if ($accountants->isNotEmpty()) {
+                    \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
+                        'title' => app()->getLocale() === 'ar' ? 'تم تحصيل مطالبة جمعية' : 'Charity Claim Paid',
+                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($charityClaim->approved_amount ?: $charityClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($charityClaim->invoice->patient->name_ar ?? $charityClaim->invoice->patient->name),
+                        'action_url' => route('charity-claims.show', $charityClaim),
+                        'type' => 'success',
+                    ]));
+                }
                 break;
         }
 

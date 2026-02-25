@@ -46,6 +46,7 @@ class SystemNotification extends Notification
             'message' => $this->details['message'] ?? '',
             'action_url' => $this->details['action_url'] ?? '#',
             'type' => $this->details['type'] ?? 'info', // info, success, warning, danger
+            'metadata' => $this->details['metadata'] ?? [],
             'created_at' => now()->toDateTimeString(),
         ];
     }

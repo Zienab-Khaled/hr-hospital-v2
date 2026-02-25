@@ -136,6 +136,36 @@
             <span class="info-value">{{ $receipt->payment_method_label }} {{ $receipt->reference_number ? ' (مرجع: '.$receipt->reference_number.')' : '' }}</span>
         </div>
 
+        @if(!empty($receipt->selected_items))
+            <div style="margin-top: 25px;">
+                <p style="font-weight: bold; margin-bottom: 8px; font-size: 14px; border-bottom: 2px solid #333; display: inline-block; padding: 0 5px;">تفاصيل الخدمات المسددة في هذا الإيصال:</p>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #eee;">
+                            <th style="border: 1px solid #000; padding: 5px; text-align: center; width: 50%;">الخدمة</th>
+                            <th style="border: 1px solid #000; padding: 5px; text-align: center;">العدد</th>
+                            <th style="border: 1px solid #000; padding: 5px; text-align: center;">المبلغ المحصل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($receipt->selected_items as $item)
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 5px;">{{ $item['name'] }}</td>
+                            <td style="border: 1px solid #000; padding: 5px; text-align: center;">{{ $item['qty'] }}</td>
+                            <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">{{ number_format($item['total'], 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="border: 1px solid #000; padding: 5px; text-align: left; font-weight: bold;">الإجمالي المحصل:</td>
+                            <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: 900; background: #f0f0f0;">{{ number_format($receipt->amount, 2) }} ريال</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        @endif
+
         <div class="financial-summary">
             <div class="summary-box">
                 <div class="summary-title">تفاصيل الفاتورة عند التحصيل</div>

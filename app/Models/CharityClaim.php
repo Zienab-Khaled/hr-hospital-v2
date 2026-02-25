@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class CharityClaim extends Model
 {
@@ -57,16 +58,20 @@ class CharityClaim extends Model
         ]);
     }
 
-    public function markAsUnderReview(): void
+    public function markAsUnderReview(string $notes = null): void
     {
-        $this->update(['status' => 'under_review']);
+        $this->update([
+            'status' => 'under_review',
+            'entity_response_notes' => $notes ?? $this->entity_response_notes,
+        ]);
     }
 
-    public function markAsApproved(float $approvedAmount = null): void
+    public function markAsApproved(float $approvedAmount = null, string $notes = null): void
     {
         $this->update([
             'status' => 'approved',
             'approved_amount' => $approvedAmount ?? $this->invoice->total_amount,
+            'entity_response_notes' => $notes ?? $this->entity_response_notes,
         ]);
     }
 
@@ -80,7 +85,32 @@ class CharityClaim extends Model
 
     public function markAsPaid(): void
     {
-        $this->update(['status' => 'paid']);
+        DB::transaction(function () {
+            $this->update(['status' => 'paid']);
+
+            $invoice = $this->invoice;
+            $amount = $this->approved_amount ?: $invoice->remaining_amount;
+
+            // 1. Create Payment record
+            $payment = Payment::create([
+                'invoice_id' => $invoice->id,
+                'payment_type' => $invoice->payment_type, // 'charity'
+                'amount' => $amount,
+                'received_date' => now(),
+                'received_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'status' => 'approved', // Claims are usually pre-approved or approved upon payment
+                'audit_status' => 'matched',
+                'notes' => __('Payment received from charity claim: :claim', ['claim' => $this->id]),
+            ]);
+
+            // 2. Update Invoice balance
+            $invoice->increment('paid_amount', $amount);
+            $invoice->decrement('remaining_amount', $amount);
+
+            if ($invoice->remaining_amount <= 0) {
+                $invoice->update(['status' => 'paid']);
+            }
+        });
     }
 
     public function isDraft(): bool

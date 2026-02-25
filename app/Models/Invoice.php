@@ -196,4 +196,48 @@ class Invoice extends Model implements HasMedia
         $this->addMediaCollection('signed_other')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
     }
+
+    /**
+     * Get all media URLs related to this invoice (signed docs, receipts, patient approvals)
+     */
+    public function getAllRelatedMediaUrls(): array
+    {
+        $urls = [];
+
+        // 1. Signed documents on this invoice
+        foreach (['signed_commitment', 'signed_non_commitment', 'signed_other'] as $collection) {
+            foreach ($this->getMedia($collection) as $media) {
+                $urls[$media->file_name] = $media->getUrl();
+            }
+        }
+
+        // 2. Receipts related to this invoice
+        foreach ($this->payments as $payment) {
+            if ($payment->receipt) {
+                $receipt = $payment->receipt;
+                $urls["Receipt-{$receipt->receipt_number}"] = route('payment-receipts.print', $receipt);
+                foreach (['physical_receipt', 'collector_screenshot'] as $col) {
+                    foreach ($receipt->getMedia($col) as $media) {
+                        $urls["Attachment-{$media->file_name}"] = $media->getUrl();
+                    }
+                }
+            }
+        }
+
+        // 3. Charity approvals from patient profile or visit if charity patient
+        if ($this->payment_type === 'charity') {
+            if ($this->patient) {
+                foreach ($this->patient->getMedia('charity-approvals') as $media) {
+                    $urls["CharityApproval-Patient-{$media->file_name}"] = $media->getUrl();
+                }
+            }
+            if ($this->visit) {
+                foreach ($this->visit->getMedia('charity_approval') as $media) {
+                    $urls["CharityApproval-Visit-{$media->file_name}"] = $media->getUrl();
+                }
+            }
+        }
+
+        return $urls;
+    }
 }

@@ -19,8 +19,10 @@ class RevenueWorkflowController extends Controller
         $date = $request->input('date', Carbon::today()->toDateString());
         $shiftId = $request->input('shift_id');
 
-        $query = Invoice::whereDate('invoice_date', $date)
-            ->with(['patient', 'visit.shift', 'items.service', 'payments.receivedByUser']);
+        $query = Invoice::whereHas('payments', function($pq) use ($date) {
+                $pq->whereDate('received_date', $date);
+            })
+            ->with(['patient', 'visit.shift', 'items.service', 'payments.receivedByUser', 'media', 'payments.receipt']);
 
         if ($shiftId) {
             $query->whereHas('visit', function ($q) use ($shiftId) {
@@ -31,7 +33,16 @@ class RevenueWorkflowController extends Controller
         $invoices = $query->latest()->get();
         $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('revenue.control-room', compact('invoices', 'shifts', 'date', 'shiftId'));
+        // Calculate actual collection total for the selected date
+        $totalCollectedToday = \App\Models\Payment::whereDate('received_date', $date)
+            ->when($shiftId, function ($q) use ($shiftId) {
+                $q->whereHas('invoice.visit', function($vq) use ($shiftId) {
+                    $vq->where('shift_id', $shiftId);
+                });
+            })
+            ->sum('amount');
+
+        return view('revenue.control-room', compact('invoices', 'shifts', 'date', 'shiftId', 'totalCollectedToday'));
     }
 
     public function match(Invoice $invoice)

@@ -20,14 +20,15 @@
                 <p class="text-sm"><strong>{{ $partySend->invoice->invoice_number }}</strong> — {{ $partySend->response_action === 'confirmed' ? (app()->getLocale() === 'ar' ? 'مؤكد' : 'Confirmed') : (app()->getLocale() === 'ar' ? 'مرفوض' : 'Rejected') }}</p>
             </div>
         </div>
-    </div>
 
     {{-- Footer --}}
     <footer class="mt-8 text-center text-slate-500 text-sm font-medium py-6 px-4">
         <div class="mb-1">
             &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Al-Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
         </div>
-       
+
     </footer>
+    </div>
+
 </body>
 </html>

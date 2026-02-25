@@ -78,7 +78,7 @@ class VisitController extends Controller
                     'department_id' => $myDepartment->id,
                     'visit_date' => today(),
                     'shift_id' => $currentShift->id,
-                    'case_type' => 'clinics',
+                    'case_type' => $myDepartment->name_ar ?? $myDepartment->name ?? 'clinics',
                     'notes' => null,
                     'registered_by' => auth()->user()->id,
                 ]);
@@ -125,12 +125,13 @@ class VisitController extends Controller
                 : 'Employee must be assigned to a department.'])->withInput();
         }
 
+        $dept = Department::find($departmentId);
         $visit = Visit::create([
             'patient_id' => $patient->id,
             'department_id' => $departmentId,
             'visit_date' => today(),
             'shift_id' => $currentShift?->id,
-            'case_type' => 'clinics',
+            'case_type' => $dept->name_ar ?? $dept->name ?? 'clinics',
             'notes' => null,
             'registered_by' => $user?->getKey(),
         ]);
@@ -489,7 +490,7 @@ class VisitController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'shift_id' => 'nullable|exists:shifts,id',
             'visit_date' => 'nullable|date',
-            'case_type' => 'required|string|in:clinics,emergency',
+            'case_type' => 'required|string',
             'notes' => 'nullable|string',
         ]);
 

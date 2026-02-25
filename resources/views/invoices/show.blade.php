@@ -33,7 +33,7 @@
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
-                @if(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity')
+                @if(($invoice->payment_type === 'charity') || ($invoice->patient?->payment_type === 'charity'))
                     <a href="{{ route('invoices.send-to-party', $invoice) }}"
                         class="inline-flex items-center gap-2 bg-emerald-600  px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
                         {{ app()->getLocale() === 'ar' ? '✉️ إرسال الفاتورة للجمعية الخيرية' : '✉️ Send invoice to charity' }}
@@ -49,7 +49,7 @@
                 @endif
 
                 {{-- زرار إشعار الجمعية باكتمال الخدمات — يظهر فقط لمرضى الجمعية بعد تنفيذ كل الخدمات --}}
-                @if(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity' && $invoice->isFullyCompleted() && $invoice->patient?->charityEntity?->email)
+                @if((($invoice->payment_type === 'charity') || ($invoice->patient?->payment_type === 'charity')) && $invoice->isFullyCompleted() && $invoice->patient?->charityEntity?->email)
                     @can('invoices.edit')
                         <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
                                 onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
@@ -60,7 +60,7 @@
                             </button>
                         </form>
                     @endcan
-                @elseif(($invoice->payment_type ?? $invoice->patient?->payment_type) === 'charity' && !$invoice->isFullyCompleted())
+                @elseif((($invoice->payment_type === 'charity') || ($invoice->patient?->payment_type === 'charity')) && !$invoice->isFullyCompleted())
                     <span class="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-2 rounded-lg font-semibold text-sm">
                         ⏳ {{ app()->getLocale() === 'ar' ? 'في انتظار تنفيذ جميع الخدمات' : 'Waiting for all services to be executed' }}
                         ({{ $invoice->items->where('status', 'completed')->count() }}/{{ $invoice->items->count() }})
@@ -132,6 +132,15 @@
                                     </a>
                                 @endforeach
                             </div>
+                        </div>
+                    @endif
+
+                    @if($invoice->hasCharityClaim())
+                        <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                            <a href="{{ route('charity-claims.show', $invoice->charityClaim()) }}"
+                               class="text-blue-700 font-bold text-xs hover:underline flex items-center gap-1">
+                                📋 {{ app()->getLocale() === 'ar' ? 'عرض تفاصيل مطالبة الجمعية' : 'View Charity Claim Details' }} →
+                            </a>
                         </div>
                     @endif
                 </div>
@@ -389,24 +398,26 @@
                                             </span>
                                         </td>
                                         <td class="px-3 py-2 text-center">
-                                            <div class="flex items-center justify-center gap-2">
+                                            <div class="flex flex-wrap items-center justify-center gap-2">
                                                 @if($receipt)
-                                                    <a href="{{ route('payment-receipts.print', $receipt) }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'طباعة إيصال ق-1 الرقمي' : 'Print Digital q-1 Receipt' }}" class="text-emerald-600 hover:text-emerald-800">
-                                                        🧾
+                                                    <a href="{{ route('payment-receipts.print', $receipt) }}" target="_blank"
+                                                       class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded text-xs font-bold transition-colors">
+                                                        🖨️ {{ app()->getLocale() === 'ar' ? 'طباعة ق-1' : 'Print q-1' }}
                                                     </a>
                                                 @endif
                                                 @if($receipt && $receipt->hasMedia('physical_receipt'))
-                                                    <a href="{{ $receipt->getFirstMediaUrl('physical_receipt') }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'إيصال التحصيل المرفوع' : 'Uploaded Physical Receipt' }}" class="text-indigo-600 hover:text-indigo-800">
-                                                        📄
+                                                    <a href="{{ $receipt->getFirstMediaUrl('physical_receipt') }}" target="_blank"
+                                                       class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded text-xs font-bold transition-colors">
+                                                        📄 {{ app()->getLocale() === 'ar' ? 'المرفق' : 'Doc' }}
                                                     </a>
                                                 @endif
                                                 @if($receipt && $receipt->hasMedia('collector_screenshot'))
-                                                    <a href="{{ $receipt->getFirstMediaUrl('collector_screenshot') }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'سكرينة المحصل' : 'Collector Screenshot' }}" class="text-indigo-500 hover:text-indigo-700">
-                                                        🖼️
+                                                    <a href="{{ $receipt->getFirstMediaUrl('collector_screenshot') }}" target="_blank"
+                                                       class="inline-flex items-center gap-1 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs font-bold transition-colors">
+                                                        📸 {{ app()->getLocale() === 'ar' ? 'لقطة' : 'Shot' }}
                                                     </a>
                                                 @endif
                                                 @if(!$receipt || (!$receipt->hasMedia('physical_receipt') && !$receipt->hasMedia('collector_screenshot')))
-                                                    {{-- Only show -- if no documents AT ALL including digital --}}
                                                     @if(!$receipt)
                                                         <span class="text-slate-300">—</span>
                                                     @endif
@@ -565,18 +576,51 @@
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
             <h3 class="text-xl font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة ومستندات التحصيل' : '💰 Record Payment & Collection Documents' }}</h3>
 
-            <form action="{{ route('payment-receipts.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('payment-receipts.store') }}" method="POST" enctype="multipart/form-data" id="payment-form">
                 @csrf
                 <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
+
+                {{-- Item Selection Section --}}
+                <div class="mb-5 bg-slate-50 border-2 border-slate-200 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3 border-b-2 border-slate-300 pb-2 flex justify-between">
+                        <span>📋 {{ app()->getLocale() === 'ar' ? 'اختر الخدمات التي يتم دفعها' : 'Select services to pay for' }}</span>
+                        <span class="text-xs text-slate-500 font-normal">{{ app()->getLocale() === 'ar' ? '(فقط الخدمات غير المسددة تظهر هنا)' : '(Only unpaid items are listed)' }}</span>
+                    </h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        @foreach($invoice->items as $item)
+                            @php
+                                // Note: In a real system, we might track per-item paid amount,
+                                // but for now we assume if invoice has remaining amount, we can select items.
+                                // We'll check if item is not fully covered by existing payments (if we had that tracking)
+                            @endphp
+                            <label class="flex items-center justify-between p-2 rounded hover:bg-white border border-transparent hover:border-slate-300 cursor-pointer transition-all">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" name="item_ids[]" value="{{ $item->id }}"
+                                           data-amount="{{ $item->patient_amount }}"
+                                           checked
+                                           onchange="updateCalculatedTotal()"
+                                           class="w-5 h-5 rounded text-green-600 border-slate-400 focus:ring-green-500">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800">{{ $item->service?->name_ar ?? $item->service?->name }}</p>
+                                        <p class="text-[10px] text-slate-500">Qty: {{ $item->quantity }} @ @currency($item->unit_price)</p>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-sm font-bold text-slate-900">@currency($item->patient_amount)</span>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }} *
+                            {{ app()->getLocale() === 'ar' ? 'إجمالي الدفع' : 'Total Payment' }} *
                         </label>
-                        <input type="number" name="amount" step="0.01" max="{{ $invoice->remaining_amount }}"
-                               value="{{ $invoice->remaining_amount }}" required
-                               class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 focus:ring-2 focus:ring-green-500">
+                        <input type="number" name="amount" id="payment-total-amount" step="0.01" max="{{ $invoice->remaining_amount }}"
+                               value="{{ $invoice->remaining_amount }}" required readonly
+                               class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-slate-100 cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
@@ -628,8 +672,8 @@
                 </div>
 
                 <div class="flex gap-3">
-                    <button type="submit"
-                        class="flex-1 bg-green-600  px-4 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg">
+                    <button type="submit" id="submit-payment-btn"
+                        class="flex-1 bg-green-600  px-4 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg flex items-center justify-center gap-2">
                         ✅ {{ app()->getLocale() === 'ar' ? 'حفظ وإرسال للمحاسب' : 'Save & Send to Accountant' }}
                     </button>
                     <button type="button" onclick="closePaymentModal()"
@@ -644,6 +688,7 @@
     <script>
         function openPaymentModal() {
             document.getElementById('payment-modal').classList.remove('hidden');
+            updateCalculatedTotal();
         }
         function closePaymentModal() {
             document.getElementById('payment-modal').classList.add('hidden');
@@ -651,5 +696,29 @@
         document.getElementById('payment-modal').addEventListener('click', function(e) {
             if (e.target === this) closePaymentModal();
         });
+
+        function updateCalculatedTotal() {
+            let total = 0;
+            const checkboxes = document.querySelectorAll('input[name="item_ids[]"]:checked');
+            checkboxes.forEach(cb => {
+                total += parseFloat(cb.dataset.amount || 0);
+            });
+
+            const totalInput = document.getElementById('payment-total-amount');
+            if (totalInput) {
+                totalInput.value = total.toFixed(2);
+            }
+
+            const submitBtn = document.getElementById('submit-payment-btn');
+            if (submitBtn) {
+                if (total <= 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
     </script>
 @endsection

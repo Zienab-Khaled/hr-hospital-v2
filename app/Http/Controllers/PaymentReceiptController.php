@@ -23,19 +23,34 @@ class PaymentReceiptController extends Controller
             'notes' => 'nullable|string',
             'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'item_ids' => 'nullable|array',
+            'item_ids.*' => 'exists:invoice_items,id',
         ]);
 
-        $invoice = Invoice::findOrFail($validated['invoice_id']);
+        $invoice = Invoice::with(['patient', 'items.service', 'payments.receipt'])->findOrFail($validated['invoice_id']);
 
         if ($validated['amount'] > $invoice->remaining_amount) {
             return back()->withErrors(['amount' => __('Amount cannot exceed the remaining balance.')])->withInput();
         }
 
+        // Prepare selected items data for receipt snapshot
+        $selectedItemsData = [];
+        if (!empty($validated['item_ids'])) {
+            $selectedItems = \App\Models\InvoiceItem::whereIn('id', $validated['item_ids'])->with('service')->get();
+            foreach ($selectedItems as $item) {
+                $selectedItemsData[] = [
+                    'id' => $item->id,
+                    'name' => $item->service?->name_ar ?? $item->service?->name ?? '—',
+                    'qty' => $item->quantity,
+                    'unit_price' => (float)$item->unit_price,
+                    'total' => (float)$item->patient_amount,
+                ];
+            }
+        }
+
         DB::beginTransaction();
         try {
             // 1. Create Payment record
-            // If it's a cash patient, payment_type is usually 'cash'.
-            // BUT here we are recording a payment against an invoice, so we use the method chosen.
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
                 'payment_type' => $validated['payment_method'],
@@ -43,7 +58,7 @@ class PaymentReceiptController extends Controller
                 'received_date' => now(),
                 'received_by' => auth()->user()->id,
                 'reference_no' => $validated['reference_number'],
-                'status' => 'pending', // Pending accountant verification
+                'status' => 'pending',
                 'notes' => $validated['notes'],
                 'audit_status' => 'under_review',
             ]);
@@ -57,10 +72,11 @@ class PaymentReceiptController extends Controller
                 'reference_number' => $validated['reference_number'],
                 'invoice_snapshot_total' => $invoice->total_amount,
                 'invoice_snapshot_paid' => $invoice->paid_amount + $validated['amount'],
-                'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $validated['amount']),
+                'invoice_snapshot_remaining' => $invoice->remaining_amount - $validated['amount'],
                 'collected_by' => auth()->user()->id,
                 'collected_at' => now(),
                 'notes' => $validated['notes'],
+                'selected_items' => $selectedItemsData,
             ]);
 
             // 3. Handle Media Uploads
@@ -85,12 +101,27 @@ class PaymentReceiptController extends Controller
 
             DB::commit();
 
-            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$validated['amount']} recorded via {$validated['payment_method']}. Proof attached.", null, $receipt->toArray());
+            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$validated['amount']} recorded via {$validated['payment_method']}. services: " . collect($selectedItemsData)->pluck('name')->implode(', '));
 
-            return redirect()->route('invoices.show', $invoice)->with('success', __('Payment recorded and receipt generated successfully.'));
+            // Notify Accountants with ALL invoice file links
+            $accountants = \App\Models\User::role('accountant')->get();
+            if ($accountants->isNotEmpty()) {
+                $fileLinks = $invoice->getAllRelatedMediaUrls();
+                $messagePrefix = app()->getLocale() === 'ar' ? 'تم تحصيل دفعة جديدة للفاتورة: ' : 'New payment collected for invoice: ';
+
+                \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
+                    'title' => app()->getLocale() === 'ar' ? '✅ تم تحصيل مبلع' : '✅ Payment Collected',
+                    'message' => $messagePrefix . " {$invoice->invoice_number} | " . (app()->getLocale() === 'ar' ? 'المبلغ: ' : 'Amount: ') . number_format($validated['amount'], 2),
+                    'action_url' => route('payment-receipts.print', $receipt),
+                    'type' => 'success',
+                    'metadata' => ['links' => $fileLinks] // This allows the notification system to show document links
+                ]));
+            }
+
+            return redirect()->route('payment-receipts.print', $receipt)->with('success', __('Payment recorded and receipt generated. Please print it.'));
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('PaymentReceipt store error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('PaymentReceipt store error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Error recording payment: ' . $e->getMessage()])->withInput();
         }
     }

@@ -26,6 +26,7 @@ class PaymentReceipt extends Model implements HasMedia
         'invoice_snapshot_total',
         'invoice_snapshot_paid',
         'invoice_snapshot_remaining',
+        'selected_items',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class PaymentReceipt extends Model implements HasMedia
             'invoice_snapshot_remaining' => 'decimal:2',
             'collected_at' => 'datetime',
             'approved_at' => 'datetime',
+            'selected_items' => 'array',
         ];
     }
 

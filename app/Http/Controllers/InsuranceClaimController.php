@@ -7,6 +7,7 @@ use App\Models\InsuranceClaim;
 use App\Models\Invoice;
 use App\Models\Patient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InsuranceClaimController extends Controller
 {
@@ -107,5 +108,68 @@ class InsuranceClaimController extends Controller
             ->get();
 
         return response()->json($items);
+    }
+
+    /**
+     * Display the specified insurance claim
+     */
+    public function show(InsuranceClaim $insuranceClaim)
+    {
+        $this->authorize('invoices.view');
+        $insuranceClaim->load(['invoice.patient', 'invoice.items.service', 'insuranceCompany', 'sentByUser']);
+        return view('insurance-claims.show', compact('insuranceClaim'));
+    }
+
+    /**
+     * Update claim status
+     */
+    public function updateStatus(Request $request, InsuranceClaim $insuranceClaim)
+    {
+        $this->authorize('invoices.create');
+
+        $request->validate([
+            'status' => 'required|in:under_review,approved,rejected,paid',
+            'approved_amount' => 'nullable|numeric|min:0',
+            'company_response_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $oldStatus = $insuranceClaim->status;
+
+        DB::beginTransaction();
+        try {
+            if ($request->status === 'paid') {
+                $insuranceClaim->markAsPaid();
+
+                // Notify Accountants
+                $accountants = \App\Models\User::role('accountant')->get();
+                if ($accountants->isNotEmpty()) {
+                    \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
+                        'title' => app()->getLocale() === 'ar' ? 'تم تحصيل مطالبة تأمين' : 'Insurance Claim Paid',
+                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($insuranceClaim->approved_amount ?: $insuranceClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($insuranceClaim->invoice->patient->name_ar ?? $insuranceClaim->invoice->patient->name),
+                        'action_url' => route('insurance-claims.show', $insuranceClaim),
+                        'type' => 'success',
+                    ]));
+                }
+            } else {
+                $updateData = ['status' => $request->status];
+                if ($request->filled('approved_amount')) {
+                    $updateData['approved_amount'] = $request->approved_amount;
+                }
+                if ($request->filled('company_response_notes')) {
+                    $updateData['company_response_notes'] = $request->company_response_notes;
+                }
+                $insuranceClaim->update($updateData);
+            }
+
+            DB::commit();
+
+            ActivityLogger::log('Insurance Claim Status Updated', 'InsuranceClaim', $insuranceClaim->id, 'Status changed',
+                ['old_status' => $oldStatus], ['new_status' => $request->status]);
+
+            return back()->with('success', app()->getLocale() === 'ar' ? 'تم تحديث حالة المطالبة' : 'Claim status updated');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Error updating claim: ' . $e->getMessage()]);
+        }
     }
 }

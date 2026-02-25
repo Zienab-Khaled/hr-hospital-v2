@@ -151,7 +151,9 @@
                                 </td>
                                 <td class="p-3">
                                     <div class="flex items-center gap-2">
-                                        <a href="{{ route('invoices.show', $claim->invoice) }}" class="inline-flex items-center gap-1 bg-slate-600 text-white text-[10px] px-2 py-1 rounded hover:bg-slate-700 font-semibold">{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}</a>
+                                        <a href="{{ route('insurance-claims.show', $claim) }}" class="inline-flex items-center gap-1 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 font-semibold">
+                                            {{ app()->getLocale() === 'ar' ? 'عرض / تعديل' : 'View / Edit' }}
+                                        </a>
                                     </div>
                                 </td>
                             </tr>

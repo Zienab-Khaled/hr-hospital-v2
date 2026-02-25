@@ -38,8 +38,12 @@ class DashboardController extends Controller
 
         $recentClaims = $insuranceClaims->concat($charityClaims)->sortByDesc('created_at')->take(10);
 
+        // Debt Tracking: Invoices from Insurance and Charity that are not fully paid
         $totalInvoiced = (float) Invoice::sum('total_amount');
         $totalCollected = (float) Payment::sum('amount');
+
+        // Outstanding debts are remaining amounts on invoices
+        // These will decrease as claims are marked as 'paid' and payments are recorded
         $totalRemaining = (float) Invoice::sum('remaining_amount');
 
         return view('dashboard', compact(

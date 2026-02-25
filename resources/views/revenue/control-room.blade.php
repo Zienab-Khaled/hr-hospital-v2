@@ -122,6 +122,11 @@
                                         {{ $invoice->patient->payment_type_label }}
                                     </span>
                                     <span class="text-slate-400 text-[10px] font-black tracking-widest">INV-{{ $invoice->invoice_number }}</span>
+                                    <a href="{{ route('invoices.show', $invoice) }}"
+                                       target="_blank"
+                                       class="bg-blue-600  text-[10px] font-black px-2 py-0.5 rounded-full hover:bg-blue-700 transition-colors uppercase">
+                                        {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}
+                                    </a>
                                 </div>
                                 <h3 class="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
                                 <div class="flex items-center gap-3 mt-1.5">
@@ -141,31 +146,53 @@
                                     {{ $invoice->status_label }}
                                 </div>
                                 {{-- Audit Documents --}}
-                                @php $receipt = $invoice->payments->first()?->receipt; @endphp
-                                @if($receipt)
-                                    <div class="mt-2 flex justify-end gap-2">
-                                        <a href="{{ route('payment-receipts.print', $receipt) }}" target="_blank" class="w-6 h-6 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-emerald-100" title="{{ app()->getLocale() === 'ar' ? 'إيصال ق-1 الرقمي' : 'Digital q-1 Receipt' }}">🧾</a>
-                                        @if($receipt->hasMedia('physical_receipt'))
-                                            <a href="{{ $receipt->getFirstMediaUrl('physical_receipt') }}" target="_blank" class="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-indigo-100" title="Physical Receipt">📄</a>
-                                        @endif
-                                        @if($receipt->hasMedia('collector_screenshot'))
-                                            <a href="{{ $receipt->getFirstMediaUrl('collector_screenshot') }}" target="_blank" class="w-6 h-6 bg-slate-50 text-slate-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-slate-100" title="Collector Screenshot">🖼️</a>
-                                        @endif
+                                @php $fileLinks = $invoice->getAllRelatedMediaUrls(); @endphp
+                                @if(!empty($fileLinks))
+                                    <div class="mt-2 flex justify-end flex-wrap gap-2">
+                                        @foreach($fileLinks as $name => $url)
+                                            <a href="{{ $url }}" target="_blank"
+                                               class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] shadow-sm border border-indigo-100 hover:bg-indigo-100 font-bold transition-all"
+                                               title="{{ $name }}">
+                                               @if(str_contains($name, 'Receipt')) 🧾 @elseif(str_contains($name, 'Approval')) 💎 @else 📄 @endif
+                                               {{ Str::limit($name, 12) }}
+                                            </a>
+                                        @endforeach
                                     </div>
                                 @endif
                             </div>
                         </div>
 
-                    {{-- Services Summary --}}
-                    <div class="bg-white/50 rounded-3xl p-4 mb-6 space-y-2 border border-slate-100 shadow-inner">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{{ app()->getLocale() === 'ar' ? 'الخدمات المقدمة' : 'Services Provided' }}</p>
-                        @foreach($invoice->items as $item)
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-700 font-bold">{{ $item->service->name_ar ?? $item->service->name }}</span>
-                            <span class="text-slate-900 font-black">{{ number_format($item->total_price, 2) }}</span>
-                        </div>
-                        @endforeach
                     </div>
+
+                    {{-- Today's Payments Details --}}
+                    @php
+                        $todayPayments = $invoice->payments->filter(fn($p) => $p->received_date?->isSameDay($date));
+                    @endphp
+                    @if($todayPayments->isNotEmpty())
+                        <div class="mb-6 p-4 bg-emerald-50/50 rounded-3xl border border-emerald-100">
+                            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">💰 {{ app()->getLocale() === 'ar' ? 'المبالغ المحصلة بتاريخ اليوم' : 'Payments Collected Today' }}</p>
+                            @foreach($todayPayments as $payment)
+                                <div class="flex justify-between items-center text-sm py-1 border-b border-emerald-100/50 last:border-0">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">{{ $payment->payment_type }}</span>
+                                            <span class="text-slate-600 text-xs">{{ $payment?->receipt?->receipt_number }}</span>
+                                        </div>
+                                        @if($payment->receipt && !empty($payment->receipt->selected_items))
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($payment->receipt->selected_items as $si)
+                                                    <span class="text-[9px] bg-white border border-emerald-200 text-emerald-700 px-1.5 py-0.5 rounded-md font-bold">
+                                                        {{ $si['name'] }} ({{ $si['qty'] }})
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <span class="text-emerald-700 font-black">@currency($payment->amount)</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     @if($invoice->rejection_reason)
                         <div class="mb-6 p-4 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-100 font-bold relative overflow-hidden group/reason">
@@ -257,7 +284,7 @@
                     <div class="grid grid-cols-2 gap-10">
                         <div>
                             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المحصلات' : 'Gross Collected' }}</p>
-                            <p class="text-4xl font-black text-white tracking-tighter">{{ number_format($invoices->sum('total_amount'), 2) }}</p>
+                            <p class="text-4xl font-black text-white tracking-tighter">{{ number_format($totalCollectedToday, 2) }}</p>
                         </div>
                         <div class="text-right">
                              <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Trans Count' }}</p>

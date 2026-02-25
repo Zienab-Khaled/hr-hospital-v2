@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -12,6 +13,36 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class InsuranceClaim extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
+
+    public function markAsPaid(): void
+    {
+        DB::transaction(function () {
+            $this->update(['status' => 'paid']);
+
+            $invoice = $this->invoice;
+            $amount = $this->approved_amount ?: $invoice->remaining_amount;
+
+            // 1. Create Payment record
+            Payment::create([
+                'invoice_id' => $invoice->id,
+                'payment_type' => $invoice->payment_type, // 'insurance'
+                'amount' => $amount,
+                'received_date' => now(),
+                'received_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'status' => 'approved',
+                'audit_status' => 'matched',
+                'notes' => __('Payment received from insurance claim: :claim', ['claim' => $this->id]),
+            ]);
+
+            // 2. Update Invoice balance
+            $invoice->increment('paid_amount', $amount);
+            $invoice->decrement('remaining_amount', $amount);
+
+            if ($invoice->remaining_amount <= 0) {
+                $invoice->update(['status' => 'paid']);
+            }
+        });
+    }
 
     protected $fillable = [
         'invoice_id', 'insurance_company_id', 'sent_date', 'sent_by', 'status',
