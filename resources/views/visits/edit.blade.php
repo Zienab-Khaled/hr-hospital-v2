@@ -61,7 +61,7 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4  pt-4">
+                <div class="flex items-center gap-4      pt-4">
                     <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
                         {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
                     </button>

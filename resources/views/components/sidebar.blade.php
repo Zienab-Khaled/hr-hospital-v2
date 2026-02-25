@@ -35,7 +35,7 @@
         @endphp
         <a href="{{ route('notifications.index') }}"
             class="flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-           {{ request()->routeIs('notifications.*') ? 'bg-red-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">
+           {{ request()->routeIs('notifications.*') ? 'bg-red-600' : 'text-slate-700 hover:bg-slate-100' }}">
             <div class="flex items-center gap-2.5">
                 <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -44,7 +44,7 @@
                 <span>{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
             </div>
             @if($unreadCount > 0)
-                <span class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full animate-pulse">
+                <span class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-[10px] font-bold rounded-full animate-pulse">
                     {{ $unreadCount }}
                 </span>
             @endif
