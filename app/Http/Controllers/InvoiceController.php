@@ -15,6 +15,9 @@ use App\Models\CharityEntity;
 use App\Mail\ApprovalRequestMail;
 use App\Mail\InvoiceToPartyMail;
 use App\Helpers\ActivityLogger;
+use App\Models\User;
+use App\Notifications\SystemNotification;
+use Illuminate\Support\Facades\Notification;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -382,6 +385,17 @@ class InvoiceController extends Controller
                 : __('Invoice created successfully.');
 
             ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Invoice created with ' . count($validated['services']) . ' items', null, $invoice->toArray());
+
+            // System Notification for Managers and Accountants
+            $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+            if ($notifyUsers->isNotEmpty()) {
+                Notification::send($notifyUsers, new SystemNotification([
+                    'title' => app()->getLocale() === 'ar' ? 'فاتورة جديدة' : 'New Invoice Created',
+                    'message' => (app()->getLocale() === 'ar' ? "تم إصدار فاتورة بمبلغ " : "Invoice created with amount: ") . number_format($invoice->total_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($patient->name_ar ?? $patient->name),
+                    'action_url' => route('invoices.show', $invoice),
+                    'type' => 'success',
+                ]));
+            }
 
             return redirect()->route('invoices.show', $invoice)->with('success', $message);
         } catch (\Exception $e) {

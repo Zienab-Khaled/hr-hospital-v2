@@ -14,6 +14,7 @@ use App\Http\Controllers\VisitController;
 use App\Http\Controllers\RevenueWorkflowController;
 use App\Http\Controllers\CashierWorkflowController;
 use App\Http\Controllers\WrittenCommitmentController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -209,4 +210,9 @@ Route::middleware('auth')->group(function () {
     Route::put('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesUpdate'])->name('charity-entities.update');
     Route::delete('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesDestroy'])->name('charity-entities.destroy');
     Route::get('charity-entities/{charity_entity}', [PlaceholderController::class, 'charityEntitiesShow'])->name('charity-entities.show');
+
+    // Notifications
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::get('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 });

@@ -8,9 +8,10 @@ use App\Models\InsuranceCompany;
 use App\Models\Patient;
 use App\Models\PatientTransfer;
 use App\Services\IdentityDocumentExtractor;
-use Illuminate\Http\Request;
-
 use App\Helpers\ActivityLogger;
+use App\Models\User;
+use App\Notifications\SystemNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PatientController extends Controller
 {
@@ -171,6 +172,17 @@ class PatientController extends Controller
         }
 
         ActivityLogger::log('Patient Created', 'Patient', $patient->id, 'Patient registered', null, $patient->toArray());
+
+        // System Notification for Managers and Accountants
+        $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+        if ($notifyUsers->isNotEmpty()) {
+            Notification::send($notifyUsers, new SystemNotification([
+                'title' => app()->getLocale() === 'ar' ? 'مريض جديد مسجل' : 'New Patient Registered',
+                'message' => (app()->getLocale() === 'ar' ? 'تم تسجيل المريض: ' : 'Patient registered: ') . ($patient->name_ar ?? $patient->name) . ' (#' . $patient->file_number . ')',
+                'action_url' => route('patients.show', $patient),
+                'type' => 'info',
+            ]));
+        }
 
         if ($request->get('redirect_to') === 'visits.create') {
             return redirect()->route('visits.create', ['patient_id' => $patient->id])

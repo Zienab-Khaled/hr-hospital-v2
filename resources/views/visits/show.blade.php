@@ -259,7 +259,7 @@
 
                 <div class="mt-8">
                     <a href="{{ route('patients.show', $visit->patient_id) }}"
-                       class="w-full flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                       class="w-full flex items-center justify-center gap-2 py-4 bg-indigo-600 rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
                         {{ app()->getLocale() === 'ar' ? 'فتح الملف كاملاً' : 'Open Full Profile' }}
                     </a>
                 </div>

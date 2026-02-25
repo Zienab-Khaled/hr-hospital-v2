@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Helpers\ActivityLogger;
+use App\Notifications\SystemNotification;
+use Illuminate\Support\Facades\Notification;
 use App\Traits\HasIndexFilters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -142,6 +144,18 @@ class VisitController extends Controller
         $patient->update(['department_id' => $departmentId]);
 
         ActivityLogger::log('Visit Created', 'Visit', $visit->id, 'Patient registered to department', null, $visit->toArray());
+
+    // System Notification for Managers and Accountants
+    $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+    if ($notifyUsers->isNotEmpty()) {
+        $deptName = $visit->department->name_ar ?? $visit->department->name;
+        Notification::send($notifyUsers, new SystemNotification([
+            'title' => app()->getLocale() === 'ar' ? 'زيارة جديدة' : 'New Patient Visit',
+            'message' => (app()->getLocale() === 'ar' ? "تم تسجيل زيارة للمريض: " : "Visit registered for patient: ") . ($patient->name_ar ?? $patient->name) . (app()->getLocale() === 'ar' ? " بلقسم: " : " in department: ") . $deptName,
+            'action_url' => route('visits.show', $visit),
+            'type' => 'success',
+        ]));
+    }
 
         return redirect()->route('visits.create', [
             'patient_id' => $patient->id,

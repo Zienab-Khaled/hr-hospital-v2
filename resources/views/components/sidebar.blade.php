@@ -29,6 +29,27 @@
             <span>{{ __('Dashboard') }}</span>
         </a>
 
+        {{-- Notifications --}}
+        @php
+            $unreadCount = $user->unreadNotifications->count();
+        @endphp
+        <a href="{{ route('notifications.index') }}"
+            class="flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+           {{ request()->routeIs('notifications.*') ? 'bg-red-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
+            </div>
+            @if($unreadCount > 0)
+                <span class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full animate-pulse">
+                    {{ $unreadCount }}
+                </span>
+            @endif
+        </a>
+
         {{-- Patients Section --}}
         @if ($user->can('patients.view') || $isManager)
             <div class="mt-3 mb-1">
