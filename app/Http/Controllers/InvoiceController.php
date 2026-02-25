@@ -166,6 +166,12 @@ class InvoiceController extends Controller
             'medical_reports' => 'nullable|array',
             'medical_reports.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             'visit_id' => 'nullable|exists:visits,id',
+            // Collection Fields
+            'collection_amount' => 'nullable|numeric|min:0',
+            'collection_method' => 'nullable|string|in:cash,card,bank_transfer,cheque',
+            'collection_reference' => 'nullable|string|max:100',
+            'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         DB::beginTransaction();
@@ -285,6 +291,58 @@ class InvoiceController extends Controller
                 }
             }
 
+            // NEW: Handle Financial Collection & Digital q-1 Documents
+            if (!empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
+                // 1. Create Payment record
+                $payment = \App\Models\Payment::create([
+                    'invoice_id' => $invoice->id,
+                    'payment_type' => $invoice->payment_type,
+                    'amount' => $validated['collection_amount'],
+                    'received_date' => now(),
+                    'received_by' => auth()->user()->id,
+                    'reference_no' => $validated['collection_reference'] ?? null,
+                    'status' => 'pending',
+                    'audit_status' => 'under_review',
+                    'notes' => $validated['notes'] ?? 'Immediate collection upon creation',
+                ]);
+
+                // 2. Create Payment Receipt (Digital q-1)
+                $receipt = \App\Models\PaymentReceipt::create([
+                    'payment_id' => $payment->id,
+                    'patient_id' => $invoice->patient_id,
+                    'amount' => $validated['collection_amount'],
+                    'payment_method' => $validated['collection_method'],
+                    'reference_number' => $validated['collection_reference'] ?? null,
+                    'invoice_snapshot_total' => $invoice->total_amount,
+                    'invoice_snapshot_paid' => $invoice->paid_amount + $validated['collection_amount'],
+                    'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $validated['collection_amount']),
+                    'collected_by' => auth()->user()->id,
+                    'collected_at' => now(),
+                    'notes' => $validated['notes'],
+                ]);
+
+                // 3. Attach Proof Documents (Spatie Media Library)
+                if ($request->hasFile('physical_receipt')) {
+                    $receipt->addMediaFromRequest('physical_receipt')->toMediaCollection('physical_receipt');
+                }
+                if ($request->hasFile('collector_screenshot')) {
+                    $receipt->addMediaFromRequest('collector_screenshot')->toMediaCollection('collector_screenshot');
+                }
+
+                // 4. Update Invoice Totals and Status
+                $newPaidAmount = $invoice->paid_amount + $validated['collection_amount'];
+                $newRemainingAmount = $invoice->total_amount - $newPaidAmount;
+
+                $invoice->update([
+                    'paid_amount' => $newPaidAmount,
+                    'remaining_amount' => $newRemainingAmount,
+                    'status' => $newRemainingAmount <= 0 ? 'paid' : 'pending',
+                    'audit_status' => 'under_review',
+                ]);
+
+                $invoice->refresh(); // Sync the model state
+            }
+
             // Create approval request for insurance/charity patients
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 $approval = Approval::create([
@@ -348,7 +406,6 @@ class InvoiceController extends Controller
             'items.completedByUser',
             'payments',
             'visit.registeredBy',
-            'attachments',
             'partySends'
         ]);
 

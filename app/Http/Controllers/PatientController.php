@@ -190,14 +190,14 @@ class PatientController extends Controller
             'department',
             'transfers.fromDepartment',
             'transfers.toDepartment',
-            'visits' => fn($q) => $q->latest()->limit(10),
-            'invoices' => fn($q) => $q->latest()->limit(10),
             'contactReports' => fn($q) => $q->latest()->limit(5),
-            'writtenCommitments' => fn($q) => $q->latest()->limit(5),
         ]);
 
+        $visits = $patient->visits()->latest()->paginate(5, ['*'], 'visits_page');
+        $invoices = $patient->invoices()->latest()->paginate(5, ['*'], 'invoices_page');
+
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        return view('patients.show', compact('patient', 'departments'));
+        return view('patients.show', compact('patient', 'departments', 'visits', 'invoices'));
     }
 
     public function transfer(Request $request, Patient $patient)

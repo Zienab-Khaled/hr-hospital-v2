@@ -16,7 +16,7 @@
                 </h1>
                 <p class="text-blue-100">{{ $approval->approval_number }}</p>
             </div>
-            
+
             {{-- Content --}}
             <div class="p-8">
                 {{-- Patient & Invoice Info --}}
@@ -41,7 +41,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 {{-- Services Table --}}
                 <div class="mb-6">
                     <h3 class="font-bold text-lg mb-3">Services</h3>
@@ -66,37 +66,37 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 {{-- Response Form --}}
                 <form action="{{ route('approvals.process', $approval->approval_token) }}" method="POST" class="space-y-6">
                     @csrf
                     <input type="hidden" name="action" value="{{ $action }}">
-                    
+
                     @if($action === 'approve')
                         {{-- Approval Form --}}
                         <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6">
                             <h3 class="font-bold text-green-900 text-lg mb-4">Approval Details</h3>
-                            
+
                             <div class="mb-4">
                                 <label class="block font-semibold text-slate-700 mb-2">
                                     Approved Amount (SAR) *
                                 </label>
-                                <input type="number" name="approved_amount" step="0.01" 
-                                       value="{{ old('approved_amount', $approval->requested_amount) }}" 
+                                <input type="number" name="approved_amount" step="0.01"
+                                       value="{{ old('approved_amount', $approval->requested_amount) }}"
                                        required
                                        class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none text-lg font-bold">
                                 <p class="text-xs text-slate-600 mt-1">You can approve a different amount than requested</p>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label class="block font-semibold text-slate-700 mb-2">
                                     Notes (Optional)
                                 </label>
-                                <textarea name="notes" rows="3" 
+                                <textarea name="notes" rows="3"
                                           class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none"
                                           placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
                             </div>
-                            
+
                             <button type="submit" class="w-full bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg">
                                 ✅ Confirm Approval
                             </button>
@@ -105,7 +105,7 @@
                         {{-- Rejection Form --}}
                         <div class="bg-red-50 border-2 border-red-300 rounded-lg p-6">
                             <h3 class="font-bold text-red-900 text-lg mb-4">Rejection Details</h3>
-                            
+
                             <div class="mb-4">
                                 <label class="block font-semibold text-slate-700 mb-2">
                                     Reason for Rejection *
@@ -114,16 +114,16 @@
                                           class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
                                           placeholder="Please provide a reason for rejection...">{{ old('rejection_reason') }}</textarea>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label class="block font-semibold text-slate-700 mb-2">
                                     Additional Notes (Optional)
                                 </label>
-                                <textarea name="notes" rows="2" 
+                                <textarea name="notes" rows="2"
                                           class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
                                           placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
                             </div>
-                            
+
                             <button type="submit" class="w-full bg-red-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-red-700 shadow-lg">
                                 ❌ Confirm Rejection
                             </button>
@@ -133,5 +133,16 @@
             </div>
         </div>
     </div>
+
+    {{-- Footer --}}
+    <footer class="mt-8 text-center text-slate-500 text-sm font-medium py-6 px-4">
+        <div class="mb-1">
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Alrwaily</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+        </div>
+        <div>
+            {{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}
+            <span class="text-indigo-600 font-bold">Zienab Khaled</span>
+        </div>
+    </footer>
 </body>
 </html>

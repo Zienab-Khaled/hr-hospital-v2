@@ -377,12 +377,62 @@
                 </div>
 
                 {{-- Notes --}}
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">
-                        {{ app()->getLocale() === 'ar' ? 'ملاحظات' : 'Notes' }}
-                    </label>
-                    <textarea name="notes" rows="3"
-                        class="{{ $inputClass}}">{{ old('notes') }}</textarea>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            {{ app()->getLocale() === 'ar' ? 'ملاحظات عامة' : 'General Notes' }}
+                        </label>
+                        <textarea name="notes" rows="3"
+                            placeholder="{{ app()->getLocale() === 'ar' ? 'أي ملاحظات إضافية على الفاتورة...' : 'Any additional notes about the invoice...' }}"
+                            class="{{ $inputClass}}">{{ old('notes') }}</textarea>
+                    </div>
+
+                    {{-- Financial Collection Section (Digital q-1) --}}
+                    <div class="border-2 border-emerald-300 rounded-lg p-5 bg-emerald-50/50 shadow-sm relative overflow-hidden group">
+                         <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-100/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                         <h3 class="text-lg font-black text-emerald-900 mb-4 flex items-center gap-2 relative z-10">
+                            <span>💰</span>
+                            {{ app()->getLocale() === 'ar' ? 'تحصيل الرسوم ومستندات (ق-1) الرقمية' : 'Financial Collection & Digital (q-1) Docs' }}
+                         </h3>
+
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                            <div>
+                                <label class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'المبلغ المحصل' : 'Collected Amount' }}</label>
+                                <input type="number" name="collection_amount" id="collection_amount" step="0.01" value="{{ old('collection_amount') }}"
+                                    class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-lg font-black text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'طريقة التحصيل' : 'Collection Method' }}</label>
+                                <select name="collection_method" class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500">
+                                    <option value="">{{ app()->getLocale() === 'ar' ? '-- بدون تحصيل --' : '-- No collection --' }}</option>
+                                    <option value="cash" {{ old('collection_method') === 'cash' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</option>
+                                    <option value="card" {{ old('collection_method') === 'card' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
+                                    <option value="bank_transfer" {{ old('collection_method') === 'bank_transfer' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
+                                    <option value="cheque" {{ old('collection_method') === 'cheque' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
+                                </select>
+                            </div>
+                         </div>
+
+                         <div class="mt-4 relative z-10">
+                            <label class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}</label>
+                            <input type="text" name="collection_reference" value="{{ old('collection_reference') }}"
+                                class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+                                placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}">
+                         </div>
+
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 relative z-10">
+                             <div class="p-3 bg-white rounded-xl border border-emerald-100">
+                                <label class="block text-[10px] font-black text-indigo-700 mb-1 uppercase tracking-tight">{{ app()->getLocale() === 'ar' ? '📁 إيصال التحصيل (ق-1)' : '📁 Physical Receipt (q-1)' }}</label>
+                                <input type="file" name="physical_receipt" accept="image/*,.pdf"
+                                    class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                             </div>
+                             <div class="p-3 bg-white rounded-xl border border-emerald-100">
+                                <label class="block text-[10px] font-black text-slate-600 mb-1 uppercase tracking-tight">{{ app()->getLocale() === 'ar' ? '📸 سكرينة المحصل' : '📸 Collector Screenshot' }}</label>
+                                <input type="file" name="collector_screenshot" accept="image/*"
+                                    class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-slate-600 file:text-white hover:file:bg-slate-700">
+                             </div>
+                         </div>
+                    </div>
                 </div>
 
                 {{-- Action Buttons --}}
@@ -489,6 +539,14 @@
             });
 
             document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+
+            // Pre-fill collection amount if not manually edited
+            const collectionInp = document.getElementById('collection_amount');
+            if (collectionInp && (!collectionInp.value || collectionInp.getAttribute('data-auto') === 'true')) {
+                collectionInp.value = grandTotal.toFixed(2);
+                collectionInp.setAttribute('data-auto', 'true');
+            }
+
             updateInsuranceTotals();
         }
 
@@ -549,6 +607,13 @@
                 togglePaymentFields();
             } else {
                 if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
+            }
+
+            const collectionInp = document.getElementById('collection_amount');
+            if (collectionInp) {
+                collectionInp.addEventListener('input', function() {
+                    this.setAttribute('data-auto', 'false');
+                });
             }
 
             const searchInput = document.getElementById('service-search-input');

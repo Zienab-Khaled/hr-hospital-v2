@@ -69,8 +69,16 @@ class RevenueWorkflowController extends Controller
     {
         Gate::authorize('reports.view');
 
-        $invoice->update(['audit_status' => 'ready_for_deposit']);
+        // Generate a 6-digit OTP for the cashier receipt phase
+        $otp = (string) rand(100000, 999999);
 
-        return back()->with('success', app()->getLocale() === 'ar' ? 'تم وضع علامة "جاهز للتوريد".' : 'Marked as "Ready for Deposit".');
+        $invoice->update([
+            'audit_status' => 'ready_for_deposit',
+            'cashier_otp' => $otp
+        ]);
+
+        return back()->with('success', app()->getLocale() === 'ar'
+            ? "تم اعتماد المعاملة للتوريد. رمز التحقق المرسل لأمين الصندوق هو: ($otp)"
+            : "Invoice approved for deposit. OTP for cashier is: ($otp)");
     }
 }

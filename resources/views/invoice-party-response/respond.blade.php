@@ -62,5 +62,16 @@
             </div>
         </div>
     </div>
+
+    {{-- Footer --}}
+    <footer class="mt-8 text-center text-slate-500 text-sm font-medium py-6 px-4">
+        <div class="mb-1">
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Alrwaily</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+        </div>
+        <div>
+            {{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}
+            <span class="text-indigo-600 font-bold">Zienab Khaled</span>
+        </div>
+    </footer>
 </body>
 </html>

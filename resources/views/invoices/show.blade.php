@@ -364,7 +364,7 @@
             {{-- Recorded Payments Section --}}
             @if($invoice->payments->isNotEmpty())
                 <div class="px-6 py-4 border-t border-slate-200 bg-slate-50/30">
-                    <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'سجل المدفوعات' : 'Payment History' }}</h3>
+                    <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'سجل المدفوعات والمستندات' : 'Payment & Document History' }}</h3>
                     <div class="overflow-x-auto border border-slate-200 rounded-lg bg-white">
                         <table class="w-full text-sm">
                             <thead>
@@ -372,6 +372,7 @@
                                     <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'رقم السند' : 'Receipt No' }}</th>
                                     <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
                                     <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'الطريقة' : 'Method' }}</th>
+                                    <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المستندات' : 'Documents' }}</th>
                                     <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المستلم' : 'Received By' }}</th>
                                     <th class="px-3 py-2 text-center font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
                                 </tr>
@@ -383,9 +384,34 @@
                                         <td class="px-3 py-2 text-center font-medium">{{ $receipt?->receipt_number ?? "—" }}</td>
                                         <td class="px-3 py-2 text-center font-bold text-green-700">@currency($payment->amount)</td>
                                         <td class="px-3 py-2 text-center">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $receipt?->payment_method === 'card' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ in_array($receipt?->payment_method, ['card', 'bank_transfer']) ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
                                                 {{ $receipt?->payment_method_label ?? ($payment->payment_type ?? '—') }}
                                             </span>
+                                        </td>
+                                        <td class="px-3 py-2 text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                @if($receipt)
+                                                    <a href="{{ route('payment-receipts.print', $receipt) }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'طباعة إيصال ق-1 الرقمي' : 'Print Digital q-1 Receipt' }}" class="text-emerald-600 hover:text-emerald-800">
+                                                        🧾
+                                                    </a>
+                                                @endif
+                                                @if($receipt && $receipt->hasMedia('physical_receipt'))
+                                                    <a href="{{ $receipt->getFirstMediaUrl('physical_receipt') }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'إيصال التحصيل المرفوع' : 'Uploaded Physical Receipt' }}" class="text-indigo-600 hover:text-indigo-800">
+                                                        📄
+                                                    </a>
+                                                @endif
+                                                @if($receipt && $receipt->hasMedia('collector_screenshot'))
+                                                    <a href="{{ $receipt->getFirstMediaUrl('collector_screenshot') }}" target="_blank" title="{{ app()->getLocale() === 'ar' ? 'سكرينة المحصل' : 'Collector Screenshot' }}" class="text-indigo-500 hover:text-indigo-700">
+                                                        🖼️
+                                                    </a>
+                                                @endif
+                                                @if(!$receipt || (!$receipt->hasMedia('physical_receipt') && !$receipt->hasMedia('collector_screenshot')))
+                                                    {{-- Only show -- if no documents AT ALL including digital --}}
+                                                    @if(!$receipt)
+                                                        <span class="text-slate-300">—</span>
+                                                    @endif
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-3 py-2 text-center text-slate-600">{{ $payment->receivedByUser->name ?? $payment->receivedByUser->username ?? "—" }}</td>
                                         <td class="px-3 py-2 text-center text-slate-500 text-[10px]">{{ $payment->received_date?->format('Y-m-d H:i') }}</td>
@@ -433,25 +459,6 @@
                                         class="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center gap-1">
                                         {{ $media->file_name ?? $media->name ?? ('File #' . $media->id) }}
                                         <span class="text-slate-500 text-xs">({{ strtoupper($media->extension ?? '') }})</span>
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                @php
-                    $medicalReports = $invoice->attachments->where('document_type', 'medical_report');
-                @endphp
-                @if($medicalReports->isNotEmpty())
-                    <div class="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                        <span class="text-sm font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'التقرير الطبي المرفق بالفاتورة:' : 'Attached medical report(s):' }}</span>
-                        <ul class="mt-2 space-y-1">
-                            @foreach($medicalReports as $att)
-                                <li>
-                                    <a href="{{ asset('storage/' . $att->file_path) }}" target="_blank" rel="noopener noreferrer"
-                                        class="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center gap-1">
-                                        {{ $att->file_name ?? 'File #' . $att->id }}
-                                        <span class="text-slate-500 text-xs">({{ $att->mime_type ?: '—' }})</span>
                                     </a>
                                 </li>
                             @endforeach
@@ -556,9 +563,9 @@
     {{-- Payment Recording Modal --}}
     <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
-            <h3 class="text-xl font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة جديدة' : '💰 Record New Payment' }}</h3>
+            <h3 class="text-xl font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة ومستندات التحصيل' : '💰 Record Payment & Collection Documents' }}</h3>
 
-            <form action="{{ route('payment-receipts.store') }}" method="POST">
+            <form action="{{ route('payment-receipts.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
 
@@ -573,35 +580,57 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'طريقة الدفع' : 'Payment Method' }} *
+                            {{ app()->getLocale() === 'ar' ? 'طريقة التحصيل' : 'Collection Method' }} *
                         </label>
                         <select name="payment_method" required
                                 class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500">
-                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش' : 'Cash' }}</option>
+                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</option>
                             <option value="card">{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
+                            <option value="bank_transfer">{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
+                            <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">
-                        {{ app()->getLocale() === 'ar' ? 'رقم المرجع (للشبكة)' : 'Reference Number (for POS)' }}
-                    </label>
-                    <input type="text" name="reference_number" placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}"
-                           class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                            {{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}
+                        </label>
+                        <input type="text" name="reference_number" placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}"
+                               class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                        <label class="block text-xs font-bold text-indigo-700 mb-2">
+                            {{ app()->getLocale() === 'ar' ? '📁 إرفاق إيصال التحصيل (ق-1)' : '📁 Attach Collection Receipt (q-1)' }}
+                        </label>
+                        <input type="file" name="physical_receipt" accept="image/*,.pdf"
+                               class="w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                    </div>
+
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-2">
+                            {{ app()->getLocale() === 'ar' ? '📸 سكرينة عمليات المحصل' : '📸 Collector Operation Screenshot' }}
+                        </label>
+                        <input type="file" name="collector_screenshot" accept="image/*"
+                               class="w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-slate-600 file:text-white hover:file:bg-slate-700">
+                    </div>
                 </div>
 
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-slate-700 mb-1">
-                        {{ app()->getLocale() === 'ar' ? 'ملاحظات' : 'Notes' }}
+                        {{ app()->getLocale() === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes' }}
                     </label>
-                    <textarea name="notes" rows="2" class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea name="notes" rows="2" class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm"></textarea>
                 </div>
 
                 <div class="flex gap-3">
                     <button type="submit"
                         class="flex-1 bg-green-600  px-4 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg">
-                        ✅ {{ app()->getLocale() === 'ar' ? 'تأكيد وحفظ السند' : 'Confirm & Save Receipt' }}
+                        ✅ {{ app()->getLocale() === 'ar' ? 'حفظ وإرسال للمحاسب' : 'Save & Send to Accountant' }}
                     </button>
                     <button type="button" onclick="closePaymentModal()"
                         class="px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">

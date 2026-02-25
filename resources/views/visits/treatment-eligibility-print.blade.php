@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>أهلية المختبر - {{ $visit->patient->name }}</title>
+    <title>أحقية علاج - {{ $visit->patient->name }}</title>
     <style>
         @font-face {
             font-family: 'Cairo';
@@ -245,7 +245,7 @@
             </div>
 
             <div class="title-banner">
-                أهلية {{ isset($targetDepartment) ? ($targetDepartment->name_ar ?? 'المختبر') : ($visit->department->name_ar ?? 'المختبر') }}
+                أحقية علاج
             </div>
         </div>
 
@@ -288,7 +288,7 @@
 
             <div class="status-section">
                 <div class="check-icon">✓</div>
-                <div class="status-text">أهلية لدخول المختبر</div>
+                <div class="status-text">أهلية لدخول {{ $targetDepartmentName ?? 'المستشفى' }}</div>
             </div>
 
             <div class="signatures">

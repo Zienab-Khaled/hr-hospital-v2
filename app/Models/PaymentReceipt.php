@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class PaymentReceipt extends Model
+class PaymentReceipt extends Model implements HasMedia
 {
+    use InteractsWithMedia;
     protected $fillable = [
         'receipt_number',
         'payment_id',
@@ -20,12 +23,18 @@ class PaymentReceipt extends Model
         'collected_at',
         'approved_at',
         'notes',
+        'invoice_snapshot_total',
+        'invoice_snapshot_paid',
+        'invoice_snapshot_remaining',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
+            'invoice_snapshot_total' => 'decimal:2',
+            'invoice_snapshot_paid' => 'decimal:2',
+            'invoice_snapshot_remaining' => 'decimal:2',
             'collected_at' => 'datetime',
             'approved_at' => 'datetime',
         ];
@@ -65,6 +74,12 @@ class PaymentReceipt extends Model
     public function collectionOrder(): HasOne
     {
         return $this->hasOne(CollectionOrder::class);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('physical_receipt')->singleFile();
+        $this->addMediaCollection('collector_screenshot')->singleFile();
     }
 
     public function getPaymentMethodLabelAttribute(): string

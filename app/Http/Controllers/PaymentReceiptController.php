@@ -18,9 +18,11 @@ class PaymentReceiptController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,card',
+            'payment_method' => 'required|string|in:cash,card,bank_transfer,cheque',
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
+            'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $invoice = Invoice::findOrFail($validated['invoice_id']);
@@ -32,16 +34,18 @@ class PaymentReceiptController extends Controller
         DB::beginTransaction();
         try {
             // 1. Create Payment record
-            $paymentType = $invoice->patient->payment_type ?? 'cash';
+            // If it's a cash patient, payment_type is usually 'cash'.
+            // BUT here we are recording a payment against an invoice, so we use the method chosen.
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
-                'payment_type' => $paymentType,
+                'payment_type' => $validated['payment_method'],
                 'amount' => $validated['amount'],
                 'received_date' => now(),
                 'received_by' => auth()->user()->id,
                 'reference_no' => $validated['reference_number'],
-                'status' => 'pending', // Pending approval if needed
+                'status' => 'pending', // Pending accountant verification
                 'notes' => $validated['notes'],
+                'audit_status' => 'under_review',
             ]);
 
             // 2. Create Payment Receipt
@@ -51,12 +55,25 @@ class PaymentReceiptController extends Controller
                 'amount' => $validated['amount'],
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
+                'invoice_snapshot_total' => $invoice->total_amount,
+                'invoice_snapshot_paid' => $invoice->paid_amount + $validated['amount'],
+                'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $validated['amount']),
                 'collected_by' => auth()->user()->id,
                 'collected_at' => now(),
                 'notes' => $validated['notes'],
             ]);
 
-            // 3. Update Invoice
+            // 3. Handle Media Uploads
+            if ($request->hasFile('physical_receipt')) {
+                $receipt->addMediaFromRequest('physical_receipt')
+                    ->toMediaCollection('physical_receipt');
+            }
+            if ($request->hasFile('collector_screenshot')) {
+                $receipt->addMediaFromRequest('collector_screenshot')
+                    ->toMediaCollection('collector_screenshot');
+            }
+
+            // 4. Update Invoice
             $newPaidAmount = $invoice->paid_amount + $validated['amount'];
             $newRemainingAmount = $invoice->remaining_amount - $validated['amount'];
 
@@ -68,12 +85,25 @@ class PaymentReceiptController extends Controller
 
             DB::commit();
 
-            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$validated['amount']} recorded via {$validated['payment_method']}", null, $receipt->toArray());
+            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$validated['amount']} recorded via {$validated['payment_method']}. Proof attached.", null, $receipt->toArray());
 
-            return redirect()->route('invoices.show', $invoice)->with('success', __('Payment recorded successfully.'));
+            return redirect()->route('invoices.show', $invoice)->with('success', __('Payment recorded and receipt generated successfully.'));
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('PaymentReceipt store error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Error recording payment: ' . $e->getMessage()])->withInput();
         }
+    }
+
+    public function print(PaymentReceipt $receipt)
+    {
+        $this->authorize('invoices.view');
+
+        $receipt->load(['payment.invoice', 'patient', 'collectedBy']);
+        $invoice = $receipt->payment->invoice;
+        $settings = \App\Models\Setting::first();
+        $manager = \App\Models\User::getManagerForSignature();
+
+        return view('invoices.print-receipt', compact('receipt', 'invoice', 'settings', 'manager'));
     }
 }

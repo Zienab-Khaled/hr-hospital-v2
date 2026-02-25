@@ -32,7 +32,7 @@
                     </p>
                 @endif
             </div>
-            
+
             <div class="bg-slate-50 rounded-lg p-6 mb-6">
                 <h3 class="font-bold mb-3">Response Details</h3>
                 <div class="space-y-2 text-sm">
@@ -62,11 +62,22 @@
                     </div>
                 </div>
             </div>
-            
+
             <p class="text-slate-600 text-sm">
                 Thank you for your prompt response. The hospital will be notified of your decision.
             </p>
         </div>
     </div>
+
+    {{-- Footer --}}
+    <footer class="fixed bottom-0 left-0 w-full py-6 text-center text-slate-500 text-sm font-medium">
+        <div class="mb-1">
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Alrwaily</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+        </div>
+        <div>
+            {{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}
+            <span class="text-indigo-600 font-bold">Zienab Khaled</span>
+        </div>
+    </footer>
 </body>
 </html>

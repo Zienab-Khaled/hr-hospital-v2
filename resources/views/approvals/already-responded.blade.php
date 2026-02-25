@@ -14,12 +14,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
             </div>
-            
+
             <h1 class="text-3xl font-bold text-slate-900 mb-3">Already Responded</h1>
             <p class="text-lg text-slate-600 mb-6">
                 This approval request has already been processed and cannot be modified.
             </p>
-            
+
             <div class="bg-slate-50 rounded-lg p-6 mb-6">
                 <h3 class="font-bold mb-3">Current Status</h3>
                 <div class="space-y-2 text-sm">
@@ -39,11 +39,22 @@
                     </div>
                 </div>
             </div>
-            
+
             <p class="text-slate-600 text-sm">
                 If you believe this is an error, please contact the hospital directly.
             </p>
         </div>
     </div>
+
+    {{-- Footer --}}
+    <footer class="fixed bottom-0 left-0 w-full py-6 text-center text-slate-500 text-sm font-medium">
+        <div class="mb-1">
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Alrwaily</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+        </div>
+        <div>
+            {{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}
+            <span class="text-indigo-600 font-bold">Zienab Khaled</span>
+        </div>
+    </footer>
 </body>
 </html>

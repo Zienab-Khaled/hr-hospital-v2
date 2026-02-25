@@ -20,6 +20,7 @@ class Invoice extends Model implements HasMedia
         'deposit_amount', 'status', 'invoice_date', 'notes', 'print_media_ids',
         'sent_to_charity_mail_at', 'printed_commitment_at', 'printed_non_commitment_at',
         'payment_type', 'invoice_type', 'audit_status', 'rejection_reason',
+        'cashier_otp', 'cashier_id', 'cashier_received_at',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class Invoice extends Model implements HasMedia
             'payment_type' => 'string',
             'invoice_type' => 'string',
             'audit_status' => 'string',
+            'cashier_received_at' => 'datetime',
         ];
     }
 
@@ -75,17 +77,17 @@ class Invoice extends Model implements HasMedia
         return $this->hasMany(InvoicePartySend::class);
     }
 
-    public function attachments(): MorphMany
-    {
-        return $this->morphMany(Attachment::class, 'attachable');
-    }
 
     public function paymentReceipts(): HasManyThrough
     {
         return $this->hasManyThrough(PaymentReceipt::class, Payment::class);
     }
 
-    /** تسمية الحالة للعرض (عربي/إنجليزي) */
+    public function cashier()
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
+
     public function getStatusLabelAttribute(): string
     {
         $labels = [

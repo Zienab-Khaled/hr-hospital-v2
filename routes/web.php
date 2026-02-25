@@ -12,6 +12,7 @@ use App\Http\Controllers\PlaceholderController;
 use App\Http\Controllers\ShiftHandoverController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\RevenueWorkflowController;
+use App\Http\Controllers\CashierWorkflowController;
 use App\Http\Controllers\WrittenCommitmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,7 +45,6 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('manager/dashboard', [DashboardController::class, 'managerDashboard'])->name('manager.dashboard');
 
     // Dashboard Dynamic Modals API
     Route::prefix('api/dashboard')->group(function () {
@@ -80,7 +80,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('visits/create', [VisitController::class, 'create'])->name('visits.create');
     Route::get('visits/create/services-search', [VisitController::class, 'searchServicesForEligibility'])->name('visits.eligibility-services-search');
-    Route::resource('visits', VisitController::class)->except(['create', 'show']); // visits.index, visits.store, visits.edit, visits.update, visits.destroy
+    Route::resource('visits', VisitController::class)->except(['create']); // visits.index, visits.show, visits.store, visits.edit, visits.update, visits.destroy
     // visits.create is handled manually above because of specific logic
 
     Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
     Route::post('invoices/{invoice}/upload-signed-document', [InvoiceController::class, 'uploadSignedDocument'])->name('invoices.upload-signed-document');
     Route::delete('invoices/{invoice}/delete-signed-document/{media}', [InvoiceController::class, 'deleteSignedDocument'])->name('invoices.delete-signed-document');
     Route::post('payment-receipts', [App\Http\Controllers\PaymentReceiptController::class, 'store'])->name('payment-receipts.store');
+    Route::get('payment-receipts/{receipt}/print', [App\Http\Controllers\PaymentReceiptController::class, 'print'])->name('payment-receipts.print');
 
     // Charity Claims Management
     Route::get('charity-claims', [App\Http\Controllers\CharityClaimController::class, 'index'])->name('charity-claims.index');

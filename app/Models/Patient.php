@@ -107,10 +107,6 @@ class Patient extends Model implements HasMedia
         return $this->hasMany(ContactReport::class);
     }
 
-    public function writtenCommitments(): HasMany
-    {
-        return $this->hasMany(WrittenCommitment::class);
-    }
 
     public function nonCommitmentReports(): HasMany
     {

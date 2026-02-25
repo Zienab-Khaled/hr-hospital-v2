@@ -17,28 +17,17 @@
     </div>
 
     {{-- Navigation --}}
-    <nav class="px-3 py-3">
+    <nav class="px-3 py-3 mt-3">
         {{-- Dashboard --}}
         <a href="{{ route('dashboard') }}"
             class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-           {{ request()->routeIs('dashboard') ? 'bg-red-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}">
+           {{ request()->routeIs('dashboard') ? 'bg-red-600' : 'text-slate-700 hover:bg-slate-100' }}">
             <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             <span>{{ __('Dashboard') }}</span>
         </a>
-
-        @if($isManager)
-        <!-- <a href="{{ route('manager.dashboard') }}"
-            class="flex items-center gap-2.5 px-3 py-1.5 mb-2 rounded-md text-sm font-bold transition-colors
-           {{ request()->routeIs('manager.dashboard') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-indigo-50 border border-slate-200' }}">
-            <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span>{{ app()->getLocale() === 'ar' ? 'لوحة تحكم المدير' : 'Analytics Dashboard' }}</span>
-        </a> -->
-        @endif
 
         {{-- Patients Section --}}
         @if ($user->can('patients.view') || $isManager)
@@ -56,26 +45,6 @@
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits' }}</span>
                 </a>
-                @if ($user->can('invoices.create'))
-                {{-- <a href="{{ route('visits.create') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-                   {{ request()->routeIs('visits.create') ? 'bg-red-600 text-slate-50' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'إنشاء زيارة' : 'Create Visit' }}</span>
-                </a> --}}
-                <!-- <a href="{{ route('shift-handovers.index') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-                   {{ request()->routeIs('shift-handovers.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'تسليم الشيفت' : 'Hand Over Shift' }}</span>
-                </a> -->
-                @endif
 
                 <a href="{{ route('patients.section.charity') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
@@ -131,16 +100,6 @@
                     </svg>
                     <span>{{ __('Collection') }}</span>
                 </a>
-<!--
-                <a href="{{ route('patients.departments-list') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-                   {{ request()->routeIs('patients.by-department*') || request()->routeIs('patients.departments-list') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'حسب القسم' : 'By Department' }}</span>
-                </a> -->
             </div>
         @endif
 
@@ -158,7 +117,7 @@
         @endif
 
         {{-- Authorizations --}}
-        @if ($user->can('authorizations.view') || $isManager)
+        <!-- @if ($user->can('authorizations.view') || $isManager)
             <a href="{{ route('authorizations.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('authorizations.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
@@ -168,7 +127,7 @@
                 </svg>
                 <span>{{ __('Authorizations') }}</span>
             </a>
-        @endif
+        @endif -->
 
         {{-- Payments --}}
         @if ($user->can('payments.view') || $user->can('payments.approve') || $isManager)
@@ -288,7 +247,7 @@
         @if ($user->can('reports.view') || $isManager)
                 <a href="{{ route('revenue.control-room') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
-                   {{ request()->routeIs('revenue.control-room') ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
+                   {{ request()->routeIs('revenue.control-room') ? 'bg-indigo-600 shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
                     <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                     </svg>

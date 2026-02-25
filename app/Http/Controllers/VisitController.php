@@ -210,8 +210,28 @@ class VisitController extends Controller
 
         // If a specific department is selected for eligibility, use its manager
         $targetDepartment = null;
+        $targetDepartmentName = null;
         if ($request->filled('department_id')) {
             $targetDepartment = Department::with('manager')->find($request->input('department_id'));
+            if ($targetDepartment) {
+                $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+            }
+        }
+
+        // Capture the first service's department if targetDepartmentName is still null
+        if (!$targetDepartmentName && !empty($services)) {
+            $firstServiceId = $services[0]['service_id'] ?? null;
+            if ($firstServiceId) {
+                $firstService = Service::with('department')->find($firstServiceId);
+                if ($firstService && $firstService->department) {
+                    $targetDepartmentName = $firstService->department->name_ar ?? $firstService->department->name;
+                }
+            }
+        }
+
+        // Final fallback to the visit's home department
+        if (!$targetDepartmentName) {
+            $targetDepartmentName = $visit->department->name_ar ?? $visit->department->name ?? null;
         }
 
         // Update tracking flag and save services
@@ -311,7 +331,7 @@ class VisitController extends Controller
         // Log the action
         ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
 
-        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment'));
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName'));
     }
 
     /**
@@ -424,6 +444,14 @@ class VisitController extends Controller
         $insuranceCompanies = \App\Models\InsuranceCompany::where('is_active', true)->orderBy('name')->get();
 
         return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments', 'registrars', 'insuranceCompanies'));
+    }
+
+    public function show(Visit $visit)
+    {
+        $this->authorize('invoices.view');
+        $visit->load(['patient', 'department', 'shift', 'registeredBy', 'invoices.items.service', 'invoices.payments']);
+
+        return view('visits.show', compact('visit'));
     }
 
     public function edit(Visit $visit)

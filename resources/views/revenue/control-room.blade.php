@@ -74,7 +74,7 @@
             </div>
 
             <div class="flex items-end self-end mb-0.5">
-                <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-200 group">
+                <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-slate-900  text-sm font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-200 group">
                     {{ app()->getLocale() === 'ar' ? 'تحديث البيانات' : 'Sync Data' }}
                     <span class="ml-2 group-hover:rotate-180 transition-transform duration-500">🔄</span>
                 </button>
@@ -129,19 +129,32 @@
                                         <span class="opacity-50">🕒</span> {{ $invoice->created_at->format('H:i') }}
                                     </span>
                                     <span class="text-xs text-slate-500 font-bold flex items-center gap-1">
-                                        <span class="opacity-50">🏢</span> {{ app()->getLocale() === 'ar' ? ($invoice->visit->shift->name_ar ?? $invoice->visit->shift->name) : $invoice->visit->shift->name }}
+                                        <span class="opacity-50">🏢</span> {{ $invoice->visit?->shift ? (app()->getLocale() === 'ar' ? ($invoice->visit->shift->name_ar ?? $invoice->visit->shift->name) : $invoice->visit->shift->name) : '—' }}
                                     </span>
                                 </div>
                              </div>
                         </div>
                         <div class="text-right">
                             <div class="text-2xl font-black text-slate-900 tracking-tight">{{ number_format($invoice->total_amount, 2) }} <span class="text-xs text-slate-400 font-medium">SR</span></div>
-                            <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase {{ $invoice->audit_status === 'under_review' ? 'bg-amber-100 text-amber-700' : ($invoice->audit_status === 'matched' ? 'bg-blue-100 text-blue-700' : ($invoice->audit_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')) }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ $invoice->audit_status === 'under_review' ? 'bg-amber-500' : ($invoice->audit_status === 'matched' ? 'bg-blue-500' : ($invoice->audit_status === 'rejected' ? 'bg-red-500' : 'bg-emerald-500')) }}"></span>
-                                {{ $invoice->status_label }}
+                                <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase {{ $invoice->audit_status === 'under_review' ? 'bg-amber-100 text-amber-700' : ($invoice->audit_status === 'matched' ? 'bg-blue-100 text-blue-700' : ($invoice->audit_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')) }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $invoice->audit_status === 'under_review' ? 'bg-amber-500' : ($invoice->audit_status === 'matched' ? 'bg-blue-500' : ($invoice->audit_status === 'rejected' ? 'bg-red-500' : 'bg-emerald-500')) }}"></span>
+                                    {{ $invoice->status_label }}
+                                </div>
+                                {{-- Audit Documents --}}
+                                @php $receipt = $invoice->payments->first()?->receipt; @endphp
+                                @if($receipt)
+                                    <div class="mt-2 flex justify-end gap-2">
+                                        <a href="{{ route('payment-receipts.print', $receipt) }}" target="_blank" class="w-6 h-6 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-emerald-100" title="{{ app()->getLocale() === 'ar' ? 'إيصال ق-1 الرقمي' : 'Digital q-1 Receipt' }}">🧾</a>
+                                        @if($receipt->hasMedia('physical_receipt'))
+                                            <a href="{{ $receipt->getFirstMediaUrl('physical_receipt') }}" target="_blank" class="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-indigo-100" title="Physical Receipt">📄</a>
+                                        @endif
+                                        @if($receipt->hasMedia('collector_screenshot'))
+                                            <a href="{{ $receipt->getFirstMediaUrl('collector_screenshot') }}" target="_blank" class="w-6 h-6 bg-slate-50 text-slate-600 rounded-lg flex items-center justify-center text-[10px] shadow-sm hover:bg-slate-100" title="Collector Screenshot">🖼️</a>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         </div>
-                    </div>
 
                     {{-- Services Summary --}}
                     <div class="bg-white/50 rounded-3xl p-4 mb-6 space-y-2 border border-slate-100 shadow-inner">
