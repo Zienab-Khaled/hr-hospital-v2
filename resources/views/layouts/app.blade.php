@@ -189,10 +189,7 @@
                     <div>
                         &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Al-Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span>{{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}</span>
-                        <span class="text-indigo-600 font-bold">Zienab Khaled</span>
-                    </div>
+                    
                 </div>
             </footer>
         </main>

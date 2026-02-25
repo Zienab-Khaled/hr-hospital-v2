@@ -279,10 +279,7 @@
             <div class="mb-1">
                 &copy; {{ date('Y') }} <span class="text-slate-900 font-bold">Abeer Al-Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
             </div>
-            <div>
-                {{ app()->getLocale() === 'ar' ? 'تم التطوير بواسطة' : 'Developed by' }}
-                <span class="text-[#F53003] font-bold">Zienab Khaled</span>
-            </div>
+           
         </footer>
     </body>
 </html>
