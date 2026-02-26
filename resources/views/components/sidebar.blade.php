@@ -238,6 +238,17 @@
                     <span>{{ __('Users') }}</span>
                 </a>
 
+                <a href="{{ route('shifts.index') }}"
+                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                   {{ request()->routeIs('shifts.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'الورديات' : 'Shifts' }}</span>
+                </a>
+
                 <a href="{{ route('settings.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('settings.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">

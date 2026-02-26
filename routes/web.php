@@ -13,6 +13,7 @@ use App\Http\Controllers\ShiftHandoverController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\RevenueWorkflowController;
 use App\Http\Controllers\CashierWorkflowController;
+use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\WrittenCommitmentController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -41,9 +42,13 @@ Route::post('invoice-party-response/{token}', [App\Http\Controllers\InvoiceParty
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
+
+    // API Token Routes
+    Route::post('api/login', [App\Http\Controllers\Auth\AuthController::class, 'login']);
+    Route::post('api/refresh', [App\Http\Controllers\Auth\AuthController::class, 'refresh']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth:web,api')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -193,6 +198,7 @@ Route::middleware('auth')->group(function () {
     Route::get('users/{user}', [PlaceholderController::class, 'usersShow'])->name('users.show');
     Route::get('settings', [PlaceholderController::class, 'settingsIndex'])->name('settings.index');
     Route::post('settings', [PlaceholderController::class, 'settingsUpdate'])->name('settings.update');
+    Route::resource('shifts', ShiftController::class);
     Route::get('codes/upload', [PlaceholderController::class, 'codesUpload'])->name('codes.upload');
     Route::post('codes/upload', [PlaceholderController::class, 'codesUploadStore'])->name('codes.upload.store');
     Route::get('activity', [PlaceholderController::class, 'activityIndex'])->name('activity.index');

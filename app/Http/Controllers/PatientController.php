@@ -174,7 +174,9 @@ class PatientController extends Controller
         ActivityLogger::log('Patient Created', 'Patient', $patient->id, 'Patient registered', null, $patient->toArray());
 
         // System Notification for Managers and Accountants
-        $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+        $notifyUsers = User::whereHas('roles', function($q) {
+            $q->whereIn('name', ['manager', 'admin', 'accountant']);
+        })->get();
         if ($notifyUsers->isNotEmpty()) {
             Notification::send($notifyUsers, new SystemNotification([
                 'title' => app()->getLocale() === 'ar' ? 'مريض جديد مسجل' : 'New Patient Registered',

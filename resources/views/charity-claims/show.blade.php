@@ -201,7 +201,7 @@
                         <div id="approved-amount-field" class="{{ $charityClaim->status === 'approved' ? '' : 'hidden' }}">
                             <label class="block text-sm font-semibold text-slate-700 mb-2">{{ app()->getLocale() === 'ar' ? 'المبلغ المعتمد' : 'Approved Amount' }}</label>
                             <input type="number" name="approved_amount" step="0.01" min="0"
-                                   value="{{ $charityClaim->approved_amount ?? $charityClaim->invoice?->total_amount }}"
+                                   value="{{ $charityClaim->approved_amount ?? $charityClaim->invoice?->remaining_amount }}"
                                    class="w-full border-2 border-slate-400 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
                         </div>
 

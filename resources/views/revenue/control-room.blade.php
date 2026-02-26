@@ -140,7 +140,16 @@
                              </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-2xl font-black text-slate-900 tracking-tight">{{ number_format($invoice->total_amount, 2) }} <span class="text-xs text-slate-400 font-medium">SR</span></div>
+                            @php
+                                $totalCollectedOnDate = $invoice->payments->filter(fn($p) => $p->received_date?->isSameDay($date))->sum('amount');
+                            @endphp
+                            <div class="text-2xl font-black text-indigo-600 tracking-tight">{{ number_format($totalCollectedOnDate, 2) }} <span class="text-xs text-slate-400 font-medium">SR</span></div>
+                            <div class="text-[10px] text-slate-500 font-bold mt-1">
+                                {{ app()->getLocale() === 'ar' ? 'إجمالي الفاتورة:' : 'Invoice Total:' }} {{ number_format($invoice->total_amount, 2) }}
+                                @if($invoice->remaining_amount > 0)
+                                    | {{ app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:' }} {{ number_format($invoice->remaining_amount, 2) }}
+                                @endif
+                            </div>
                                 <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase {{ $invoice->audit_status === 'under_review' ? 'bg-amber-100 text-amber-700' : ($invoice->audit_status === 'matched' ? 'bg-blue-100 text-blue-700' : ($invoice->audit_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')) }}">
                                     <span class="w-1.5 h-1.5 rounded-full {{ $invoice->audit_status === 'under_review' ? 'bg-amber-500' : ($invoice->audit_status === 'matched' ? 'bg-blue-500' : ($invoice->audit_status === 'rejected' ? 'bg-red-500' : 'bg-emerald-500')) }}"></span>
                                     {{ $invoice->status_label }}

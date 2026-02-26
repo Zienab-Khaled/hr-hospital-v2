@@ -178,7 +178,7 @@ class PlaceholderController extends Controller
     public function patientsDepartmentsList()
     {
         Gate::authorize('patients.view');
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'medical')->orderBy('name')->get();
         return view('patients.departments-list', compact('departments'));
     }
 
@@ -249,7 +249,7 @@ class PlaceholderController extends Controller
             ->withQueryString();
 
         $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'medical')->orderBy('name')->get();
 
         return view('visits.index', compact('visits', 'currentShift', 'isAdmin', 'shifts', 'departments'));
     }
@@ -315,7 +315,7 @@ class PlaceholderController extends Controller
             ->withQueryString();
 
         $shifts = Shift::all();
-        $departments = Department::all();
+        $departments = Department::where('category', 'medical')->get();
         $registrars = User::all(); // Simplified for now
         $insuranceCompanies = InsuranceCompany::all();
 
@@ -421,7 +421,7 @@ class PlaceholderController extends Controller
             ->sum('amount');
 
         // --- إحصائيات الأداء حسب الأقسام ---
-        $deptPerformance = \App\Models\Department::all()->map(function($dept) use ($start, $end) {
+        $deptPerformance = \App\Models\Department::where('category', 'medical')->get()->map(function($dept) use ($start, $end) {
             $stats = Payment::whereNotNull('approved_by')
                 ->whereBetween('received_date', [$start, $end])
                 ->whereHas('invoice.visit', function($q) use ($dept) {
@@ -588,11 +588,13 @@ class PlaceholderController extends Controller
             'name_ar' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:20|unique:departments,code',
             'is_active' => 'nullable|boolean',
+            'category' => 'required|in:medical,administrative',
             'manager_id' => 'nullable|exists:users,id',
         ]);
         $dept = Department::create([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
+            'category' => $request->input('category'),
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
             'manager_id' => $request->input('manager_id'),
@@ -622,11 +624,13 @@ class PlaceholderController extends Controller
             'name_ar' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:20|unique:departments,code,' . $department->id,
             'is_active' => 'nullable|boolean',
+            'category' => 'required|in:medical,administrative',
             'manager_id' => 'nullable|exists:users,id',
         ]);
         $department->update([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
+            'category' => $request->input('category'),
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
             'manager_id' => $request->input('manager_id'),
@@ -960,13 +964,11 @@ class PlaceholderController extends Controller
         $managerSignaturePath = Setting::get('manager_signature', '');
         $departmentManagerName = Setting::get('department_manager_name', '');
         $departmentManagerSignaturePath = Setting::get('department_manager_signature', '');
-        $shifts = Shift::orderBy('sort_order')->get();
-
         return view('settings.index', compact(
             'hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn',
             'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress',
             'accountNumber', 'ibanNumber', 'bankName', 'stampPath', 'managerSignaturePath',
-            'departmentManagerName', 'departmentManagerSignaturePath', 'shifts'
+            'departmentManagerName', 'departmentManagerSignaturePath'
         ));
     }
 
@@ -990,12 +992,6 @@ class PlaceholderController extends Controller
             'manager_signature_data' => 'nullable|string',
             'department_manager_name' => 'nullable|string|max:255',
             'department_manager_signature_data' => 'nullable|string',
-            'shifts' => 'nullable|array',
-            'shifts.*.id' => 'nullable|exists:shifts,id',
-            'shifts.*.name' => 'required|string|max:255',
-            'shifts.*.name_ar' => 'nullable|string|max:255',
-            'shifts.*.start_time' => 'required',
-            'shifts.*.end_time' => 'required',
         ]);
         Setting::set('hospital_name', $request->input('hospital_name', ''), 'general');
         Setting::set('hospital_name_en', $request->input('hospital_name_en', ''), 'general');
@@ -1046,27 +1042,6 @@ class PlaceholderController extends Controller
             Setting::set('department_manager_signature', $deptManagerSigPath, 'general');
         }
 
-        // --- Handle Dynamic Shifts ---
-        $providedShifts = $request->input('shifts', []);
-        $providedIds = collect($providedShifts)->pluck('id')->filter()->toArray();
-
-        // Delete shifts not in the request
-        Shift::whereNotIn('id', $providedIds)->delete();
-
-        // Update/Create shifts
-        foreach ($providedShifts as $index => $shiftData) {
-            Shift::updateOrCreate(
-                ['id' => $shiftData['id'] ?? null],
-                [
-                    'name' => $shiftData['name'],
-                    'name_ar' => $shiftData['name_ar'] ?: $shiftData['name'],
-                    'start_time' => $shiftData['start_time'],
-                    'end_time' => $shiftData['end_time'],
-                    'is_active' => true,
-                    'sort_order' => $index,
-                ]
-            );
-        }
 
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
 

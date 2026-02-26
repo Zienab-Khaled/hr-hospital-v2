@@ -75,5 +75,13 @@
     "Documentation": "التوثيق",
     "Watch video tutorials at": "شاهد الدروس التعليمية على",
     "Deploy now": "انشر الآن",
-    "Register": "تسجيل"
+    "Register": "تسجيل",
+    "Department": "القسم",
+    "Invoice Number": "رقم الفاتورة",
+    "Total": "المجموع",
+    "Status": "الحالة",
+    "View Detailed Reports": "عرض التقارير المفصلة",
+    "Category": "التصنيف",
+    "Medical": "طبي",
+    "Administrative": "إداري"
 }

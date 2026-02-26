@@ -35,6 +35,7 @@ class RevenueWorkflowController extends Controller
 
         // Calculate actual collection total for the selected date
         $totalCollectedToday = \App\Models\Payment::whereDate('received_date', $date)
+            ->whereNotNull('approved_by')
             ->when($shiftId, function ($q) use ($shiftId) {
                 $q->whereHas('invoice.visit', function($vq) use ($shiftId) {
                     $vq->where('shift_id', $shiftId);
@@ -49,13 +50,20 @@ class RevenueWorkflowController extends Controller
     {
         Gate::authorize('reports.view');
 
-        $invoice->update([
-            'audit_status' => 'matched',
-            'status' => 'approved' // If it was pending
-        ]);
+        DB::transaction(function() use ($invoice) {
+            $invoice->update([
+                'audit_status' => 'matched',
+                'status' => 'approved'
+            ]);
 
-        // Also match any linked payments
-        $invoice->payments()->update(['audit_status' => 'matched']);
+            // Also match any linked payments and ensure they are marked as approved for reports
+            $invoice->payments()->update([
+                'audit_status' => 'matched',
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+        });
 
         return back()->with('success', app()->getLocale() === 'ar' ? 'تمت المطابقة بنجاح (جاهز للتوريد).' : 'Matched successfully (Ready for deposit).');
     }

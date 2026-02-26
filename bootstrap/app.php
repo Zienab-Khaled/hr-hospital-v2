@@ -15,9 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
         ]);
-        // Force unauthenticated users to login page (no direct dashboard access)
+
+        $middleware->alias([
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        ]);
+
         $middleware->redirectGuestsTo(fn ($request) => route('login'));
-        // Logged-in users visiting login page go to dashboard
         $middleware->redirectUsersTo(fn ($request) => route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

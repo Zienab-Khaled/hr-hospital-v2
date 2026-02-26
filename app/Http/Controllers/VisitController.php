@@ -33,7 +33,7 @@ class VisitController extends Controller
         $this->authorize('invoices.create');
 
         $currentShift = Shift::currentAt();
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'medical')->orderBy('name')->get();
         $myDepartment = auth()->user()?->department_id
             ? Department::find(auth()->user()->department_id)
             : null;
@@ -89,6 +89,7 @@ class VisitController extends Controller
         }
 
         $eligibilityDepartments = Department::where('is_active', true)
+            ->where('category', 'medical')
             ->orderBy('name')
             ->get();
 
@@ -147,7 +148,9 @@ class VisitController extends Controller
         ActivityLogger::log('Visit Created', 'Visit', $visit->id, 'Patient registered to department', null, $visit->toArray());
 
     // System Notification for Managers and Accountants
-    $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+    $notifyUsers = User::whereHas('roles', function($q) {
+        $q->whereIn('name', ['manager', 'admin', 'accountant']);
+    })->get();
     if ($notifyUsers->isNotEmpty()) {
         $deptName = $visit->department->name_ar ?? $visit->department->name;
         Notification::send($notifyUsers, new SystemNotification([
@@ -454,7 +457,7 @@ class VisitController extends Controller
             ->withQueryString();
 
         $shifts = Shift::where('is_active', true)->orderBy('sort_order')->get();
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'medical')->orderBy('name')->get();
         $registrars = \App\Models\User::orderBy('name')->get();
         $insuranceCompanies = \App\Models\InsuranceCompany::where('is_active', true)->orderBy('name')->get();
 
@@ -520,7 +523,17 @@ class VisitController extends Controller
     {
         // 1. Validate
         $request->validate([
-            'to_department_id' => 'required|exists:departments,id|different:department_id',
+            'to_department_id' => [
+                'required',
+                'exists:departments,id',
+                'different:department_id',
+                function ($attribute, $value, $fail) {
+                    $dept = Department::find($value);
+                    if ($dept && $dept->category !== 'medical') {
+                        $fail(app()->getLocale() === 'ar' ? 'يمكن التحويل للأقسام الطبية فقط.' : 'Transfers are only allowed to medical departments.');
+                    }
+                },
+            ],
             'notes' => 'nullable|string|max:500',
         ]);
 

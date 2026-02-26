@@ -294,9 +294,11 @@ class InvoiceController extends Controller
                     'amount' => $validated['collection_amount'],
                     'received_date' => now(),
                     'received_by' => auth()->user()->id,
+                    'approved_by' => auth()->user()->id, // Auto-approve immediate collection
+                    'approved_at' => now(),
                     'reference_no' => $validated['collection_reference'] ?? null,
-                    'status' => 'pending',
-                    'audit_status' => 'under_review',
+                    'status' => 'approved',
+                    'audit_status' => 'matched',
                     'notes' => $validated['notes'] ?? 'Immediate collection upon creation',
                 ]);
 

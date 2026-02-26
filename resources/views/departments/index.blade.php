@@ -20,6 +20,7 @@
                 <tr>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الاسم' : 'Name' }}</th>
 
+                    <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'التصنيف' : 'Category' }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'مدير القسم' : 'Manager' }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'عدد الموظفين' : 'Employees' }}</th>
                     @can('departments.manage')
@@ -31,6 +32,17 @@
                 @foreach ($departments as $d)
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="p-3">{{ app()->getLocale() === 'ar' ? ($d->name_ar ?: $d->name) : $d->name }}</td>
+                        <td class="p-3">
+                            @if($d->category === 'medical')
+                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                    {{ app()->getLocale() === 'ar' ? 'طبي' : 'Medical' }}
+                                </span>
+                            @else
+                                <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                    {{ app()->getLocale() === 'ar' ? 'إداري' : 'Administrative' }}
+                                </span>
+                            @endif
+                        </td>
 
                         <td class="p-3">
                             @if($d->manager)

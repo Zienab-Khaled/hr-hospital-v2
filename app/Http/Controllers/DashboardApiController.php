@@ -153,6 +153,9 @@ class DashboardApiController extends Controller
             case 'patient':
                 $data = Patient::with(['insuranceCompany', 'charityEntity'])->find($id);
                 break;
+            case 'visit':
+                $data = \App\Models\Visit::with(['patient', 'department', 'shift'])->find($id);
+                break;
             case 'commitment':
                 $data = WrittenCommitment::with('patient')->find($id);
                 break;
@@ -168,6 +171,7 @@ class DashboardApiController extends Controller
         }
 
         if (!$data) {
+            \Illuminate\Support\Facades\Log::warning("Quick View: Record not found. Type: {$type}, ID: {$id}");
             return response()->json(['success' => false, 'message' => 'Record not found']);
         }
 

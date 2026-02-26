@@ -267,6 +267,12 @@
                                 html += `<p><strong>${isAr ? 'الهوية' : 'Identity'}:</strong> ${d.identity_value}</p>`;
                                 html += `<p><strong>${isAr ? 'الهاتف' : 'Phone'}:</strong> ${d.phone || '—'}</p>`;
                                 html += `<p><strong>${isAr ? 'نوع الدفع' : 'Payment'}:</strong> ${d.payment_type}</p>`;
+                            } else if (data.type === 'visit') {
+                                html += `<p><strong>${isAr ? 'المريض' : 'Patient'}:</strong> ${d.patient?.name || '—'}</p>`;
+                                html += `<p><strong>${isAr ? 'القسم' : 'Department'}:</strong> ${isAr ? (d.department?.name_ar || d.department?.name) : d.department?.name}</p>`;
+                                html += `<p><strong>${isAr ? 'الشيفت' : 'Shift'}:</strong> ${isAr ? (d.shift?.name_ar || d.shift?.name) : d.shift?.name}</p>`;
+                                html += `<p><strong>${isAr ? 'نوع الحالة' : 'Case Type'}:</strong> ${d.case_type}</p>`;
+                                html += `<p><strong>${isAr ? 'التاريخ' : 'Date'}:</strong> ${new Date(d.visit_date).toLocaleDateString()}</p>`;
                             } else {
                                 html += `<p><strong>${isAr ? 'المريض' : 'Patient'}:</strong> ${d.patient?.name || '—'}</p>`;
                                 if (d.amount) html += `<p><strong>${isAr ? 'المبلغ' : 'Amount'}:</strong> ${d.amount} SAR</p>`;

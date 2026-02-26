@@ -57,10 +57,12 @@ class PaymentReceiptController extends Controller
                 'amount' => $validated['amount'],
                 'received_date' => now(),
                 'received_by' => auth()->user()->id,
+                'approved_by' => auth()->user()->id, // Auto-approve manual payment receipt
+                'approved_at' => now(),
                 'reference_no' => $validated['reference_number'],
-                'status' => 'pending',
+                'status' => 'approved',
                 'notes' => $validated['notes'],
-                'audit_status' => 'under_review',
+                'audit_status' => 'matched',
             ]);
 
             // 2. Create Payment Receipt

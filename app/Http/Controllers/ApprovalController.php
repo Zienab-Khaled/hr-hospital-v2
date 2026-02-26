@@ -72,7 +72,9 @@ class ApprovalController extends Controller
         }
 
         // System Notification for Managers and Accountants
-        $notifyUsers = User::role(['manager', 'admin', 'accountant'])->get();
+        $notifyUsers = User::whereHas('roles', function($q) {
+            $q->whereIn('name', ['manager', 'admin', 'accountant']);
+        })->get();
         if ($notifyUsers->isNotEmpty()) {
             $statusLabel = $approval->status === 'approved' ? (app()->getLocale() === 'ar' ? 'موافقة' : 'Approved') : (app()->getLocale() === 'ar' ? 'مرفوض' : 'Rejected');
             $partyName = $approval->insuranceCompany?->name ?? $approval->charityEntity?->name ?? 'External Party';

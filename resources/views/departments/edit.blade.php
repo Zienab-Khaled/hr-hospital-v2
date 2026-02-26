@@ -32,6 +32,16 @@
                     @error('code')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'التصنيف' : 'Category' }} <span class="text-red-500">*</span></label>
+                    <select name="category" required class="w-full rounded border border-slate-300 px-3 py-2 bg-white @error('category') border-red-500 @enderror">
+                        <option value="medical" {{ old('category', $department->category) == 'medical' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'طبي' : 'Medical' }}</option>
+                        <option value="administrative" {{ old('category', $department->category) == 'administrative' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'إداري' : 'Administrative' }}</option>
+                    </select>
+                    @error('category')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 <!-- Manager -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'مدير القسم' : 'Department Manager' }}</label>

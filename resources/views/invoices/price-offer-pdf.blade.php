@@ -89,9 +89,19 @@
                     <td>{{ number_format((float) $item->total_price, 2) }}</td>
                 </tr>
             @endforeach
-            <tr class="total-row">
-                <td colspan="4">الاجمالي</td>
-                <td style="text-align: left;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+            @if($invoice->paid_amount > 0)
+                <tr class="total-row">
+                    <td colspan="4">إجمالي الخدمات</td>
+                    <td style="text-align: left;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+                </tr>
+                <tr class="total-row" style="color: #64748b; font-weight: normal;">
+                    <td colspan="4">المسدد نقداً (مقدم/مساهمة)</td>
+                    <td style="text-align: left;">- {{ number_format((float) $invoice->paid_amount, 2) }} ريال</td>
+                </tr>
+            @endif
+            <tr class="total-row" style="background: #e2e8f0; border-top: 2px solid #1e293b;">
+                <td colspan="4">{{ app()->getLocale() === 'ar' ? 'المبلغ المطلوب من الجمعية (الصافي)' : 'Net Amount Claimed from Charity' }}</td>
+                <td style="text-align: left; font-size: 14px;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
             </tr>
         </tbody>
     </table>

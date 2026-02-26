@@ -94,10 +94,12 @@ class CharityClaim extends Model
             // 1. Create Payment record
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
-                'payment_type' => $invoice->payment_type, // 'charity'
+                'payment_type' => $invoice->payment_type ?? 'charity',
                 'amount' => $amount,
                 'received_date' => now(),
                 'received_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'approved_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'approved_at' => now(),
                 'status' => 'approved', // Claims are usually pre-approved or approved upon payment
                 'audit_status' => 'matched',
                 'notes' => __('Payment received from charity claim: :claim', ['claim' => $this->id]),

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Department extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['name', 'name_ar', 'code', 'is_active', 'manager_id'];
+    protected $fillable = ['name', 'name_ar', 'category', 'code', 'is_active', 'manager_id'];
 
     public function manager()
     {
