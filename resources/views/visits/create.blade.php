@@ -331,72 +331,84 @@
                                 @endif
                         </div>
 
-                        {{-- Invoices for this visit --}}
+                        {{-- ليستينج الفواتير الخاصة بالزيارة — يظهر دائماً عند وجود زيارة --}}
                         @php
                             $visitInvoices = ($visitForPrint ?? $visit)?->invoices ?? collect();
                         @endphp
 
-                        @if ($visitInvoices->isNotEmpty())
+                        @if ($visitForPrint || $visit)
                             <div class="border-2 border-emerald-300 rounded-lg p-5 mb-6 bg-emerald-50 shadow-sm">
                                 <h3 class="text-lg font-bold text-emerald-800 mb-3 flex items-center gap-2">
                                     <span>💰</span>
                                     {{ app()->getLocale() === 'ar' ? 'الفواتير المرتبطة بهذه الزيارة' : 'Invoices for this visit' }}
                                 </h3>
-                                <div class="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
-                                    <table class="w-full text-sm text-right">
-                                        <thead>
-                                            <tr class="bg-emerald-100/50 border-b border-emerald-200 text-emerald-900">
-                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
-                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
-                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'نوع الفاتورة' : 'Type' }}</th>
-                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
-                                                <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
-                                                <th class="p-3 font-bold text-center">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-emerald-50">
-                                            @foreach ($visitInvoices as $inv)
-                                                <tr class="hover:bg-emerald-50/50 transition-colors">
-                                                    <td class="p-3 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
-                                                    <td class="p-3 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
-                                                    <td class="p-3">
-                                                        @if($inv->invoice_type === 'eligibility')
-                                                            <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
-                                                        @else
-                                                            <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="p-3 font-bold text-slate-900">@currency($inv->total_amount)</td>
-                                                    <td class="p-3">
-                                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold
-                                                            {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-                                                            {{ $inv->status_label }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="p-3">
-                                                        <div class="flex justify-center gap-2">
-                                                            <a href="{{ route('invoices.show', $inv) }}" target="_blank"
-                                                               class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}">
-                                                                👁️ {{ app()->getLocale() === 'ar' ? 'عرض التفاصيل' : 'View Details' }}
-                                                            </a>
-                                                            @if($inv->payment_type === 'charity')
-                                                                <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
-                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر تعهد' : 'Print Commitment' }}">
-                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'تعهد' : 'Commitment' }}
-                                                                </a>
-                                                            @else
-                                                                <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
-                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
-                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
-                                                                </a>
-                                                            @endif
-                                                        </div>
-                                                    </td>
+                                @if ($visitInvoices->isNotEmpty())
+                                    <div class="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
+                                        <table class="w-full text-sm text-right">
+                                            <thead>
+                                                <tr class="bg-emerald-100/50 border-b border-emerald-200 text-emerald-900">
+                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
+                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
+                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'نوع الفاتورة' : 'Type' }}</th>
+                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
+                                                    <th class="p-3 font-bold text-center">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</th>
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody class="divide-y divide-emerald-50">
+                                                @foreach ($visitInvoices as $inv)
+                                                    <tr class="hover:bg-emerald-50/50 transition-colors">
+                                                        <td class="p-3 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
+                                                        <td class="p-3 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
+                                                        <td class="p-3">
+                                                            @if($inv->invoice_type === 'eligibility')
+                                                                <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                            @else
+                                                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="p-3 font-bold text-slate-900">@currency($inv->total_amount)</td>
+                                                        <td class="p-3">
+                                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                                                {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                                                                {{ $inv->status_label }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="p-3">
+                                                            <div class="flex justify-center gap-2">
+                                                                <a href="{{ route('invoices.show', $inv) }}" target="_blank"
+                                                                   class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}">
+                                                                    👁️ {{ app()->getLocale() === 'ar' ? 'عرض التفاصيل' : 'View Details' }}
+                                                                </a>
+                                                                @if($inv->payment_type === 'charity')
+                                                                    <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
+                                                                       class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر تعهد' : 'Print Commitment' }}">
+                                                                        🖨️ {{ app()->getLocale() === 'ar' ? 'تعهد' : 'Commitment' }}
+                                                                    </a>
+                                                                @else
+                                                                    <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
+                                                                       class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
+                                                                        🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
+                                                                    </a>
+                                                                @endif
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="rounded-lg border-2 border-dashed border-emerald-200 bg-white p-8 text-center">
+                                        <p class="text-slate-600 font-bold mb-4">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير لهذه الزيارة بعد' : 'No invoices for this visit yet' }}</p>
+                                        @if (!$isTransferred)
+                                            <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
+                                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm">
+                                                {{ app()->getLocale() === 'ar' ? '💰 إنشاء فاتورة (تقديم خدمات)' : '💰 Create invoice (add services)' }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         @endif
 

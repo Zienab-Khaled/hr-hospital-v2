@@ -2,6 +2,14 @@
 @section('title', app()->getLocale() === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details')
 
 @section('content')
+    @php
+        $hasInsuranceCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
+        $totalInsuranceCovered = $invoice->items->sum(fn ($i) => (float) $i->insurance_covered_amount);
+        $totalPatientShare = $invoice->items->sum(fn ($i) => (float) $i->patient_amount);
+        $effectiveRemaining = $hasInsuranceCoverage
+            ? max(0, round($totalPatientShare - (float) $invoice->paid_amount, 2))
+            : (float) $invoice->remaining_amount;
+    @endphp
     <div class="max-w-5xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 class="text-2xl font-bold text-slate-800">
@@ -41,7 +49,7 @@
                 @endif
 
                 {{-- Record Payment button for Cash/Partially Paid --}}
-                @if($invoice->remaining_amount > 0)
+                @if($effectiveRemaining > 0)
                     <button type="button" onclick="openPaymentModal()"
                         class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
                         💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
@@ -224,11 +232,6 @@
                 </div>
             @endif
 
-            @php
-                $hasInsuranceCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
-                $totalInsuranceCovered = $invoice->items->sum(fn ($i) => (float) $i->insurance_covered_amount);
-                $totalPatientShare = $invoice->items->sum(fn ($i) => (float) $i->patient_amount);
-            @endphp
             {{-- Services table (الخدمات المقدمة) --}}
             <div class="p-6">
                 <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخدمات المقدمة' : 'Provided Services' }}</h3>
@@ -457,7 +460,7 @@
                     </div>
                     <div class="flex justify-between text-sm pt-2 border-t border-slate-300">
                         <span class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:' }}</span>
-                        <span class="font-bold text-slate-900">@currency($invoice->remaining_amount)</span>
+                        <span class="font-bold text-slate-900">@currency($effectiveRemaining)</span>
                     </div>
                 </div>
                 @if($printMedia->isNotEmpty())
@@ -576,7 +579,8 @@
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
             <h3 class="text-xl font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة ومستندات التحصيل' : '💰 Record Payment & Collection Documents' }}</h3>
 
-            <form action="{{ route('payment-receipts.store') }}" method="POST" enctype="multipart/form-data" id="payment-form">
+            <form action="{{ route('payment-receipts.store') }}" method="POST" enctype="multipart/form-data" id="payment-form"
+                  data-effective-remaining="{{ $effectiveRemaining }}">
                 @csrf
                 <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
 
@@ -618,8 +622,8 @@
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
                             {{ app()->getLocale() === 'ar' ? 'إجمالي الدفع' : 'Total Payment' }} *
                         </label>
-                        <input type="number" name="amount" id="payment-total-amount" step="0.01" max="{{ $invoice->remaining_amount }}"
-                               value="{{ $invoice->remaining_amount }}" required readonly
+                        <input type="number" name="amount" id="payment-total-amount" step="0.01" max="{{ $effectiveRemaining }}"
+                               value="{{ $effectiveRemaining }}" required readonly
                                class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-slate-100 cursor-not-allowed">
                     </div>
                     <div>
@@ -632,8 +636,20 @@
                             <option value="card">{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
                             <option value="bank_transfer">{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
                             <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
+                            @if($invoice->patient && in_array($invoice->patient->payment_type, ['insurance', 'charity']))
+                                <option value="insurance">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
+                                <option value="charity">{{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
+                            @endif
                         </select>
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">
+                        {{ app()->getLocale() === 'ar' ? 'المبلغ اللي يدفعه المريض كاش (اختياري)' : 'Amount paid in cash by patient (optional)' }}
+                    </label>
+                    <input type="number" name="patient_cash_amount" id="patient-cash-amount" step="0.01" min="0" placeholder="0"
+                           class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -704,14 +720,21 @@
                 total += parseFloat(cb.dataset.amount || 0);
             });
 
+            const form = document.getElementById('payment-form');
+            const maxRemaining = form ? parseFloat(form.dataset.effectiveRemaining || 0) : 0;
+            const amountDue = maxRemaining > 0 ? Math.min(total, maxRemaining) : total;
+
             const totalInput = document.getElementById('payment-total-amount');
             if (totalInput) {
-                totalInput.value = total.toFixed(2);
+                totalInput.value = amountDue.toFixed(2);
             }
+
+            const cashInput = document.getElementById('patient-cash-amount');
+            if (cashInput) cashInput.max = totalInput ? parseFloat(totalInput.value) || 0 : 0;
 
             const submitBtn = document.getElementById('submit-payment-btn');
             if (submitBtn) {
-                if (total <= 0) {
+                if (amountDue <= 0) {
                     submitBtn.disabled = true;
                     submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 } else {

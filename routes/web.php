@@ -166,10 +166,15 @@ Route::middleware('auth:web,api')->group(function () {
     // Revenue Workflow (Control Room)
     Route::prefix('revenue')->name('revenue.')->group(function () {
         Route::get('/control-room', [RevenueWorkflowController::class, 'controlRoom'])->name('control-room');
+        Route::get('/treasury', [RevenueWorkflowController::class, 'treasuryIndex'])->name('treasury.index');
+        Route::get('/daily-summary', [RevenueWorkflowController::class, 'dailyRevenueSummary'])->name('daily-summary');
         Route::post('/invoices/{invoice}/match', [RevenueWorkflowController::class, 'match'])->name('invoices.match');
         Route::post('/invoices/{invoice}/reject', [RevenueWorkflowController::class, 'reject'])->name('invoices.reject');
         Route::post('/invoices/{invoice}/ready', [RevenueWorkflowController::class, 'markReadyForDeposit'])->name('invoices.ready');
+        Route::post('/invoices/{invoice}/deposited', [RevenueWorkflowController::class, 'markDeposited'])->name('invoices.deposited');
     });
+    Route::get('revenue/cashier', [CashierWorkflowController::class, 'index'])->name('cashier.index');
+    Route::post('revenue/cashier/{invoice}/receive', [CashierWorkflowController::class, 'receive'])->name('cashier.receive');
     Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadCluster'])->name('reports.upload-cluster');
     Route::post('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadClusterStore'])->name('reports.upload-cluster.store');

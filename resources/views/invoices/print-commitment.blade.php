@@ -224,23 +224,7 @@
            style="color: #555; font-size: 14px; text-decoration: none;">← العودة للفاتورة</a>
     </div>
 
-    <!-- ====== HEADER ====== -->
-    <div class="page-header">
-        <div class="header-logo">
-            @if(App\Models\Setting::get('logo'))
-                <img src="{{ asset('storage/' . App\Models\Setting::get('logo')) }}" alt="شعار المستشفى">
-            @else
-                <div class="header-logo-placeholder">شعار</div>
-            @endif
-        </div>
-        <div class="header-info">
-            <div class="hospital-name-ar">مستشفى {{ App\Models\Setting::get('hospital_name', 'الأمير متعب بن عبدالعزيز') }}</div>
-            <div class="hospital-name-en">{{ App\Models\Setting::get('hospital_name_en', 'Prince Muteb bin Abdulaziz Hospital') }}</div>
-            <div class="cluster-name">Empowered by {{ App\Models\Setting::get('health_cluster_name_en', 'Aljouf Health Cluster') }}</div>
-            <div class="dept-name">إدارة تنمية الإيرادات</div>
-        </div>
-        <div class="header-spacer"></div>
-    </div>
+    @include('components.report-header')
 
     <!-- ====== TITLE ====== -->
     <div class="form-title">تعهد خطي</div>

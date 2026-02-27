@@ -45,6 +45,8 @@
         </a>
     </div>
 
+    @include('components.report-header')
+
     <div class="header">
         <h1>
             @if(isset($printTitle) && $printTitle === 'detailed_invoice')

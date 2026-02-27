@@ -20,8 +20,9 @@
         }
         .print-container {
             width: 500px;
+            max-width: 100%;
             background: white;
-            padding: 0;
+            padding: 0 28px 0 28px;
             position: relative;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             overflow: hidden;
@@ -52,7 +53,7 @@
 
         .header-card {
             background-color: #ffffff;
-            padding: 20px;
+            padding: 20px 0;
             text-align: center;
             border-bottom: 2px dashed #cbd5e1;
             position: relative;
@@ -60,6 +61,7 @@
         }
         .header-top {
             display: flex;
+            flex-direction: row-reverse;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
@@ -97,18 +99,23 @@
         }
         .info-row {
             display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            gap: 10px;
             margin-bottom: 20px;
             border-bottom: 1px solid #f1f5f9;
             padding-bottom: 10px;
         }
         .info-label {
-            width: 120px;
+            flex-shrink: 0;
+            width: 130px;
             font-weight: 700;
             color: #475569;
             font-size: 16px;
         }
         .info-value {
-            flex-grow: 1;
+            flex: 1;
+            min-width: 0;
             color: #1e293b;
             font-size: 16px;
             font-weight: 600;
@@ -146,16 +153,23 @@
             margin-top: 50px;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
             padding-bottom: 20px;
         }
         .sig-box {
-            text-align: right;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .sig-label {
             font-size: 14px;
             color: #64748b;
-            margin-bottom: 10px;
+            margin: 0;
             font-weight: 600;
+            flex-shrink: 0;
         }
         .sig-name {
             font-weight: 700;
@@ -165,7 +179,9 @@
         .sig-img {
             max-width: 120px;
             max-height: 50px;
-            margin-bottom: 5px;
+            margin-top: 4px;
+            flex-basis: 100%;
+            height: auto;
         }
 
         .timestamp {
@@ -202,18 +218,22 @@
         .btn-secondary:hover { background: #475569; }
 
         @media print {
-            body { background: white; padding: 0; margin: 0; }
+            body { background: white !important; padding: 0; margin: 0; display: block !important; justify-content: unset !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .print-container {
-                width: 100%;
-                max-width: none;
+                width: 100% !important;
+                max-width: none !important;
                 margin: 0;
-                box-shadow: none;
-                border: none;
+                padding: 0 28px 0 28px;
+                box-sizing: border-box;
+                box-shadow: none !important;
+                border: none !important;
                 border-radius: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
-            .no-print-actions { display: none; }
+            .no-print-actions { display: none !important; }
             .wave-backdrop { opacity: 1; }
-            @page { margin: 0; }
+            @page { size: A4; margin: 20mm; }
         }
     </style>
 </head>
@@ -226,6 +246,8 @@
 
     <div class="print-container">
         <!-- Wave Background -->
+        @include('components.report-header')
+
         <div class="wave-backdrop">
             <svg class="wave-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
                 <path fill="#3b82f6" fill-opacity="0.1" d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
@@ -234,6 +256,7 @@
 
         <div class="header-card">
             <div class="header-top">
+                <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">وحدة ERP / HIS</div>
                 <div class="hospital-badge">
                     <svg class="hospital-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="50" cy="50" r="45" stroke="#3b82f6" stroke-width="5"/>
@@ -241,7 +264,6 @@
                     </svg>
                     المستشفى
                 </div>
-                <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">وحدة ERP / HIS</div>
             </div>
 
             <div class="title-banner">
@@ -294,18 +316,18 @@
             <div class="signatures">
                 <div class="sig-box">
                     <div class="sig-label">الموظف :</div>
+                    <div class="sig-name">{{ auth()->user()->name ?? '—' }}</div>
                     @if (auth()->check() && auth()->user()->signature)
                         <img src="{{ asset('storage/' . auth()->user()->signature) }}" class="sig-img" alt="Signature">
                     @endif
-                    <div class="sig-name">{{ auth()->user()->name }}</div>
                 </div>
 
-                <div class="sig-box" style="text-align: left;">
+                <div class="sig-box">
                     <div class="sig-label">مدير الايرادات :</div>
+                    <div class="sig-name">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</div>
                     @if ($manager && $manager->signature)
                         <img src="{{ asset('storage/' . $manager->signature) }}" class="sig-img" alt="Manager Signature">
                     @endif
-                    <div class="sig-name">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</div>
                 </div>
             </div>
 

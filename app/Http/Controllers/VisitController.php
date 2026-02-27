@@ -282,6 +282,7 @@ class VisitController extends Controller
                     }
                 }
 
+                // ربط الفاتورة بالزيارة (visit_id) حتى تظهر في ليستينج فواتير الزيارة
                 $invoice = Invoice::create([
                     'patient_id' => $patient->id,
                     'visit_id' => $visit->id,
@@ -295,6 +296,7 @@ class VisitController extends Controller
                     'notes' => app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility',
                     'payment_type' => $finalPaymentType,
                     'invoice_type' => 'eligibility',
+                    'audit_status' => 'under_review',
                 ]);
 
                 foreach ($services as $s) {

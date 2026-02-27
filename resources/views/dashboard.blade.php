@@ -403,7 +403,7 @@
                         div.className = 'px-4 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0';
                         const displayName = "{{ app()->getLocale() }}" === 'ar' ? (p.name_ar || p.name) : p.name;
                         div.innerHTML = `<span class="font-bold">${displayName}</span> <span class="text-xs text-slate-500">(${p.file_number} / ${p.identity_value})</span>`;
-                        div.onclick = () => selectPatient(p, type);
+                        div.onclick = () => selectPatient(p);
                         searchResults.appendChild(div);
                     });
                     searchResults.classList.remove('hidden');

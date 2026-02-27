@@ -18,7 +18,8 @@ class PaymentReceiptController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,card,bank_transfer,cheque',
+            'payment_method' => 'required|string|in:cash,card,bank_transfer,cheque,insurance,charity',
+            'patient_cash_amount' => 'nullable|numeric|min:0',
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
             'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -27,9 +28,26 @@ class PaymentReceiptController extends Controller
             'item_ids.*' => 'exists:invoice_items,id',
         ]);
 
+        if (isset($validated['patient_cash_amount']) && (float) $validated['patient_cash_amount'] > (float) $validated['amount']) {
+            return back()->withErrors(['patient_cash_amount' => __('Cash amount from patient cannot exceed total payment.')])->withInput();
+        }
+        $validated['patient_cash_amount'] = isset($validated['patient_cash_amount']) ? (float) $validated['patient_cash_amount'] : null;
+
         $invoice = Invoice::with(['patient', 'items.service', 'payments.receipt'])->findOrFail($validated['invoice_id']);
 
-        if ($validated['amount'] > $invoice->remaining_amount) {
+        // المبلغ الفعلي اللي يُسجّل كدفعة على الفاتورة: لو دخل "المبلغ اللي يدفعه المريض كاش" نستخدمه، وإلا المبلغ الكامل
+        $amountToRecord = ($validated['patient_cash_amount'] !== null && $validated['patient_cash_amount'] > 0)
+            ? (float) $validated['patient_cash_amount']
+            : (float) $validated['amount'];
+
+        // المتبقي على المريض = حصة المريض − المدفوع (لو فيه تغطية تأمين)، وإلا إجمالي الفاتورة − المدفوع
+        $hasCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
+        $effectiveTotalDue = $hasCoverage
+            ? (float) $invoice->items->sum(fn ($i) => (float) $i->patient_amount)
+            : (float) $invoice->total_amount;
+        $effectiveRemaining = max(0, round($effectiveTotalDue - (float) $invoice->paid_amount, 2));
+
+        if ($amountToRecord > $effectiveRemaining) {
             return back()->withErrors(['amount' => __('Amount cannot exceed the remaining balance.')])->withInput();
         }
 
@@ -40,6 +58,7 @@ class PaymentReceiptController extends Controller
             foreach ($selectedItems as $item) {
                 $selectedItemsData[] = [
                     'id' => $item->id,
+                    'code' => $item->service?->code ?? '—',
                     'name' => $item->service?->name_ar ?? $item->service?->name ?? '—',
                     'qty' => $item->quantity,
                     'unit_price' => (float)$item->unit_price,
@@ -50,11 +69,11 @@ class PaymentReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Create Payment record
+            // 1. Create Payment record (بالمبلغ الفعلي اللي يُخصم من الفاتورة)
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
                 'payment_type' => $validated['payment_method'],
-                'amount' => $validated['amount'],
+                'amount' => $amountToRecord,
                 'received_date' => now(),
                 'received_by' => auth()->user()->id,
                 'approved_by' => auth()->user()->id, // Auto-approve manual payment receipt
@@ -65,16 +84,19 @@ class PaymentReceiptController extends Controller
                 'audit_status' => 'matched',
             ]);
 
-            // 2. Create Payment Receipt
+            // 2. Create Payment Receipt (amount = المبلغ المسجّل فعلاً؛ total_payment_amount = إجمالي الدفعة للعرض إن وُجد)
+            $newRemainingForReceipt = max(0, round($effectiveTotalDue - ($invoice->paid_amount + $amountToRecord), 2));
             $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'patient_id' => $invoice->patient_id,
-                'amount' => $validated['amount'],
+                'amount' => $amountToRecord,
+                'patient_cash_amount' => $validated['patient_cash_amount'],
+                'total_payment_amount' => ($validated['patient_cash_amount'] !== null && $validated['patient_cash_amount'] > 0) ? (float) $validated['amount'] : null,
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
                 'invoice_snapshot_total' => $invoice->total_amount,
-                'invoice_snapshot_paid' => $invoice->paid_amount + $validated['amount'],
-                'invoice_snapshot_remaining' => $invoice->remaining_amount - $validated['amount'],
+                'invoice_snapshot_paid' => $invoice->paid_amount + $amountToRecord,
+                'invoice_snapshot_remaining' => $newRemainingForReceipt,
                 'collected_by' => auth()->user()->id,
                 'collected_at' => now(),
                 'notes' => $validated['notes'],
@@ -91,9 +113,9 @@ class PaymentReceiptController extends Controller
                     ->toMediaCollection('collector_screenshot');
             }
 
-            // 4. Update Invoice
-            $newPaidAmount = $invoice->paid_amount + $validated['amount'];
-            $newRemainingAmount = $invoice->remaining_amount - $validated['amount'];
+            // 4. Update Invoice: المتبقي = حصة المريض − المدفوع (حتى يتسق مع عرض "المتبقي عليه")
+            $newPaidAmount = $invoice->paid_amount + $amountToRecord;
+            $newRemainingAmount = max(0, round($effectiveTotalDue - $newPaidAmount, 2));
 
             $invoice->update([
                 'paid_amount' => $newPaidAmount,
@@ -103,7 +125,7 @@ class PaymentReceiptController extends Controller
 
             DB::commit();
 
-            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$validated['amount']} recorded via {$validated['payment_method']}. services: " . collect($selectedItemsData)->pluck('name')->implode(', '));
+            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$amountToRecord} recorded via {$validated['payment_method']}. services: " . collect($selectedItemsData)->pluck('name')->implode(', '));
 
             // Notify Accountants with ALL invoice file links
             $accountants = \App\Models\User::role('accountant')->get();
@@ -113,7 +135,7 @@ class PaymentReceiptController extends Controller
 
                 \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
                     'title' => app()->getLocale() === 'ar' ? '✅ تم تحصيل مبلع' : '✅ Payment Collected',
-                    'message' => $messagePrefix . " {$invoice->invoice_number} | " . (app()->getLocale() === 'ar' ? 'المبلغ: ' : 'Amount: ') . number_format($validated['amount'], 2),
+                    'message' => $messagePrefix . " {$invoice->invoice_number} | " . (app()->getLocale() === 'ar' ? 'المبلغ: ' : 'Amount: ') . number_format($amountToRecord, 2),
                     'action_url' => route('payment-receipts.print', $receipt),
                     'type' => 'success',
                     'metadata' => ['links' => $fileLinks] // This allows the notification system to show document links
@@ -134,9 +156,18 @@ class PaymentReceiptController extends Controller
 
         $receipt->load(['payment.invoice', 'patient', 'collectedBy']);
         $invoice = $receipt->payment->invoice;
-        $settings = \App\Models\Setting::first();
         $manager = \App\Models\User::getManagerForSignature();
+        $settingsData = [
+            'logo' => \App\Models\Setting::get('logo'),
+            'hospital_name' => \App\Models\Setting::get('hospital_name', 'مستشفى'),
+            'hospital_name_en' => \App\Models\Setting::get('hospital_name_en'),
+            'health_cluster_name' => \App\Models\Setting::get('health_cluster_name', ''),
+            'stamp' => \App\Models\Setting::get('stamp'),
+            'manager_name' => \App\Models\Setting::get('manager_name', ''),
+            'manager_signature' => \App\Models\Setting::get('manager_signature'),
+            'financial_dept_name' => \App\Models\Setting::get('financial_dept_name', 'إدارة الموارد المالية'),
+        ];
 
-        return view('invoices.print-receipt', compact('receipt', 'invoice', 'settings', 'manager'));
+        return view('invoices.print-receipt', compact('receipt', 'invoice', 'settingsData', 'manager'));
     }
 }

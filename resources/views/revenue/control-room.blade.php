@@ -94,6 +94,31 @@
         </div>
     @endif
 
+    {{-- ملخص اليوم — جنب بعض (مرتبط بفلتر التاريخ والوردية) --}}
+    <div class="mb-10 flex flex-wrap gap-4">
+        <div class="premium-card rounded-2xl p-5 border-2 border-slate-200 flex-1 min-w-[180px]">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي فواتير اليوم' : 'Today\'s Invoices' }}</p>
+            <p class="text-2xl font-black text-slate-800">{{ $controlRoomStats['total_count'] }}</p>
+            <p class="text-sm font-bold text-slate-600 mt-1">{{ number_format($controlRoomStats['total_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+        </div>
+        <div class="premium-card rounded-2xl p-5 border-2 border-emerald-200 bg-emerald-50/50 flex-1 min-w-[180px]">
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">{{ app()->getLocale() === 'ar' ? 'تم تأكيده (مطابق)' : 'Confirmed (Matched)' }}</p>
+            {{-- <p class="text-[9px] text-emerald-600/80 font-bold mb-1">{{ app()->getLocale() === 'ar' ? 'اللي اتبعتت لأمين الصندوق' : 'Sent to treasury' }}</p> --}}
+            <p class="text-2xl font-black text-emerald-800">{{ $controlRoomStats['matched_count'] }}</p>
+            <p class="text-sm font-bold text-emerald-700 mt-1">{{ number_format($controlRoomStats['matched_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+        </div>
+        <div class="premium-card rounded-2xl p-5 border-2 border-red-200 bg-red-50/50 flex-1 min-w-[180px]">
+            <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'تم رفضه' : 'Rejected' }}</p>
+            <p class="text-2xl font-black text-red-800">{{ $controlRoomStats['rejected_count'] }}</p>
+            <p class="text-sm font-bold text-red-700 mt-1">{{ number_format($controlRoomStats['rejected_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+        </div>
+        <div class="premium-card rounded-2xl p-5 border-2 border-amber-200 bg-amber-50/50 flex-1 min-w-[180px]">
+            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'قيد المراجعة' : 'Under Review' }}</p>
+            <p class="text-2xl font-black text-amber-800">{{ $controlRoomStats['pending_count'] }}</p>
+            <p class="text-sm font-bold text-amber-700 mt-1">{{ number_format($controlRoomStats['pending_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+        </div>
+    </div>
+
     {{-- Split Screen Container --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
@@ -252,12 +277,13 @@
                                 <span>❌</span> {{ app()->getLocale() === 'ar' ? 'رفض' : 'Reject' }}
                             </button>
                         @elseif($invoice->audit_status === 'matched')
-                            <form action="{{ route('revenue.invoices.ready', $invoice) }}" method="POST" class="w-full">
-                                @csrf
-                                <button type="submit" class="btn-ready w-full inline-flex items-center justify-center px-6 py-4 text-white text-xs font-black rounded-2xl shadow-xl gap-3">
-                                    <span>🏦</span> {{ app()->getLocale() === 'ar' ? 'جاهز للتوريد للبنك' : 'Ready for Bank Deposit' }}
-                                </button>
-                            </form>
+                            <div class="w-full py-4 bg-blue-50 text-blue-700 text-xs font-black rounded-2xl text-center border-2 border-blue-100 shadow-inner flex flex-col items-center justify-center gap-3">
+                                <span>📤</span>
+                                {{ app()->getLocale() === 'ar' ? 'تم التحويل لأمين الصندوق' : 'Transferred to Treasury' }}
+                                <a href="{{ route('revenue.treasury.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+                                    {{ app()->getLocale() === 'ar' ? 'عرض تبويب أمين الصندوق' : 'Open Treasury' }}
+                                </a>
+                            </div>
                         @else
                            <div class="w-full py-4 bg-emerald-50 text-emerald-700 text-xs font-black rounded-2xl text-center border-2 border-emerald-100 shadow-inner flex items-center justify-center gap-3">
                                <span class="animate-bounce">💎</span> {{ app()->getLocale() === 'ar' ? 'بانتظار ايداع الصندوق' : 'Awaiting Cashier Deposit' }}

@@ -7,11 +7,14 @@ use App\Models\Department;
 use App\Models\InsuranceCompany;
 use App\Models\Patient;
 use App\Models\PatientTransfer;
+use App\Models\Shift;
+use App\Models\Visit;
 use App\Services\IdentityDocumentExtractor;
 use App\Helpers\ActivityLogger;
 use App\Models\User;
 use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
@@ -186,12 +189,31 @@ class PatientController extends Controller
             ]));
         }
 
-        if ($request->get('redirect_to') === 'visits.create') {
-            return redirect()->route('visits.create', ['patient_id' => $patient->id])
-                ->with('success', __('Patient registered successfully. Register entry to department then add services.'));
-        }
-        return redirect()->route('invoices.create', ['patient_id' => $patient->id])
-            ->with('success', __('Patient registered successfully. You can now add services and create an invoice.'));
+        // إنشاء زيارة تلقائية للمريض والتوجيه لها
+        $user = auth()->user();
+        $departmentId = $patient->department_id ?? $user?->department_id;
+        $currentShift = Shift::currentAt();
+        $dept = $departmentId ? Department::find($departmentId) : null;
+
+        $visit = Visit::create([
+            'patient_id' => $patient->id,
+            'department_id' => $departmentId,
+            'visit_date' => now()->toDateString(),
+            'shift_id' => $currentShift?->id,
+            'case_type' => $dept ? ($dept->name_ar ?? $dept->name ?? 'reception') : 'reception',
+            'notes' => null,
+            'registered_by' => $user?->getKey(),
+        ]);
+
+        ActivityLogger::log('Visit Created', 'Visit', $visit->id, 'Visit auto-created on patient registration', null, $visit->toArray());
+
+        return redirect()->route('visits.create', [
+            'patient_id' => $patient->id,
+            'visit_id' => $visit->id,
+            'registered' => 1,
+        ])->with('success', app()->getLocale() === 'ar'
+            ? 'تم تسجيل المريض وإنشاء زيارة جديدة. تم التوجيه لشاشة الزيارة والخدمات.'
+            : 'Patient registered and visit created. Redirected to visit services screen.');
     }
 
     public function show(Patient $patient)

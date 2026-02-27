@@ -16,6 +16,8 @@ class PaymentReceipt extends Model implements HasMedia
         'payment_id',
         'patient_id',
         'amount',
+        'patient_cash_amount',
+        'total_payment_amount',
         'payment_method',
         'reference_number',
         'collected_by',
@@ -33,6 +35,8 @@ class PaymentReceipt extends Model implements HasMedia
     {
         return [
             'amount' => 'decimal:2',
+            'patient_cash_amount' => 'decimal:2',
+            'total_payment_amount' => 'decimal:2',
             'invoice_snapshot_total' => 'decimal:2',
             'invoice_snapshot_paid' => 'decimal:2',
             'invoice_snapshot_remaining' => 'decimal:2',
@@ -91,6 +95,8 @@ class PaymentReceipt extends Model implements HasMedia
             'card' => app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card',
             'bank_transfer' => app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
             'cheque' => app()->getLocale() === 'ar' ? 'شيك' : 'Cheque',
+            'insurance' => app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance',
+            'charity' => app()->getLocale() === 'ar' ? 'جمعية' : 'Charity',
         ];
         return $labels[$this->payment_method] ?? $this->payment_method;
     }

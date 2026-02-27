@@ -20,7 +20,7 @@ class Invoice extends Model implements HasMedia
         'deposit_amount', 'status', 'invoice_date', 'notes', 'print_media_ids',
         'sent_to_charity_mail_at', 'printed_commitment_at', 'printed_non_commitment_at',
         'payment_type', 'invoice_type', 'audit_status', 'rejection_reason',
-        'cashier_otp', 'cashier_id', 'cashier_received_at',
+        'cashier_otp', 'cashier_id', 'cashier_received_at', 'deposited_at',
     ];
 
     protected function casts(): array
@@ -39,6 +39,7 @@ class Invoice extends Model implements HasMedia
             'invoice_type' => 'string',
             'audit_status' => 'string',
             'cashier_received_at' => 'datetime',
+            'deposited_at' => 'datetime',
         ];
     }
 
@@ -101,6 +102,7 @@ class Invoice extends Model implements HasMedia
                 'under_review' => 'قيد المراجعة',
                 'matched' => 'مكتمل (مطابق)',
                 'ready_for_deposit' => 'جاهز للتوريد',
+                'deposited' => 'تم التوريد',
             ],
             'en' => [
                 'pending' => 'Pending',
@@ -112,12 +114,13 @@ class Invoice extends Model implements HasMedia
                 'under_review' => 'Under Review',
                 'matched' => 'Matched',
                 'ready_for_deposit' => 'Ready for Deposit',
+                'deposited' => 'Deposited',
             ],
         ];
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
 
         // Priority to audit_status if it's set to a workflow state
-        if (in_array($this->audit_status, ['under_review', 'matched', 'ready_for_deposit', 'rejected'])) {
+        if (in_array($this->audit_status, ['under_review', 'matched', 'ready_for_deposit', 'deposited', 'rejected'])) {
              return $labels[$locale][$this->audit_status] ?? $this->audit_status;
         }
 

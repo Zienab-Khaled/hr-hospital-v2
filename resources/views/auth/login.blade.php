@@ -75,12 +75,6 @@
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="flex items-center justify-between mb-4">
-                <label class="flex items-center">
-                    <input type="checkbox" name="remember" class="rounded border-slate-300">
-                    <span class="ms-2 text-sm text-slate-600">{{ app()->getLocale() === 'ar' ? 'تذكرني' : 'Remember me' }}</span>
-                </label>
-            </div>
             <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded font-medium hover:bg-blue-700">
                 {{ __("Login") }}
             </button>
