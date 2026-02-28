@@ -158,8 +158,12 @@
                                 @endforeach
                             </div>
                         @endif
-                        <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل التوريد وإقفال المعاملة؟' : 'Confirm deposit and close transaction?' }}');">
+                        <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2 items-end" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل التوريد وإقفال المعاملة؟' : 'Confirm deposit and close transaction?' }}');">
                             @csrf
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 w-full justify-end">
+                                <span>{{ app()->getLocale() === 'ar' ? 'صورة إيداع (اختياري):' : 'Deposit slip image (optional):' }}</span>
+                                <input type="file" name="deposit_slip" accept="image/*" class="rounded border border-slate-300 text-[10px] max-w-[180px]">
+                            </label>
                             <button type="submit" class="btn-deposited inline-flex items-center justify-center px-6 py-3 text-white text-xs font-black rounded-2xl gap-2">
                                 <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم التوريد (إقفال)' : 'Deposited (Close)' }}
                             </button>
@@ -203,6 +207,17 @@
                             @endif
                         </div>
                     </div>
+                    @php $depositMedia = $invoice->getMedia('bank_deposit'); @endphp
+                    @if($depositMedia->isNotEmpty())
+                        <div class="flex flex-wrap gap-2 justify-end items-center">
+                            <span class="text-[10px] font-bold text-emerald-700">{{ app()->getLocale() === 'ar' ? 'صورة الإيداع:' : 'Deposit slip:' }}</span>
+                            @foreach($depositMedia as $media)
+                                <a href="{{ $media->getUrl() }}" target="_blank" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold border border-emerald-200 hover:bg-emerald-100">
+                                    🖼️ {{ Str::limit($media->file_name, 20) }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                     @if(!empty($fileLinks))
                         <div class="flex flex-wrap gap-2 justify-end">
                             @foreach($fileLinks as $name => $url)

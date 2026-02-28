@@ -198,6 +198,10 @@ class Invoice extends Model implements HasMedia
 
         $this->addMediaCollection('signed_other')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
+
+        /** صورة إيداع البنك (اختياري) — يرفقها أمين الصندوق عند تسجيل التوريد */
+        $this->addMediaCollection('bank_deposit')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp']);
     }
 
     /**

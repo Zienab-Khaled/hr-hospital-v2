@@ -138,7 +138,7 @@ class RevenueWorkflowController extends Controller
 
         $depositedInvoices = Invoice::where('audit_status', 'deposited')
             ->whereDate('deposited_at', $date)
-            ->with(['patient', 'visit.shift', 'payments.receipt'])
+            ->with(['patient', 'visit.shift', 'payments.receipt', 'media'])
             ->latest('deposited_at')
             ->get();
 
@@ -157,10 +157,18 @@ class RevenueWorkflowController extends Controller
 
     /**
      * تم التوريد (إقفال من ناحية الإدارة).
+     * أمين الصندوق يمكنه رفع صورة إيداع بنكي (اختياري) لكل فاتورة.
      */
-    public function markDeposited(Invoice $invoice)
+    public function markDeposited(Request $request, Invoice $invoice)
     {
         Gate::authorize('reports.view');
+
+        if ($request->hasFile('deposit_slip')) {
+            $request->validate([
+                'deposit_slip' => ['file', 'image', 'max:10240'], // 10MB
+            ]);
+            $invoice->addMediaFromRequest('deposit_slip')->toMediaCollection('bank_deposit');
+        }
 
         $invoice->update([
             'audit_status' => 'deposited',
