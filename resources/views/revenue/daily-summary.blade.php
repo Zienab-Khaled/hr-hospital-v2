@@ -112,7 +112,7 @@
                 <p class="font-bold text-slate-800 mb-2">{{ $key }} - {{ $period['label_ar'] }}</p>
                 <p class="text-sm mb-1 total-line">
                     <span class="part-right">إجمالي إيرادات الفترة ({{ number_format($period['total'], 2) }}) فقط</span>
-                    <span class="part-left fillable-red">مبلغ وقدره: ...............................</span>
+                    <span class="part-left fillable-red">مبلغ وقدره: {{ \App\Helpers\CurrencyHelper::amountInArabicWords($period['total']) }}</span>
                 </p>
                 <p class="text-sm mb-3">حسب سندات التحصيل من رقم <strong>{{ $period['receipt_from'] ?? '—' }}</strong> إلى <strong>{{ $period['receipt_to'] ?? '—' }}</strong></p>
 
@@ -139,13 +139,16 @@
                             <td class="amount-cell">{{ number_format($period['cash'], 2) }}</td>
                             <td class="amount-cell">—</td>
                         </tr>
-                        @if($period['other'] > 0)
                         <tr>
-                            <td>إيرادات أخرى (تأمين / جمعية)</td>
-                            <td class="amount-cell">{{ number_format($period['other'], 2) }}</td>
+                            <td>إيرادات التأمين</td>
+                            <td class="amount-cell">{{ number_format($period['insurance'] ?? 0, 2) }}</td>
                             <td class="amount-cell">—</td>
                         </tr>
-                        @endif
+                        <tr>
+                            <td>إيرادات الجمعية</td>
+                            <td class="amount-cell">{{ number_format($period['charity'] ?? 0, 2) }}</td>
+                            <td class="amount-cell">—</td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -168,6 +171,14 @@
                 </div>
             </div>
             @endforeach
+
+            <div class="form-block mt-6 bg-slate-50 border-2 border-slate-300">
+                <p class="text-base font-black text-slate-800 mb-2">إجمالي نهار اليوم (من سجل الدفعات)</p>
+                <p class="text-sm mb-1 total-line">
+                    <span class="part-right">المجموع الكلي لجميع الفترات ({{ number_format($dayTotals['total'], 2) }}) ريال فقط</span>
+                    <span class="part-left fillable-red">مبلغ وقدره: {{ \App\Helpers\CurrencyHelper::amountInArabicWords($dayTotals['total']) }}</span>
+                </p>
+            </div>
         </div>
 
         {{-- Tab: ملخص حسب طريقة التحصيل (يوم واحد) --}}
@@ -203,13 +214,16 @@
                             <td class="amount-cell">{{ number_format($dayTotals['cash'], 2) }}</td>
                             <td class="amount-cell">—</td>
                         </tr>
-                        @if($dayTotals['other'] > 0)
                         <tr>
-                            <td>إيرادات أخرى (تأمين / جمعية)</td>
-                            <td class="amount-cell">{{ number_format($dayTotals['other'], 2) }}</td>
+                            <td>إيرادات التأمين</td>
+                            <td class="amount-cell">{{ number_format($dayTotals['insurance'] ?? 0, 2) }}</td>
                             <td class="amount-cell">—</td>
                         </tr>
-                        @endif
+                        <tr>
+                            <td>إيرادات الجمعية</td>
+                            <td class="amount-cell">{{ number_format($dayTotals['charity'] ?? 0, 2) }}</td>
+                            <td class="amount-cell">—</td>
+                        </tr>
                         <tr class="font-bold bg-slate-100">
                             <td>الإجمالي</td>
                             <td class="amount-cell">{{ number_format($dayTotals['total'], 2) }}</td>
@@ -312,6 +326,46 @@
                         <td class="amount-cell fillable-red">{{ number_format($monthlyTotalCollected, 2) }}</td>
                         <td class="amount-cell fillable-red">{{ number_format($monthlyTotalDeposited, 2) }}</td>
                         <td class="amount-cell fillable-red">{{ number_format($monthlyTotalDiff, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p class="font-bold text-slate-800 mb-2 mt-6">ثالثاً: توزيع الإيرادات المحصلة (نقدي / تأمين / جمعية)</p>
+            <table class="mb-6">
+                <thead>
+                    <tr>
+                        <th>الأسابيع</th>
+                        <th>من تاريخ</th>
+                        <th>إلى تاريخ</th>
+                        <th>نقدي (كاش / شيكات / بطاقات)</th>
+                        <th>تأمين</th>
+                        <th>جمعية</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($monthlyWeeks as $w)
+                    <tr>
+                        <td>{{ $w['label'] }}</td>
+                        <td class="fillable-red">{{ $w['from_date'] }}</td>
+                        <td class="fillable-red">{{ $w['to_date'] }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($w['collected_cash'] ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($w['collected_insurance'] ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($w['collected_charity'] ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($w['collected'], 2) }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-slate-500">لا توجد بيانات لهذا الشهر</td>
+                    </tr>
+                    @endforelse
+                    <tr class="font-bold bg-slate-100">
+                        <td>الإجمالي</td>
+                        <td colspan="2">—</td>
+                        <td class="amount-cell fillable-red">{{ number_format($monthlyTotalCash ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($monthlyTotalInsurance ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($monthlyTotalCharity ?? 0, 2) }}</td>
+                        <td class="amount-cell fillable-red">{{ number_format($monthlyTotalCollected, 2) }}</td>
                     </tr>
                 </tbody>
             </table>

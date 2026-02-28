@@ -224,15 +224,17 @@ class RevenueWorkflowController extends Controller
             $certifiedChecks = (float) ($byMethod['cheque'] ?? 0) + (float) ($byMethod['bank_transfer'] ?? 0);
             $pos = (float) ($byMethod['card'] ?? 0);
             $cash = (float) ($byMethod['cash'] ?? 0);
-            $other = (float) ($byMethod['insurance'] ?? 0) + (float) ($byMethod['charity'] ?? 0);
-            $total = $certifiedChecks + $pos + $cash + $other;
+            $insurance = (float) ($byMethod['insurance'] ?? 0);
+            $charity = (float) ($byMethod['charity'] ?? 0);
+            $total = $certifiedChecks + $pos + $cash + $insurance + $charity;
 
             $summary[$key] = [
                 'label_ar' => $period['label_ar'],
                 'certified_checks' => $certifiedChecks,
                 'pos' => $pos,
                 'cash' => $cash,
-                'other' => $other,
+                'insurance' => $insurance,
+                'charity' => $charity,
                 'total' => $total,
                 'receipt_from' => $receiptNumbers->first(),
                 'receipt_to' => $receiptNumbers->last(),
@@ -240,6 +242,40 @@ class RevenueWorkflowController extends Controller
                 'handover_names' => $handoverNames,
                 'receiver_names' => [], // filled below from next period
             ];
+        }
+
+        // دفعات اليوم بدون إيصال (مثل دفعات الجمعية) نضيفها للفترة الثانية لظهور الإجمالي الفعلي
+        $receiptPaymentIds = PaymentReceipt::query()
+            ->whereRaw('DATE(COALESCE(collected_at, created_at)) = ?', [$date])
+            ->pluck('payment_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $orphanPayments = Payment::query()
+            ->where('received_date', $date)
+            ->when(!empty($receiptPaymentIds), fn ($q) => $q->whereNotIn('id', $receiptPaymentIds))
+            ->get();
+        if ($orphanPayments->isNotEmpty()) {
+            $ocash = 0.0;
+            $oins = 0.0;
+            $ochar = 0.0;
+            foreach ($orphanPayments as $p) {
+                $amt = (float) $p->amount;
+                $t = $p->payment_type ?? 'cash';
+                if ($t === 'insurance') {
+                    $oins += $amt;
+                } elseif ($t === 'charity') {
+                    $ochar += $amt;
+                } else {
+                    $ocash += $amt;
+                }
+            }
+            $orphanTotal = $ocash + $oins + $ochar;
+            $summary[2]['cash'] += $ocash;
+            $summary[2]['insurance'] += $oins;
+            $summary[2]['charity'] += $ochar;
+            $summary[2]['total'] += $orphanTotal;
         }
 
         foreach ([1 => 2, 2 => 3] as $current => $next) {
@@ -252,17 +288,61 @@ class RevenueWorkflowController extends Controller
         $hijri = $carbonDate->locale('ar')->translatedFormat('d / m / Y');
         $gregorian = $carbonDate->format('d / m / Y');
 
+        // إجمالي اليوم من سجل الدفعات (Payment) حتى تظهر كل الفواتير حتى بدون إيصال
+        $paymentsDay = Payment::query()
+            ->where('received_date', $date)
+            ->with('receipt')
+            ->get();
+        $dayTotalsFromPayments = [
+            'certified_checks' => 0.0,
+            'pos' => 0.0,
+            'cash' => 0.0,
+            'insurance' => 0.0,
+            'charity' => 0.0,
+        ];
+        foreach ($paymentsDay as $p) {
+            $amt = (float) $p->amount;
+            $method = $p->receipt?->payment_method ?? $p->payment_type;
+            if (in_array($method, ['cheque', 'bank_transfer'])) {
+                $dayTotalsFromPayments['certified_checks'] += $amt;
+            } elseif ($method === 'card') {
+                $dayTotalsFromPayments['pos'] += $amt;
+            } elseif ($method === 'cash') {
+                $dayTotalsFromPayments['cash'] += $amt;
+            } elseif ($method === 'insurance') {
+                $dayTotalsFromPayments['insurance'] += $amt;
+            } elseif ($method === 'charity') {
+                $dayTotalsFromPayments['charity'] += $amt;
+            } else {
+                $dayTotalsFromPayments['cash'] += $amt;
+            }
+        }
+        $dayTotalsFromPayments['total'] = (float) $paymentsDay->sum('amount');
+
         $receiptsDay = PaymentReceipt::query()
             ->whereRaw('DATE(COALESCE(collected_at, created_at)) = ?', [$date])
             ->get();
         $byMethodDay = $receiptsDay->groupBy('payment_method')->map->sum('amount');
-        $dayTotals = [
-            'certified_checks' => (float) (($byMethodDay['cheque'] ?? 0) + ($byMethodDay['bank_transfer'] ?? 0)),
-            'pos' => (float) ($byMethodDay['card'] ?? 0),
-            'cash' => (float) ($byMethodDay['cash'] ?? 0),
-            'other' => (float) (($byMethodDay['insurance'] ?? 0) + ($byMethodDay['charity'] ?? 0)),
-        ];
-        $dayTotals['total'] = $dayTotals['certified_checks'] + $dayTotals['pos'] + $dayTotals['cash'] + $dayTotals['other'];
+        // إجمالي اليوم من سجل الدفعات (يظهر الفواتير حتى بدون إيصال)؛ إن لم يوجد دفعات نستخدم الإيصالات
+        if ($dayTotalsFromPayments['total'] > 0) {
+            $dayTotals = [
+                'certified_checks' => (float) $dayTotalsFromPayments['certified_checks'],
+                'pos' => (float) $dayTotalsFromPayments['pos'],
+                'cash' => (float) $dayTotalsFromPayments['cash'],
+                'insurance' => (float) $dayTotalsFromPayments['insurance'],
+                'charity' => (float) $dayTotalsFromPayments['charity'],
+                'total' => $dayTotalsFromPayments['total'],
+            ];
+        } else {
+            $dayTotals = [
+                'certified_checks' => (float) (($byMethodDay['cheque'] ?? 0) + ($byMethodDay['bank_transfer'] ?? 0)),
+                'pos' => (float) ($byMethodDay['card'] ?? 0),
+                'cash' => (float) ($byMethodDay['cash'] ?? 0),
+                'insurance' => (float) ($byMethodDay['insurance'] ?? 0),
+                'charity' => (float) ($byMethodDay['charity'] ?? 0),
+            ];
+            $dayTotals['total'] = $dayTotals['certified_checks'] + $dayTotals['pos'] + $dayTotals['cash'] + $dayTotals['insurance'] + $dayTotals['charity'];
+        }
         $dayReceiptNumbers = $receiptsDay->pluck('receipt_number')->filter()->values();
         $dayCollectorIds = $receiptsDay->pluck('collected_by')->filter()->unique()->values()->all();
         $dayCollectorNames = $dayCollectorIds
@@ -298,6 +378,10 @@ class RevenueWorkflowController extends Controller
                 ->whereRaw('COALESCE(collected_at, created_at) BETWEEN ? AND ?', [$periodStart, $periodEnd])
                 ->get();
             $collected = (float) $receiptsWeek->sum('amount');
+            $byMethod = $receiptsWeek->groupBy('payment_method')->map->sum('amount');
+            $collectedCash = (float) (($byMethod['cash'] ?? 0) + ($byMethod['card'] ?? 0) + ($byMethod['cheque'] ?? 0) + ($byMethod['bank_transfer'] ?? 0));
+            $collectedInsurance = (float) ($byMethod['insurance'] ?? 0);
+            $collectedCharity = (float) ($byMethod['charity'] ?? 0);
             $receiptFrom = $receiptsWeek->pluck('receipt_number')->filter()->first();
             $receiptTo = $receiptsWeek->pluck('receipt_number')->filter()->last();
             $deposited = (float) Invoice::whereNotNull('deposited_at')
@@ -311,6 +395,9 @@ class RevenueWorkflowController extends Controller
                 'receipt_from' => $receiptFrom,
                 'receipt_to' => $receiptTo,
                 'collected' => $collected,
+                'collected_cash' => $collectedCash,
+                'collected_insurance' => $collectedInsurance,
+                'collected_charity' => $collectedCharity,
                 'deposited' => $deposited,
                 'difference' => $diff,
             ];
@@ -320,6 +407,9 @@ class RevenueWorkflowController extends Controller
         $monthlyTotalCollected = array_sum(array_column($monthlyWeeks, 'collected'));
         $monthlyTotalDeposited = array_sum(array_column($monthlyWeeks, 'deposited'));
         $monthlyTotalDiff = round($monthlyTotalCollected - $monthlyTotalDeposited, 2);
+        $monthlyTotalCash = array_sum(array_column($monthlyWeeks, 'collected_cash'));
+        $monthlyTotalInsurance = array_sum(array_column($monthlyWeeks, 'collected_insurance'));
+        $monthlyTotalCharity = array_sum(array_column($monthlyWeeks, 'collected_charity'));
         $monthYearAr = $monthStart->locale('ar')->translatedFormat('F Y');
         $monthYearEn = $monthStart->format('F Y');
         $hospitalName = \App\Models\Setting::get('hospital_name', 'المستشفى');
@@ -354,6 +444,7 @@ class RevenueWorkflowController extends Controller
             'date', 'summary', 'dayName', 'hijri', 'gregorian', 'activeTab', 'tabs',
             'dayTotals', 'dayCollectorNames', 'dayReceiptNumbers',
             'monthInput', 'monthlyWeeks', 'monthlyTotalCollected', 'monthlyTotalDeposited', 'monthlyTotalDiff',
+            'monthlyTotalCash', 'monthlyTotalInsurance', 'monthlyTotalCharity',
             'monthYearAr', 'monthYearEn', 'hospitalName',
             'monthlyStatsRows', 'monthlyStatsTotals'
         ));
