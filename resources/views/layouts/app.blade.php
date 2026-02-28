@@ -167,7 +167,7 @@
             </div>
 
             {{-- Content --}}
-            <div class="p-8">
+            <div class="p-8 main-content-area">
                 @if (session('success'))
                     <div class="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
                         {{ session('success') }}

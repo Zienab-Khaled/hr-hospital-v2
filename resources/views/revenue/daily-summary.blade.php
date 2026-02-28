@@ -25,11 +25,12 @@
     .total-line .part-left { text-align: left; color: #dc2626; font-weight: 600; }
     .fillable-red { color: #dc2626 !important; }
     .daily-summary-wrap .handover-box .fillable-red { color: #dc2626 !important; }
+    .daily-summary-wrap input[type="text"] { font-family: inherit; }
     @media print {
-        /* طباعة التقرير فقط — إخفاء السايدبار والهيدر والفوتر وكل ما عدا صندوق التقرير */
+        /* طباعة التقرير فقط — إخفاء السايدبار والهيدر وكل ما عدا صندوق التقرير */
         body * { visibility: hidden; }
-        .daily-summary-wrap,
-        .daily-summary-wrap * { visibility: visible; }
+        .main-content-area,
+        .main-content-area * { visibility: visible !important; }
         .daily-summary-wrap {
             position: absolute !important;
             left: 0 !important;
@@ -37,7 +38,7 @@
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 16px !important;
+            padding: 12px !important;
             background: white !important;
             box-shadow: none !important;
         }
@@ -47,10 +48,12 @@
         .tab-pane.active { display: block !important; }
         .form-block { break-inside: avoid; }
         .fillable-red, .part-left { color: #b91c1c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .daily-summary-wrap input[type="text"] { border-bottom-color: #333 !important; }
+        @page { margin: 10mm; }
     }
 </style>
 
-<div class="px-4 sm:px-6 lg:px-8 py-8 bg-slate-50 min-h-screen font-cairo">
+<div class="revenue-summary-root px-4 sm:px-6 lg:px-8 py-8 bg-slate-50 min-h-screen font-cairo">
     <div class="no-print flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
         <h1 class="text-2xl font-black text-slate-900">
             {{ app()->getLocale() === 'ar' ? 'ملخصات الإيرادات اليومية' : 'Daily Revenue Summaries' }}
@@ -376,6 +379,56 @@
             <div class="handover-row mt-6 flex-wrap">
                 <div class="handover-box"><p class="text-xs font-bold">المحاسب</p><p class="text-xs fillable-red">الاسم / التوقيع: .....................</p></div>
                 <div class="handover-box"><p class="text-xs font-bold">مدير المرفق</p><p class="text-xs fillable-red">الاسم / التوقيع: .....................</p></div>
+            </div>
+        </div>
+
+        {{-- Tab: أمر قبض (موارد - ٥) — حقول قابلة للملء --}}
+        <div class="tab-pane {{ $activeTab === 'receipt-order' ? 'active' : '' }}" data-tab="receipt-order">
+            @include('components.report-header')
+            <p class="text-center text-sm text-slate-500 mt-2 mb-1">الدليل التنظيمي للخدمات الصحية بمقابل</p>
+            <p class="text-center font-bold text-slate-800 mb-4">نموذج رقم (موارد - ٥)</p>
+            <h2 class="text-center text-xl font-black text-slate-900 mb-8 underline">أمر قبض</h2>
+
+            <div class="form-block">
+                <p class="text-sm mb-2">إلى أمين الصندوق / <input type="text" class="border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[200px] px-1 py-0.5" placeholder=""></p>
+                <p class="text-sm mb-2">القبض من / <input type="text" class="border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[200px] px-1 py-0.5" placeholder=""></p>
+                <p class="text-sm mb-6">لحساب : <input type="text" class="border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[220px] px-1 py-0.5" placeholder=""></p>
+
+                <div class="border-t border-slate-300 pt-4 mb-4">
+                    <div class="grid grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 mb-1">المبلغ</p>
+                            <input type="text" class="w-full border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 px-1 py-1" placeholder="">
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 mb-1">البيان</p>
+                            <input type="text" class="w-full border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 px-1 py-1" placeholder="">
+                        </div>
+                    </div>
+                    <p class="text-sm">فقط وقدره : <input type="text" class="border-0 border-b-2 border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 w-full max-w-md inline-block px-1 py-0.5" placeholder=""></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 mt-8 mb-6">
+                    <div class="border border-slate-300 p-4 rounded-lg">
+                        <p class="text-xs font-bold text-slate-700 mb-2">المحاسب</p>
+                        <p class="text-xs">الأسم : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                        <p class="text-xs mt-1">التوقيع : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                    </div>
+                    <div class="border border-slate-300 p-4 rounded-lg">
+                        <p class="text-xs font-bold text-slate-700 mb-2">مدير الموارد الذاتية</p>
+                        <p class="text-xs">الأسم : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                        <p class="text-xs mt-1">التوقيع : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                    </div>
+                </div>
+
+                <p class="text-xs border border-slate-200 bg-slate-50 p-3 rounded-lg mb-4">
+                    تم إستلام المبلغ أعلاه واستخرج عنه إيصال الإستلام رقم : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 w-24 px-1 py-0.5 inline-block" placeholder=""> بتاريخ : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 w-28 px-1 py-0.5 inline-block" placeholder="">
+                </p>
+                <div class="border border-slate-300 p-4 rounded-lg">
+                    <p class="text-xs font-bold text-slate-700 mb-2">أمين الصندوق</p>
+                    <p class="text-xs">الأسم : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                    <p class="text-xs mt-1">التوقيع : <input type="text" class="border-0 border-b border-slate-400 bg-transparent focus:ring-0 focus:border-indigo-500 min-w-[120px] px-1 py-0.5" placeholder=""></p>
+                </div>
             </div>
         </div>
     </div>

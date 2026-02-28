@@ -267,6 +267,7 @@ class RevenueWorkflowController extends Controller
             'by-method' => ['label_ar' => 'ملخص حسب طريقة التحصيل', 'label_en' => 'Summary by collection method'],
             'monthly' => ['label_ar' => 'خلاصة الإيرادات الشهرية (موارد - ١١)', 'label_en' => 'Monthly Revenue Summary (Resources-11)'],
             'monthly-stats' => ['label_ar' => 'إحصائية شهرية (موارد - ٩)', 'label_en' => 'Monthly Statistics (Resources-9)'],
+            'receipt-order' => ['label_ar' => 'أمر قبض (موارد - ٥)', 'label_en' => 'Receipt Order (Resources-5)'],
         ];
 
         $monthInput = $request->input('month', Carbon::today()->format('Y-m'));
