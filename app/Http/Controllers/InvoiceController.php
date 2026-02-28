@@ -487,7 +487,7 @@ class InvoiceController extends Controller
     public function sendToPartySubmit(Request $request, Invoice $invoice)
     {
         $this->authorize('invoices.view');
-        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'visit', 'items.service']);
 
         $request->validate(['recipient_email' => 'required|email']);
 
@@ -535,10 +535,12 @@ class InvoiceController extends Controller
         $pdfRelativePath = $pdfDir . '/' . $pdfFilename;
 
         try {
+            $attachmentPaths = $invoice->getAttachmentPathsForPdf();
             $html = view('invoices.price-offer-pdf', [
                 'invoice' => $invoice,
                 'recipientName' => $recipientName,
                 'settings' => $settings,
+                'attachmentPaths' => $attachmentPaths,
             ])->render();
 
             $mpdf = new Mpdf([
@@ -595,7 +597,7 @@ class InvoiceController extends Controller
     public function sendCharityPriceOffer(Invoice $invoice)
     {
         $this->authorize('invoices.view');
-        $invoice->load(['patient.charityEntity', 'items.service']);
+        $invoice->load(['patient.charityEntity', 'visit', 'items.service']);
 
         $patient = $invoice->patient;
         if (! $patient || $patient->payment_type !== 'charity') {
@@ -640,10 +642,12 @@ class InvoiceController extends Controller
         $pdfRelativePath = $pdfDir . '/' . $pdfFilename;
 
         try {
+            $attachmentPaths = $invoice->getAttachmentPathsForPdf();
             $html = view('invoices.price-offer-pdf', [
                 'invoice' => $invoice,
                 'recipientName' => $recipientName,
                 'settings' => $settings,
+                'attachmentPaths' => $attachmentPaths,
             ])->render();
             $mpdf = new Mpdf([
                 'mode' => 'utf-8',

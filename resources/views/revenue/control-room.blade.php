@@ -175,8 +175,8 @@
                                     | {{ app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:' }} {{ number_format($invoice->remaining_amount, 2) }}
                                 @endif
                             </div>
-                                <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase {{ $invoice->audit_status === 'under_review' ? 'bg-amber-100 text-amber-700' : ($invoice->audit_status === 'matched' ? 'bg-blue-100 text-blue-700' : ($invoice->audit_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')) }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $invoice->audit_status === 'under_review' ? 'bg-amber-500' : ($invoice->audit_status === 'matched' ? 'bg-blue-500' : ($invoice->audit_status === 'rejected' ? 'bg-red-500' : 'bg-emerald-500')) }}"></span>
+                                <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase @if($invoice->audit_status === 'under_review') bg-amber-100 text-amber-700 @elseif($invoice->audit_status === 'matched') bg-blue-100 text-blue-700 @elseif($invoice->audit_status === 'rejected') bg-red-100 text-red-700 @elseif($invoice->audit_status === 'ready_for_deposit') bg-amber-100 text-amber-700 @elseif($invoice->audit_status === 'manager_confirmed') bg-violet-100 text-violet-700 @elseif($invoice->audit_status === 'deposited') bg-emerald-100 text-emerald-700 @else bg-slate-100 text-slate-700 @endif">
+                                    <span class="w-1.5 h-1.5 rounded-full @if($invoice->audit_status === 'under_review') bg-amber-500 @elseif($invoice->audit_status === 'matched') bg-blue-500 @elseif($invoice->audit_status === 'rejected') bg-red-500 @elseif($invoice->audit_status === 'ready_for_deposit') bg-amber-500 @elseif($invoice->audit_status === 'manager_confirmed') bg-violet-500 @elseif($invoice->audit_status === 'deposited') bg-emerald-500 @else bg-slate-500 @endif"></span>
                                     {{ $invoice->status_label }}
                                 </div>
                                 {{-- Audit Documents --}}
@@ -284,9 +284,31 @@
                                     {{ app()->getLocale() === 'ar' ? 'عرض تبويب أمين الصندوق' : 'Open Treasury' }}
                                 </a>
                             </div>
+                        @elseif($invoice->audit_status === 'ready_for_deposit')
+                            <div class="w-full flex flex-col gap-3">
+                                <p class="text-amber-700 text-xs font-black text-center">{{ app()->getLocale() === 'ar' ? 'أمين الصندوق سجّل جاهزية التوريد. يرجى التأكيد أن الاستلام تم.' : 'Cashier marked ready for deposit. Please confirm receipt.' }}</p>
+                                <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST" class="w-full">
+                                    @csrf
+                                    <button type="submit" class="w-full py-4 bg-violet-600 text-white text-xs font-black rounded-2xl shadow-xl hover:bg-violet-700 flex items-center justify-center gap-2">
+                                        <span>✓</span> {{ app()->getLocale() === 'ar' ? 'تأكيد من المدير (أمين الصندوق استلم)' : 'Manager Confirm (Cashier Received)' }}
+                                    </button>
+                                </form>
+                            </div>
+                        @elseif($invoice->audit_status === 'manager_confirmed')
+                            <div class="w-full py-4 bg-violet-50 text-violet-700 text-xs font-black rounded-2xl text-center border-2 border-violet-100 shadow-inner flex flex-col items-center justify-center gap-3">
+                                <span>✓</span>
+                                {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير — أمين الصندوق يمكنه تسجيل التوريد في البنك' : 'Manager confirmed — Cashier can record bank deposit' }}
+                                <a href="{{ route('revenue.treasury.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700">
+                                    {{ app()->getLocale() === 'ar' ? 'تبويب أمين الصندوق' : 'Treasury' }}
+                                </a>
+                            </div>
+                        @elseif($invoice->audit_status === 'deposited')
+                            <div class="w-full py-4 bg-emerald-50 text-emerald-700 text-xs font-black rounded-2xl text-center border-2 border-emerald-100 shadow-inner flex items-center justify-center gap-3">
+                                <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم التوريد في البنك (إقفال)' : 'Deposited at Bank (Closed)' }}
+                            </div>
                         @else
-                           <div class="w-full py-4 bg-emerald-50 text-emerald-700 text-xs font-black rounded-2xl text-center border-2 border-emerald-100 shadow-inner flex items-center justify-center gap-3">
-                               <span class="animate-bounce">💎</span> {{ app()->getLocale() === 'ar' ? 'بانتظار ايداع الصندوق' : 'Awaiting Cashier Deposit' }}
+                           <div class="w-full py-4 bg-slate-50 text-slate-600 text-xs font-black rounded-2xl text-center border-2 border-slate-100 shadow-inner flex items-center justify-center gap-3">
+                               <span>💎</span> {{ $invoice->getStatusLabelAttribute() }}
                            </div>
                         @endif
                     </div>

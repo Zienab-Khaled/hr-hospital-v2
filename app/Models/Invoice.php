@@ -102,6 +102,7 @@ class Invoice extends Model implements HasMedia
                 'under_review' => 'قيد المراجعة',
                 'matched' => 'مكتمل (مطابق)',
                 'ready_for_deposit' => 'جاهز للتوريد',
+                'manager_confirmed' => 'تم التأكيد من المدير',
                 'deposited' => 'تم التوريد',
             ],
             'en' => [
@@ -114,13 +115,14 @@ class Invoice extends Model implements HasMedia
                 'under_review' => 'Under Review',
                 'matched' => 'Matched',
                 'ready_for_deposit' => 'Ready for Deposit',
+                'manager_confirmed' => 'Manager Confirmed',
                 'deposited' => 'Deposited',
             ],
         ];
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
 
         // Priority to audit_status if it's set to a workflow state
-        if (in_array($this->audit_status, ['under_review', 'matched', 'ready_for_deposit', 'deposited', 'rejected'])) {
+        if (in_array($this->audit_status, ['under_review', 'matched', 'ready_for_deposit', 'manager_confirmed', 'deposited', 'rejected'])) {
              return $labels[$locale][$this->audit_status] ?? $this->audit_status;
         }
 
@@ -246,5 +248,61 @@ class Invoice extends Model implements HasMedia
         }
 
         return $urls;
+    }
+
+    /**
+     * مسارات الملفات (صور/مستندات) المرفقة للاستخدام في PDF عرض السعر للجمعية.
+     * يشمل: مستندات الفاتورة، تقارير/اعتمادات الجمعية، صورة أو هوية المريض إن وُجدت.
+     */
+    public function getAttachmentPathsForPdf(): array
+    {
+        $documents = [];
+        $patientPhoto = null;
+        $addIfImage = function ($media, bool $asPatientPhoto = false) use (&$documents, &$patientPhoto) {
+            if (! $media || ! method_exists($media, 'getPath')) {
+                return;
+            }
+            $path = $media->getPath();
+            if (! is_string($path) || ! file_exists($path)) {
+                return;
+            }
+            $mime = $media->mime_type ?? '';
+            if (! str_starts_with($mime, 'image/')) {
+                return;
+            }
+            $absolutePath = realpath($path) ?: $path;
+            $absolutePath = str_replace('\\', '/', $absolutePath);
+            $item = ['path' => $absolutePath, 'name' => $media->file_name];
+            if ($asPatientPhoto) {
+                $patientPhoto = $item;
+            } else {
+                $documents[] = $item;
+            }
+        };
+
+        foreach (['signed_commitment', 'signed_non_commitment', 'signed_other'] as $col) {
+            foreach ($this->getMedia($col) as $media) {
+                $addIfImage($media);
+            }
+        }
+        if ($this->patient) {
+            foreach ($this->patient->getMedia('charity-approvals') as $media) {
+                $addIfImage($media);
+            }
+            $profilePhoto = $this->patient->getMedia('profile-photo')->first();
+            if ($profilePhoto) {
+                $addIfImage($profilePhoto, true);
+            }
+        }
+        if ($this->visit) {
+            foreach ($this->visit->getMedia('charity_approval') as $media) {
+                $addIfImage($media);
+            }
+        }
+
+        return [
+            'documents' => $documents,
+            'patient_photo' => $patientPhoto,
+        ];
     }
 }

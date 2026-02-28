@@ -50,6 +50,11 @@
             <span class="text-xl">✨</span> {{ session('success') }}
         </div>
     @endif
+    @if($errors->any())
+        <div class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl shadow-sm font-bold">
+            @foreach($errors->all() as $err) {{ $err }} @endforeach
+        </div>
+    @endif
 
     {{-- ملخص أمين الصندوق — جنب بعض (مرتبط بفلتر التاريخ) --}}
     <div class="mb-10 flex flex-wrap gap-4">
@@ -59,9 +64,14 @@
             <p class="text-sm font-bold text-blue-700 mt-1">{{ number_format($treasuryStats['matched_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
         </div>
         <div class="premium-card rounded-2xl p-5 border-2 border-amber-200 bg-amber-50/50 flex-1 min-w-[200px]">
-            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد للبنك' : 'Ready for Deposit' }}</p>
+            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد (بانتظار المدير)' : 'Ready (Awaiting Manager)' }}</p>
             <p class="text-2xl font-black text-amber-800">{{ $treasuryStats['ready_count'] }}</p>
             <p class="text-sm font-bold text-amber-700 mt-1">{{ number_format($treasuryStats['ready_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+        </div>
+        <div class="premium-card rounded-2xl p-5 border-2 border-violet-200 bg-violet-50/50 flex-1 min-w-[200px]">
+            <p class="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير' : 'Manager Confirmed' }}</p>
+            <p class="text-2xl font-black text-violet-800">{{ $treasuryStats['manager_confirmed_count'] ?? 0 }}</p>
+            <p class="text-sm font-bold text-violet-700 mt-1">{{ number_format($treasuryStats['manager_confirmed_amount'] ?? 0, 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
         </div>
         <div class="premium-card rounded-2xl p-5 border-2 border-emerald-200 bg-emerald-50/50 flex-1 min-w-[200px]">
             <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'تم التقفيل والتوريد' : 'Deposited (Closed)' }}</p>
@@ -123,11 +133,11 @@
         @endforelse
     </div>
 
-    {{-- القسم 2: جاهزة للتوريد (ready_for_deposit) — زرار "تم التوريد" --}}
-    <div>
+    {{-- القسم 2: جاهزة للتوريد (ready_for_deposit) — بانتظار تأكيد المدير فقط، بدون زر تم التوريد --}}
+    <div class="mb-12">
         <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
             <span class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">🏦</span>
-            {{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد للبنك' : 'Ready for Bank Deposit' }}
+            {{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد للبنك (بانتظار تأكيد المدير)' : 'Ready for Deposit (Awaiting Manager)' }}
             <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-600 text-white">{{ $readyForDepositInvoices->count() }}</span>
         </h2>
 
@@ -158,16 +168,17 @@
                                 @endforeach
                             </div>
                         @endif
-                        <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2 items-end" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل التوريد وإقفال المعاملة؟' : 'Confirm deposit and close transaction?' }}');">
-                            @csrf
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 w-full justify-end">
-                                <span>{{ app()->getLocale() === 'ar' ? 'صورة إيداع (اختياري):' : 'Deposit slip image (optional):' }}</span>
-                                <input type="file" name="deposit_slip" accept="image/*" class="rounded border border-slate-300 text-[10px] max-w-[180px]">
-                            </label>
-                            <button type="submit" class="btn-deposited inline-flex items-center justify-center px-6 py-3 text-white text-xs font-black rounded-2xl gap-2">
-                                <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم التوريد (إقفال)' : 'Deposited (Close)' }}
-                            </button>
-                        </form>
+                        <div class="flex flex-col items-end gap-3">
+                            <div class="px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs font-black">
+                                {{ app()->getLocale() === 'ar' ? '⏳ بانتظار تأكيد المدير (لا يمكن تسجيل التوريد في البنك إلا بعد التأكيد)' : 'Awaiting manager confirmation (deposit can only be recorded after confirmation)' }}
+                            </div>
+                            <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST">
+                                @csrf
+                                <button type="submit" style="background: #047857" class="text-white inline-flex items-center justify-center px-6 py-3 bg-violet-600 text-xs font-black rounded-2xl gap-2 hover:bg-violet-700 shadow-lg">
+                                    <span>✓</span> {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير' : 'Manager Confirm' }}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,7 +189,62 @@
         @endforelse
     </div>
 
-    {{-- القسم 3: تم التوريد (اتدفعت) — للعرض فقط --}}
+    {{-- القسم 3: تم التأكيد من المدير (manager_confirmed) — زرار "تم التوريد في البنك" --}}
+    <div class="mb-12">
+        <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center">✓</span>
+            {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير (يمكن تسجيل التوريد في البنك)' : 'Manager Confirmed (Can Record Deposit)' }}
+            <span class="px-3 py-1 rounded-full text-xs font-black bg-violet-600 text-white">{{ $managerConfirmedInvoices->count() }}</span>
+        </h2>
+
+        @forelse($managerConfirmedInvoices as $invoice)
+            @php $fileLinks = $invoice->getAllRelatedMediaUrls(); @endphp
+            <div class="premium-card rounded-[2.5rem] p-6 mb-6 border-2 border-violet-100 hover:shadow-xl transition-all">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="flex gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-violet-50 flex items-center justify-center text-2xl">🏦</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">#{{ $invoice->invoice_number }}</span>
+                                <a href="{{ route('invoices.show', $invoice) }}" target="_blank" class="text-[10px] font-black text-violet-700 hover:underline">
+                                    {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View' }}
+                                </a>
+                            </div>
+                            <h3 class="text-lg font-black text-slate-900">{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                            <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        @if(!empty($fileLinks))
+                            <div class="flex flex-wrap gap-2 justify-end">
+                                @foreach($fileLinks as $name => $url)
+                                    <a href="{{ $url }}" target="_blank" class="px-3 py-1.5 bg-violet-50 text-violet-700 rounded-xl text-xs font-bold border border-violet-200 hover:bg-violet-100">
+                                        📄 {{ Str::limit($name, 18) }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
+                        <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2 items-end" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل التوريد في البنك وإقفال المعاملة؟' : 'Confirm bank deposit and close transaction?' }}');">
+                            @csrf
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 w-full justify-end">
+                                <span>{{ app()->getLocale() === 'ar' ? 'صورة إيداع (اختياري):' : 'Deposit slip image (optional):' }}</span>
+                                <input type="file" name="deposit_slip" accept="image/*" class="rounded border border-slate-300 text-[10px] max-w-[180px]">
+                            </label>
+                            <button type="submit" class="btn-deposited inline-flex items-center justify-center px-6 py-3 text-white text-xs font-black rounded-2xl gap-2">
+                                <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم التوريد في البنك (إقفال)' : 'Deposited at Bank (Close)' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="premium-card rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
+                <p class="text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير مؤكدة من المدير بهذا التاريخ' : 'No manager-confirmed invoices for this date' }}</p>
+            </div>
+        @endforelse
+    </div>
+
+    {{-- القسم 4: تم التوريد (اتدفعت) — للعرض فقط --}}
     <div class="mt-12">
         <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
             <span class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">✅</span>

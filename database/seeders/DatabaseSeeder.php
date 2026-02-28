@@ -18,18 +18,19 @@ class DatabaseSeeder extends Seeder
         echo "║                                                          ║\n";
         echo "╚══════════════════════════════════════════════════════════╝\n";
         echo "\n";
-        
+
         $this->call([
             SettingsSeeder::class,
             DepartmentsSeeder::class,
             ShiftsSeeder::class,
-            ServicesSeeder::class,
+            // ServicesSeeder::class,
+            SeedServicesFromXlsSeeder::class,
             InsuranceCompaniesSeeder::class,
             CharityEntitiesSeeder::class,
             UsersSeeder::class,
             PatientsSeeder::class,
         ]);
-        
+
         echo "\n";
         echo "╔══════════════════════════════════════════════════════════╗\n";
         echo "║                                                          ║\n";

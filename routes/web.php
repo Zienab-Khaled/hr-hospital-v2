@@ -174,6 +174,7 @@ Route::middleware('auth:web,api')->group(function () {
         Route::post('/invoices/{invoice}/match', [RevenueWorkflowController::class, 'match'])->name('invoices.match');
         Route::post('/invoices/{invoice}/reject', [RevenueWorkflowController::class, 'reject'])->name('invoices.reject');
         Route::post('/invoices/{invoice}/ready', [RevenueWorkflowController::class, 'markReadyForDeposit'])->name('invoices.ready');
+        Route::post('/invoices/{invoice}/manager-confirmed', [RevenueWorkflowController::class, 'markManagerConfirmed'])->name('invoices.manager-confirmed');
         Route::post('/invoices/{invoice}/deposited', [RevenueWorkflowController::class, 'markDeposited'])->name('invoices.deposited');
     });
     Route::get('revenue/cashier', [CashierWorkflowController::class, 'index'])->name('cashier.index');

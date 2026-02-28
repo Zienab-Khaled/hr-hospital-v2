@@ -7,10 +7,12 @@ use App\Models\Payment;
 use App\Models\PaymentReceipt;
 use App\Models\Shift;
 use App\Models\User;
+use App\Notifications\SystemNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class RevenueWorkflowController extends Controller
 {
@@ -79,6 +81,8 @@ class RevenueWorkflowController extends Controller
             ]);
         });
 
+        $this->notifyWorkflowUsers($invoice, 'match');
+
         return back()->with('success', app()->getLocale() === 'ar' ? 'تمت المطابقة بنجاح (جاهز للتوريد).' : 'Matched successfully (Ready for deposit).');
     }
 
@@ -98,21 +102,47 @@ class RevenueWorkflowController extends Controller
         return back()->with('warning', app()->getLocale() === 'ar' ? 'تم رفض المعاملة وإعادتها للمحصل.' : 'Transaction rejected and returned to collector.');
     }
 
+    /**
+     * أمين الصندوق يعلن أن الفاتورة جاهزة للتوريد للبنك (استلم المبلغ).
+     */
     public function markReadyForDeposit(Invoice $invoice)
     {
         Gate::authorize('reports.view');
 
-        // Generate a 6-digit OTP for the cashier receipt phase
-        $otp = (string) rand(100000, 999999);
+        if ($invoice->audit_status !== 'matched') {
+            return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'الحالة الحالية لا تسمح بهذا الإجراء.' : 'Current status does not allow this action.']);
+        }
 
         $invoice->update([
             'audit_status' => 'ready_for_deposit',
-            'cashier_otp' => $otp
+            'cashier_otp' => (string) rand(100000, 999999),
         ]);
 
+        $this->notifyWorkflowUsers($invoice, 'ready_for_deposit');
+
         return back()->with('success', app()->getLocale() === 'ar'
-            ? "تم اعتماد المعاملة للتوريد. رمز التحقق المرسل لأمين الصندوق هو: ($otp)"
-            : "Invoice approved for deposit. OTP for cashier is: ($otp)");
+            ? 'تم تسجيل جاهزية التوريد للبنك. بانتظار تأكيد المدير.'
+            : 'Marked ready for bank deposit. Awaiting manager confirmation.');
+    }
+
+    /**
+     * المدير يؤكد أن أمين الصندوق استلم المبلغ — بعدها فقط يمكن لأمين الصندوق تسجيل "تم الإيداع".
+     */
+    public function markManagerConfirmed(Invoice $invoice)
+    {
+        Gate::authorize('reports.view');
+
+        if ($invoice->audit_status !== 'ready_for_deposit') {
+            return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'يجب أن تكون الفاتورة في حالة "جاهز للتوريد" لتأكيد المدير.' : 'Invoice must be ready for deposit to confirm.']);
+        }
+
+        $invoice->update(['audit_status' => 'manager_confirmed']);
+
+        $this->notifyWorkflowUsers($invoice, 'manager_confirmed');
+
+        return back()->with('success', app()->getLocale() === 'ar'
+            ? 'تم التأكيد من المدير. أمين الصندوق يمكنه الآن تسجيل التوريد في البنك.'
+            : 'Manager confirmed. Cashier can now record bank deposit.');
     }
 
     /**
@@ -136,36 +166,48 @@ class RevenueWorkflowController extends Controller
             ->latest()
             ->get();
 
+        $managerConfirmedInvoices = Invoice::where('audit_status', 'manager_confirmed')
+            ->whereHas('payments', fn($q) => $q->whereDate('received_date', $date))
+            ->with(['patient', 'visit.shift', 'payments.receipt'])
+            ->latest()
+            ->get();
+
         $depositedInvoices = Invoice::where('audit_status', 'deposited')
             ->whereDate('deposited_at', $date)
             ->with(['patient', 'visit.shift', 'payments.receipt', 'media'])
             ->latest('deposited_at')
             ->get();
 
-        // ملخص أمين الصندوق: عدد كل مرحلة + التوتال (مرتبط بفلتر التاريخ)
         $treasuryStats = [
             'matched_count' => $matchedInvoices->count(),
             'matched_amount' => (float) $matchedInvoices->sum('paid_amount'),
             'ready_count' => $readyForDepositInvoices->count(),
             'ready_amount' => (float) $readyForDepositInvoices->sum('paid_amount'),
+            'manager_confirmed_count' => $managerConfirmedInvoices->count(),
+            'manager_confirmed_amount' => (float) $managerConfirmedInvoices->sum('paid_amount'),
             'deposited_count' => $depositedInvoices->count(),
             'deposited_amount' => (float) $depositedInvoices->sum('paid_amount'),
         ];
 
-        return view('revenue.treasury.index', compact('matchedInvoices', 'readyForDepositInvoices', 'depositedInvoices', 'date', 'treasuryStats'));
+        return view('revenue.treasury.index', compact('matchedInvoices', 'readyForDepositInvoices', 'managerConfirmedInvoices', 'depositedInvoices', 'date', 'treasuryStats'));
     }
 
     /**
-     * تم التوريد (إقفال من ناحية الإدارة).
-     * أمين الصندوق يمكنه رفع صورة إيداع بنكي (اختياري) لكل فاتورة.
+     * تم التوريد في البنك (إقفال). مسموح فقط بعد تأكيد المدير (manager_confirmed).
      */
     public function markDeposited(Request $request, Invoice $invoice)
     {
         Gate::authorize('reports.view');
 
+        if ($invoice->audit_status !== 'manager_confirmed') {
+            return back()->withErrors(['audit_status' => app()->getLocale() === 'ar'
+                ? 'لا يمكن تسجيل التوريد إلا بعد تأكيد المدير أن أمين الصندوق استلم. الحالة الحالية: ' . ($invoice->getStatusLabelAttribute() ?? $invoice->audit_status)
+                : 'Deposit can only be recorded after manager confirmation.']);
+        }
+
         if ($request->hasFile('deposit_slip')) {
             $request->validate([
-                'deposit_slip' => ['file', 'image', 'max:10240'], // 10MB
+                'deposit_slip' => ['file', 'image', 'max:10240'],
             ]);
             $invoice->addMediaFromRequest('deposit_slip')->toMediaCollection('bank_deposit');
         }
@@ -175,9 +217,56 @@ class RevenueWorkflowController extends Controller
             'deposited_at' => now(),
         ]);
 
+        $this->notifyWorkflowUsers($invoice, 'deposited');
+
         return back()->with('success', app()->getLocale() === 'ar'
             ? 'تم تسجيل التوريد وإقفال المعاملة.'
             : 'Deposit recorded and transaction closed.');
+    }
+
+    /**
+     * إشعار المدير وأمين الصندوق والمحاسب بخطوات الفلو.
+     */
+    protected function notifyWorkflowUsers(Invoice $invoice, string $step): void
+    {
+        $users = User::role(['manager', 'admin', 'accountant'])->get();
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $invNum = $invoice->invoice_number;
+        $amount = number_format((float) $invoice->paid_amount, 2);
+        $url = route('revenue.control-room', ['date' => $invoice->payments()->first()?->received_date?->format('Y-m-d') ?? now()->format('Y-m-d')]);
+
+        $messages = [
+            'match' => [
+                'ar' => "تمت مطابقة الفاتورة #{$invNum} (مبلغ {$amount} ريال). جاهزة لأمين الصندوق لتسجيل جاهزية التوريد.",
+                'en' => "Invoice #{$invNum} matched (amount {$amount}). Ready for cashier to mark ready for deposit.",
+            ],
+            'ready_for_deposit' => [
+                'ar' => "أمين الصندوق سجّل جاهزية التوريد للبنك للفاتورة #{$invNum}. يرجى التأكيد من المدير.",
+                'en' => "Cashier marked invoice #{$invNum} ready for bank deposit. Manager confirmation required.",
+            ],
+            'manager_confirmed' => [
+                'ar' => "تم التأكيد من المدير للفاتورة #{$invNum}. يمكن تسجيل التوريد في البنك من تبويب أمين الصندوق.",
+                'en' => "Manager confirmed invoice #{$invNum}. You can now record bank deposit in Treasury.",
+            ],
+            'deposited' => [
+                'ar' => "تم تسجيل التوريد في البنك للفاتورة #{$invNum} (مبلغ {$amount} ريال).",
+                'en' => "Bank deposit recorded for invoice #{$invNum} (amount {$amount}).",
+            ],
+        ];
+
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        $msg = $messages[$step][$locale] ?? $messages[$step]['ar'];
+
+        Notification::send($users, new SystemNotification([
+            'title' => app()->getLocale() === 'ar' ? 'فلو التوريد - تحديث' : 'Deposit workflow update',
+            'message' => $msg,
+            'action_url' => $url,
+            'type' => 'info',
+            'metadata' => ['invoice_id' => $invoice->id, 'step' => $step],
+        ]));
     }
 
     /**
