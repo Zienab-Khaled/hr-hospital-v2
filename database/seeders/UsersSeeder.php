@@ -7,60 +7,19 @@ use App\Models\Department;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 class UsersSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create Roles
-        // Create Roles for both web and api guards
+        // الأدوار والصلاحيات تُعرّف في RolesAndPermissionsSeeder (يُستدعى قبله في DatabaseSeeder).
+        // هنا فقط التأكد من وجود الأدوار لـ web و api.
         $guards = ['web', 'api'];
+        $roleNames = ['admin', 'manager', 'doctor', 'nurse', 'reception', 'accountant', 'insurance_clerk', 'charity_clerk'];
         foreach ($guards as $guard) {
-            Role::firstOrCreate(['name' => 'admin', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'manager', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'doctor', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'nurse', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'reception', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'accountant', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'insurance_clerk', 'guard_name' => $guard]);
-            Role::firstOrCreate(['name' => 'charity_clerk', 'guard_name' => $guard]);
-        }
-
-        // Create Permissions (all used in app: sidebar, controllers, gates)
-        $permissions = [
-            'patients.view', 'patients.create', 'patients.edit', 'patients.delete',
-            'visits.view', 'visits.create', 'visits.edit', 'visits.delete',
-            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete',
-            'payments.view', 'payments.create', 'payments.approve',
-            'services.view', 'services.create', 'services.edit', 'services.delete',
-            'services.manage',
-            'users.view', 'users.create', 'users.edit', 'users.delete',
-            'users.manage',
-            'reports.view', 'reports.generate', 'reports.upload_cluster',
-            'authorizations.view',
-            'claims.view',
-            'activity.view',
-            'departments.manage',
-            'settings.manage',
-            'codes.upload',
-            'insurance_companies.manage',
-            'charity_entities.manage',
-            'procedures.contact_report', 'procedures.written_commitment',
-            'procedures.non_commitment', 'procedures.debt_inventory',
-        ];
-
-        foreach ($permissions as $permission) {
-            foreach ($guards as $guard) {
-                Permission::firstOrCreate(['name' => $permission, 'guard_name' => $guard]);
+            foreach ($roleNames as $name) {
+                Role::firstOrCreate(['name' => $name, 'guard_name' => $guard]);
             }
-        }
-
-        // Assign all permissions to admin and manager (both guards)
-        foreach ($guards as $guard) {
-            $allPerms = Permission::where('guard_name', $guard)->get();
-            Role::findByName('admin', $guard)->syncPermissions($allPerms);
-            Role::findByName('manager', $guard)->syncPermissions($allPerms);
         }
 
         // Helper to get department ID by name (English or Arabic)
@@ -95,7 +54,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $reception1->assignRole('reception');
-        $reception1->givePermissionTo(['patients.view', 'patients.create', 'invoices.create', 'procedures.contact_report']);
 
         $reception2 = User::updateOrCreate(
             ['username' => 'reception2'],
@@ -109,7 +67,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $reception2->assignRole('reception');
-        $reception2->givePermissionTo(['patients.view', 'patients.create', 'invoices.create', 'procedures.contact_report']);
 
         // Create Insurance Clerk
         $insurance = User::updateOrCreate(
@@ -124,7 +81,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $insurance->assignRole('insurance_clerk');
-        $insurance->givePermissionTo(['patients.view', 'invoices.view', 'invoices.create', 'procedures.contact_report']);
 
         // Head of Insurance Department — رئيس قسم التأمين
         $insuranceHead = User::updateOrCreate(
@@ -153,7 +109,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $insuranceDoctor->assignRole('doctor');
-        $insuranceDoctor->givePermissionTo(['patients.view', 'patients.edit', 'invoices.view']);
 
         // Create Charity Clerk
         $charity = User::updateOrCreate(
@@ -168,7 +123,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $charity->assignRole('charity_clerk');
-        $charity->givePermissionTo(['patients.view', 'invoices.view', 'invoices.create', 'procedures.contact_report']);
 
         // Create Accountant
         $accountant = User::updateOrCreate(
@@ -183,7 +137,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $accountant->assignRole('accountant');
-        $accountant->givePermissionTo(['invoices.view', 'payments.view', 'payments.create', 'payments.approve', 'reports.view', 'reports.generate']);
 
         // Create Doctor
         $doctor = User::updateOrCreate(
@@ -198,7 +151,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $doctor->assignRole('doctor');
-        $doctor->givePermissionTo(['patients.view', 'patients.edit', 'invoices.view']);
 
         // Create Nurse
         $nurse = User::updateOrCreate(
@@ -213,7 +165,6 @@ class UsersSeeder extends Seeder
             ]
         );
         $nurse->assignRole('nurse');
-        $nurse->givePermissionTo(['patients.view']);
 
         echo "\n✅ Users created successfully!\n";
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";

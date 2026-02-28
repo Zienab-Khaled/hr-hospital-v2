@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             SeedServicesFromXlsSeeder::class,
             InsuranceCompaniesSeeder::class,
             CharityEntitiesSeeder::class,
+            RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
             PatientsSeeder::class,
         ]);

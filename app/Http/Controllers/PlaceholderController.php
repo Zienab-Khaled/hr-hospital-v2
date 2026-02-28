@@ -791,7 +791,7 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('users.manage');
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::where('guard_name', 'web')->orderBy('name')->get();
         return view('users.create', compact('departments', 'roles'));
     }
 
@@ -865,7 +865,7 @@ class PlaceholderController extends Controller
         Gate::authorize('users.manage');
         $user->load('department', 'roles');
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::where('guard_name', 'web')->orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'roles'));
     }
 
