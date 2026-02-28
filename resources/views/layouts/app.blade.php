@@ -9,7 +9,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -20,7 +22,9 @@
                 theme: {
                     extend: {
                         fontFamily: {
-                            sans: ['Inter', 'SF Pro Text', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+                            sans: ['Inter', 'SF Pro Text', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI',
+                                'sans-serif'
+                            ],
                             arabic: ['Cairo', 'system-ui', '-apple-system', 'sans-serif'],
                         },
                     }
@@ -83,6 +87,7 @@
             border-radius: 0.5rem;
             color: #1e293b;
         }
+
         form input:focus,
         form textarea:focus,
         form select:focus {
@@ -90,6 +95,7 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
         }
+
         form input[type="file"]:not(.hidden) {
             border: 2px solid #94a3b8;
             border-radius: 0.5rem;
@@ -116,12 +122,15 @@
                             @php
                                 $unreadCount = auth()->user()->unreadNotifications()->count();
                             @endphp
-                            <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-600 hover:text-slate-800 transition-colors">
+                            <a href="{{ route('notifications.index') }}"
+                                class="relative p-2 text-slate-600 hover:text-slate-800 transition-colors">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
-                                @if($unreadCount > 0)
-                                    <span class="absolute top-0 right-1 flex items-center justify-center w-[16px] h-[16px] bg-rose-500 text-white text-[9px] font-bold rounded-full border border-white z-20">
+                                @if ($unreadCount > 0)
+                                    <span
+                                        class="absolute top-0 right-1 flex items-center justify-center w-[16px] h-[16px] bg-rose-500 text-white text-[9px] font-bold rounded-full border border-white z-20">
                                         {{ $unreadCount }}
                                     </span>
                                 @endif
@@ -134,8 +143,10 @@
                                     <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
                                 </div>
                                 <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
                             </div>
@@ -155,9 +166,11 @@
                             {{-- Logout --}}
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="p-2 text-slate-600 hover:text-red-600 transition-colors" title="{{ __('Logout') }}">
+                                <button type="submit" class="p-2 text-slate-600 hover:text-red-600 transition-colors"
+                                    title="{{ __('Logout') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                 </button>
                             </form>
@@ -180,16 +193,18 @@
                     </div>
                 @endif
 
-            @yield('content')
+                @yield('content')
             </div>
 
             {{-- Footer --}}
             <footer class="mt-auto px-8 py-6 border-t border-slate-200 bg-white/50">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
+                <div
+                    class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
                     <div>
-                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Al-Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Suleiman</span>.
+                        {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
                     </div>
-                    
+
                 </div>
             </footer>
         </main>

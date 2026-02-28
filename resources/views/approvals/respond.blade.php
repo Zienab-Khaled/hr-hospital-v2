@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approval Response</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gradient-to-br from-blue-50 to-slate-100 min-h-screen py-12">
     <div class="max-w-4xl mx-auto px-4">
         <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -37,7 +39,9 @@
                         </div>
                         <div>
                             <span class="text-slate-600">Requested Amount:</span>
-                            <span class="font-bold text-blue-600 ml-2">{{ number_format($approval->requested_amount, 2) }} SAR</span>
+                            <span
+                                class="font-bold text-blue-600 ml-2">{{ number_format($approval->requested_amount, 2) }}
+                                SAR</span>
                         </div>
                     </div>
                 </div>
@@ -55,12 +59,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($approval->invoice->items as $item)
+                            @foreach ($approval->invoice->items as $item)
                                 <tr class="border-b">
-                                    <td class="p-3">{{ $item->service->name }} @if($item->service->code)({{ $item->service->code }})@endif</td>
+                                    <td class="p-3">{{ $item->service->name }} @if ($item->service->code)
+                                            ({{ $item->service->code }})
+                                        @endif
+                                    </td>
                                     <td class="p-3 text-center">{{ $item->quantity }}</td>
                                     <td class="p-3 text-right">{{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="p-3 text-right font-semibold">{{ number_format($item->total_price, 2) }}</td>
+                                    <td class="p-3 text-right font-semibold">{{ number_format($item->total_price, 2) }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -68,11 +76,12 @@
                 </div>
 
                 {{-- Response Form --}}
-                <form action="{{ route('approvals.process', $approval->approval_token) }}" method="POST" class="space-y-6">
+                <form action="{{ route('approvals.process', $approval->approval_token) }}" method="POST"
+                    class="space-y-6">
                     @csrf
                     <input type="hidden" name="action" value="{{ $action }}">
 
-                    @if($action === 'approve')
+                    @if ($action === 'approve')
                         {{-- Approval Form --}}
                         <div class="bg-green-50 border-2 border-green-300 rounded-lg p-6">
                             <h3 class="font-bold text-green-900 text-lg mb-4">Approval Details</h3>
@@ -82,10 +91,10 @@
                                     Approved Amount (SAR) *
                                 </label>
                                 <input type="number" name="approved_amount" step="0.01"
-                                       value="{{ old('approved_amount', $approval->requested_amount) }}"
-                                       required
-                                       class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none text-lg font-bold">
-                                <p class="text-xs text-slate-600 mt-1">You can approve a different amount than requested</p>
+                                    value="{{ old('approved_amount', $approval->requested_amount) }}" required
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none text-lg font-bold">
+                                <p class="text-xs text-slate-600 mt-1">You can approve a different amount than requested
+                                </p>
                             </div>
 
                             <div class="mb-4">
@@ -93,11 +102,12 @@
                                     Notes (Optional)
                                 </label>
                                 <textarea name="notes" rows="3"
-                                          class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none"
-                                          placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-green-500 focus:outline-none"
+                                    placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
                             </div>
 
-                            <button type="submit" class="w-full bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg">
+                            <button type="submit"
+                                class="w-full bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg">
                                 ✅ Confirm Approval
                             </button>
                         </div>
@@ -111,8 +121,8 @@
                                     Reason for Rejection *
                                 </label>
                                 <textarea name="rejection_reason" rows="4" required
-                                          class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
-                                          placeholder="Please provide a reason for rejection...">{{ old('rejection_reason') }}</textarea>
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
+                                    placeholder="Please provide a reason for rejection...">{{ old('rejection_reason') }}</textarea>
                             </div>
 
                             <div class="mb-4">
@@ -120,11 +130,12 @@
                                     Additional Notes (Optional)
                                 </label>
                                 <textarea name="notes" rows="2"
-                                          class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
-                                          placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-red-500 focus:outline-none"
+                                    placeholder="Add any additional notes...">{{ old('notes') }}</textarea>
                             </div>
 
-                            <button type="submit" class="w-full bg-red-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-red-700 shadow-lg">
+                            <button type="submit"
+                                class="w-full bg-red-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-red-700 shadow-lg">
                                 ❌ Confirm Rejection
                             </button>
                         </div>
@@ -137,9 +148,11 @@
     {{-- Footer --}}
     <footer class="mt-8 text-center text-slate-500 text-sm font-medium py-6 px-4">
         <div class="mb-1">
-            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Al-Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Suleiman</span>.
+            {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
         </div>
-        
+
     </footer>
 </body>
+
 </html>
