@@ -752,6 +752,32 @@ class InvoiceController extends Controller
         }
     }
 
+    /** إرسال تذكير بالسداد للجمعية من صفحة الفاتورة */
+    public function sendCharityPaymentReminder(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+
+        $invoice->load(['patient.charityEntity']);
+
+        if (!$invoice->patient || $invoice->patient->payment_type !== 'charity') {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'هذه الفاتورة ليست مرتبطة بمريض جمعية.' : 'This invoice is not linked to a charity patient.']);
+        }
+
+        $charityEntity = $invoice->patient->charityEntity;
+        if (!$charityEntity || !$charityEntity->email) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية.' : 'No email registered for the charity entity.']);
+        }
+
+        try {
+            Mail::to($charityEntity->email)->send(new \App\Mail\CharityPaymentReminderMail($invoice));
+            ActivityLogger::log('Charity Payment Reminder Sent', 'Invoice', $invoice->id, 'Payment reminder sent to ' . $charityEntity->email, null, null);
+            return back()->with('success', app()->getLocale() === 'ar' ? 'تم إرسال تذكير السداد للجمعية بنجاح.' : 'Payment reminder sent to charity.');
+        } catch (\Throwable $e) {
+            Log::error('Charity payment reminder failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إرسال الإيميل. حاول مرة أخرى.' : 'Failed to send email. Please try again.']);
+        }
+    }
+
     public function edit(Invoice $invoice)
 
     {

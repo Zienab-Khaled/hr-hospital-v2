@@ -102,6 +102,38 @@
             </tbody>
         </table>
 
+        <h2>💰 تذكير بالسداد</h2>
+        <div class="info-box" style="background: #fef3c7; border-color: #f59e0b; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #92400e;">
+                يرجى تحويل المبلغ المستحق إلى الحساب التالي بعد اتمام العملية:
+            </p>
+            <div class="info-row">
+                <span class="info-label">المبلغ المستحق</span>
+                <span class="info-value" style="font-size: 18px; color: #b45309;">{{ number_format((float)$invoice->total_amount, 2) }} ريال</span>
+            </div>
+            @if(!empty($settings['bank_name'] ?? ''))
+                <div class="info-row">
+                    <span class="info-label">البنك</span>
+                    <span class="info-value">{{ $settings['bank_name'] }}</span>
+                </div>
+            @endif
+            @if(!empty($settings['account_number'] ?? ''))
+                <div class="info-row">
+                    <span class="info-label">رقم الحساب</span>
+                    <span class="info-value" dir="ltr">{{ $settings['account_number'] }}</span>
+                </div>
+            @endif
+            @if(!empty($settings['iban_number'] ?? ''))
+                <div class="info-row">
+                    <span class="info-label">رقم الآيبان</span>
+                    <span class="info-value" dir="ltr">{{ $settings['iban_number'] }}</span>
+                </div>
+            @endif
+            <p style="margin: 14px 0 0; font-size: 13px; color: #92400e;">
+                نأمل السداد في أقرب وقت ممكن بعد استلام هذا الإشعار.
+            </p>
+        </div>
+
         <p style="margin-top:24px; font-size:14px; color:#475569; line-height:1.7;">
             نأمل أن تجدوا في ذلك ما يُفيد، ونحن على أتم الاستعداد لتزويدكم بأي معلومات إضافية تحتاجونها.
             <br>مع خالص التقدير والاحترام.

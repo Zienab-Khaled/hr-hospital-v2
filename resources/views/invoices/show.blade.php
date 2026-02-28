@@ -50,6 +50,13 @@
                                 {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة الطبية للجمعية' : '✉️ Send price offer / medical invoice to charity' }}
                             </button>
                         </form>
+                        <form method="POST" action="{{ route('invoices.send-charity-payment-reminder', $invoice) }}" class="inline"
+                            onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال تذكير بالسداد للجمعية؟' : 'Send payment reminder to charity?' }}');">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-2 bg-amber-500  px-4 py-2 rounded-lg font-semibold hover:bg-amber-600">
+                                {{ app()->getLocale() === 'ar' ? '💰 إرسال تذكير بالسداد للجمعية' : '💰 Send payment reminder to charity' }}
+                            </button>
+                        </form>
                         {{-- <a href="{{ route('invoices.send-to-party', $invoice) }}"
                             class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200 border border-slate-300">
                             {{ app()->getLocale() === 'ar' ? 'إرسال لطرف (تعديل البريد)' : 'Send to party (change email)' }}

@@ -156,6 +156,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
     Route::post('invoices/{invoice}/send-charity-price-offer', [InvoiceController::class, 'sendCharityPriceOffer'])->name('invoices.send-charity-price-offer');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');
+    Route::post('invoices/{invoice}/send-charity-payment-reminder', [InvoiceController::class, 'sendCharityPaymentReminder'])->name('invoices.send-charity-payment-reminder');
     Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
     Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
     Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
