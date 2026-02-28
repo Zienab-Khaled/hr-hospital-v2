@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ActivityLogger;
 use App\Models\CharityClaim;
+use App\Models\CharityClaimNote;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 
@@ -131,7 +132,31 @@ class CharityClaimController extends Controller
 
         $charityClaim->load(['invoice.patient', 'invoice.items.service', 'charityEntity', 'sentByUser']);
 
-        return view('charity-claims.show', compact('charityClaim'));
+        $claimNotes = $charityClaim->notes()->with('createdByUser')->orderBy('created_at', 'desc')->get();
+
+        return view('charity-claims.show', compact('charityClaim', 'claimNotes'));
+    }
+
+    /**
+     * إضافة ملاحظة للمطالبة (بدون تغيير الحالة).
+     */
+    public function addNote(Request $request, CharityClaim $charityClaim)
+    {
+        $this->authorize('invoices.create');
+
+        $request->validate([
+            'body' => 'required|string|max:2000',
+        ]);
+
+        CharityClaimNote::create([
+            'charity_claim_id' => $charityClaim->id,
+            'body' => $request->body,
+            'created_by' => auth()->id(),
+        ]);
+
+        ActivityLogger::log('Charity Claim Note Added', 'CharityClaim', $charityClaim->id, 'Note added', null, ['body_length' => strlen($request->body)]);
+
+        return redirect()->route('charity-claims.show', $charityClaim)->withFragment('notes')->with('success', app()->getLocale() === 'ar' ? 'تمت إضافة الملاحظة' : 'Note added');
     }
 
     /**
@@ -176,6 +201,14 @@ class CharityClaimController extends Controller
         }
 
         $oldStatus = $charityClaim->status;
+
+        if ($request->filled('entity_response_notes')) {
+            CharityClaimNote::create([
+                'charity_claim_id' => $charityClaim->id,
+                'body' => $request->entity_response_notes,
+                'created_by' => auth()->id(),
+            ]);
+        }
 
         switch ($request->status) {
             case 'under_review':

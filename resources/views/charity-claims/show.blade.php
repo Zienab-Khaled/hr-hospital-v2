@@ -104,6 +104,34 @@
                     @endif
                 </div>
 
+                {{-- الملاحظات (متعددة) --}}
+                <div id="notes" class="bg-white rounded-lg shadow p-5 mt-5">
+                    <h3 class="font-bold text-slate-800 mb-3 border-b pb-2">{{ app()->getLocale() === 'ar' ? 'الملاحظات' : 'Notes' }}</h3>
+                    @forelse(($claimNotes ?? collect()) as $note)
+                        <div class="mb-4 p-3 rounded-lg border {{ $loop->first ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200' }}">
+                            <p class="text-slate-800 text-sm">{{ $note->body }}</p>
+                            <p class="text-[10px] text-slate-500 mt-2">
+                                {{ $note->created_at->translatedFormat('d/m/Y H:i') }}
+                                @if($note->createdByUser)
+                                    — {{ $note->createdByUser->name_ar ?? $note->createdByUser->name ?? '' }}
+                                @endif
+                            </p>
+                        </div>
+                    @empty
+                        <p class="text-slate-500 text-sm">{{ app()->getLocale() === 'ar' ? 'لا توجد ملاحظات بعد.' : 'No notes yet.' }}</p>
+                    @endforelse
+                    <form method="POST" action="{{ route('charity-claims.notes.store', $charityClaim) }}" class="mt-4 pt-4 border-t border-slate-200">
+                        @csrf
+                        <p class="text-xs text-slate-500 mb-2">{{ app()->getLocale() === 'ar' ? 'اكتب الملاحظة في المربع أدناه ثم اضغط زر «حفظ الملاحظة».' : 'Type your note in the box below then click «Save note».' }}</p>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">{{ app()->getLocale() === 'ar' ? 'نص الملاحظة' : 'Note text' }}</label>
+                        <textarea name="body" rows="3" required placeholder="{{ app()->getLocale() === 'ar' ? 'اكتب الملاحظة هنا...' : 'Write your note here...' }}"
+                                  class="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                        <button type="submit" class="mt-3 w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 shadow">
+                            {{ app()->getLocale() === 'ar' ? 'حفظ الملاحظة' : 'Save note' }}
+                        </button>
+                    </form>
+                </div>
+
                 {{-- Approval Documents Display --}}
                 @php
                     $patientApprovals = $charityClaim->invoice?->patient?->getMedia('charity-approvals') ?? collect();

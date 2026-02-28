@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +42,11 @@ class CharityClaim extends Model
     public function sentByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(CharityClaimNote::class)->latest();
     }
 
     // Status Helper Methods
