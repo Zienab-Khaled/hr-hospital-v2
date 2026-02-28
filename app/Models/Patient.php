@@ -48,6 +48,18 @@ class Patient extends Model implements HasMedia
         return app()->getLocale() === 'ar' ? $opts[$key]['ar'] : $opts[$key]['en'];
     }
 
+    /** تسمية طريقة الدفع للعرض (كاش / تأمين / جمعية) */
+    public function getPaymentTypeLabelAttribute(): string
+    {
+        $labels = [
+            'ar' => ['cash' => 'كاش', 'insurance' => 'تأمين', 'charity' => 'جمعية'],
+            'en' => ['cash' => 'Cash', 'insurance' => 'Insurance', 'charity' => 'Charity'],
+        ];
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        $key = $this->payment_type ?? 'cash';
+        return $labels[$locale][$key] ?? $labels['ar'][$key] ?? $key;
+    }
+
     public function insuranceCompany(): BelongsTo
     {
         return $this->belongsTo(InsuranceCompany::class, 'insurance_company_id');

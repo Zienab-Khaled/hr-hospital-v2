@@ -149,7 +149,7 @@
                                     <span class="text-slate-400 text-[10px] font-black tracking-widest">INV-{{ $invoice->invoice_number }}</span>
                                     <a href="{{ route('invoices.show', $invoice) }}"
                                        target="_blank"
-                                       class="bg-blue-600  text-[10px] font-black px-2 py-0.5 rounded-full hover:bg-blue-700 transition-colors uppercase">
+                                       class="bg-blue-600  text-[10px] font-black px-2 text-white py-0.5 rounded-full hover:bg-blue-700 transition-colors uppercase">
                                         {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}
                                     </a>
                                 </div>
@@ -209,7 +209,7 @@
                                 <div class="flex justify-between items-center text-sm py-1 border-b border-emerald-100/50 last:border-0">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">{{ $payment->payment_type }}</span>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $payment->payment_type === 'charity' ? 'bg-purple-600 ' : ($payment->payment_type === 'insurance' ? 'bg-amber-600 ' : 'bg-emerald-600 ') }}">{{ $payment->payment_type_label }}</span>
                                             <span class="text-slate-600 text-xs">{{ $payment?->receipt?->receipt_number }}</span>
                                         </div>
                                         @if($payment->receipt && !empty($payment->receipt->selected_items))

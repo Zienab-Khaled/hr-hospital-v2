@@ -226,7 +226,7 @@ class VisitController extends Controller
         // Default manager: System Manager or Revenue Manager
         $manager = User::getManagerForSignature();
 
-        // If a specific department is selected for eligibility, use its manager
+        // إذا مُختار قسم الأحقية نستخدمه، وإلا نعتمد على "حالة الزيارة (نوع الحالة)" أو قسم المريض
         $targetDepartment = null;
         $targetDepartmentName = null;
         if ($request->filled('department_id')) {
@@ -236,20 +236,41 @@ class VisitController extends Controller
             }
         }
 
-        // Capture the first service's department if targetDepartmentName is still null
+        if (!$targetDepartmentName) {
+            // الأولوية: حالة الزيارة (نوع الحالة) — القسم اللي اليوزر اختاره في "بيانات الزيارة والمتابعة"
+            $caseType = trim($visit->case_type ?? '');
+            if ($caseType !== '' && $caseType !== 'emergency') {
+                $targetDepartmentName = $caseType;
+                $targetDepartment = Department::where('name_ar', $caseType)->orWhere('name', $caseType)->first();
+            }
+            if (!$targetDepartmentName && $visit->transferred_department_id) {
+                $targetDepartment = Department::with('manager')->find($visit->transferred_department_id);
+                if ($targetDepartment) {
+                    $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+                }
+            }
+            if (!$targetDepartmentName && $visit->patient && $visit->patient->department_id) {
+                $targetDepartment = Department::with('manager')->find($visit->patient->department_id);
+                if ($targetDepartment) {
+                    $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+                }
+            }
+            if (!$targetDepartmentName && $visit->department) {
+                $targetDepartmentName = $visit->department->name_ar ?? $visit->department->name;
+                $targetDepartment = $visit->department;
+            }
+        }
+
+        // إن لم يتوفر أي قسم: استخدام قسم أول خدمة إن وُجدت
         if (!$targetDepartmentName && !empty($services)) {
             $firstServiceId = $services[0]['service_id'] ?? null;
             if ($firstServiceId) {
                 $firstService = Service::with('department')->find($firstServiceId);
                 if ($firstService && $firstService->department) {
                     $targetDepartmentName = $firstService->department->name_ar ?? $firstService->department->name;
+                    $targetDepartment = $firstService->department;
                 }
             }
-        }
-
-        // Final fallback to the visit's home department
-        if (!$targetDepartmentName) {
-            $targetDepartmentName = $visit->department->name_ar ?? $visit->department->name ?? null;
         }
 
         // Update tracking flag and save services
@@ -293,7 +314,7 @@ class VisitController extends Controller
                     'remaining_amount' => $totalAmount,
                     'deposit_amount' => 0,
                     'status' => 'pending',
-                    'notes' => app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility',
+                    'notes' => app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility',
                     'payment_type' => $finalPaymentType,
                     'invoice_type' => 'eligibility',
                     'audit_status' => 'under_review',

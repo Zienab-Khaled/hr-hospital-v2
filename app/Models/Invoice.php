@@ -132,7 +132,7 @@ class Invoice extends Model implements HasMedia
         $labels = [
             'ar' => [
                 'regular' => 'فاتورة عادية',
-                'eligibility' => 'أحقية علاج',
+                'eligibility' => 'أحقية العلاج',
             ],
             'en' => [
                 'regular' => 'Regular Invoice',

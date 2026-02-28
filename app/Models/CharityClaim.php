@@ -91,10 +91,10 @@ class CharityClaim extends Model
             $invoice = $this->invoice;
             $amount = $this->approved_amount ?: $invoice->remaining_amount;
 
-            // 1. Create Payment record
+            // 1. Create Payment record — دائماً جمعية لأن الدفع تحويل بنكي من الجمعية (ليس كاش)
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
-                'payment_type' => $invoice->payment_type ?? 'charity',
+                'payment_type' => 'charity',
                 'amount' => $amount,
                 'received_date' => now(),
                 'received_by' => auth()->id() ?? User::role('admin')->first()?->id,

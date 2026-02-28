@@ -43,4 +43,24 @@ class Payment extends Model
     {
         return $this->hasOne(PaymentReceipt::class);
     }
+
+    /** تسمية طريقة الدفع للعرض (كاش / تأمين / جمعية) */
+    public function getPaymentTypeLabelAttribute(): string
+    {
+        $labels = [
+            'ar' => [
+                'cash' => 'كاش',
+                'insurance' => 'تأمين',
+                'charity' => 'جمعية',
+            ],
+            'en' => [
+                'cash' => 'Cash',
+                'insurance' => 'Insurance',
+                'charity' => 'Charity',
+            ],
+        ];
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        $key = $this->payment_type ?? 'cash';
+        return $labels[$locale][$key] ?? $labels['ar'][$key] ?? $key;
+    }
 }
