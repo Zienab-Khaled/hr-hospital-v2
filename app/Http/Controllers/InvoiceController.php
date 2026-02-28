@@ -588,6 +588,103 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.show', $invoice)->with('success', __('Professional email with price offer has been sent. The recipient can confirm or reject with written response.'));
     }
 
+    /**
+     * إرسال عرض سعر / فاتورة طبية للجمعية مباشرة (نفس فلو أحقية العلاج).
+     * يرسل ميل "عرض سعر / فاتورة طبية" مع PDF مرفق وزرّي تأكيد/رفض إلى إيميل الجمعية المسجل.
+     */
+    public function sendCharityPriceOffer(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.charityEntity', 'items.service']);
+
+        $patient = $invoice->patient;
+        if (! $patient || $patient->payment_type !== 'charity') {
+            return back()->withErrors(['error' => __('Invoice is not linked to a charity patient.')]);
+        }
+
+        $charityEntity = $patient->charityEntity;
+        if (! $charityEntity || ! $charityEntity->email) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية. استخدم "إرسال لطرف" لإدخال بريد يدوياً.' : 'No email registered for the charity. Use "Send to party" to enter an email manually.']);
+        }
+
+        $recipientName = app()->getLocale() === 'ar' && ! empty($charityEntity->name_ar) ? $charityEntity->name_ar : $charityEntity->name;
+        $token = InvoicePartySend::generateToken();
+        $partySend = InvoicePartySend::create([
+            'invoice_id' => $invoice->id,
+            'recipient_type' => 'charity',
+            'recipient_entity_id' => $charityEntity->id,
+            'recipient_email' => $charityEntity->email,
+            'recipient_name' => $recipientName,
+            'token' => $token,
+            'sent_at' => now(),
+            'sent_by' => auth()->user()?->getKey(),
+        ]);
+
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'hospital_name_en' => Setting::get('hospital_name_en', ''),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'health_cluster_name_en' => Setting::get('health_cluster_name_en', ''),
+            'manager_name' => Setting::get('manager_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'bank_name' => Setting::get('bank_name', ''),
+            'account_number' => Setting::get('account_number', ''),
+            'iban_number' => Setting::get('iban_number', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'department_manager_name' => Setting::get('department_manager_name', ''),
+            'department_manager_signature' => Setting::get('department_manager_signature', ''),
+        ];
+
+        $pdfDir = 'invoice-party-pdfs';
+        $pdfFilename = $token . '.pdf';
+        $pdfRelativePath = $pdfDir . '/' . $pdfFilename;
+
+        try {
+            $html = view('invoices.price-offer-pdf', [
+                'invoice' => $invoice,
+                'recipientName' => $recipientName,
+                'settings' => $settings,
+            ])->render();
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'default_font_size' => 11,
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'margin_top' => 16,
+                'margin_bottom' => 16,
+            ]);
+            $mpdf->SetDirectionality('rtl');
+            $mpdf->WriteHTML($html);
+            $pdfContent = $mpdf->Output('', 'S');
+            Storage::disk('local')->put($pdfRelativePath, $pdfContent);
+
+            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail($partySend, $pdfRelativePath));
+
+            $invoice->update(['status' => 'sent_to_charity']);
+            \App\Models\CharityClaim::updateOrCreate(
+                ['invoice_id' => $invoice->id],
+                [
+                    'charity_entity_id' => $patient->charity_entity_id,
+                    'status'            => 'sent',
+                    'sent_date'         => today(),
+                    'sent_by'           => auth()->user()?->id,
+                ]
+            );
+
+            ActivityLogger::log('Invoice Sent', 'Invoice', $invoice->id, 'Charity price offer email sent to ' . $partySend->recipient_name, null, $partySend->toArray());
+            Storage::disk('local')->delete($pdfRelativePath);
+        } catch (\Throwable $e) {
+            Log::error('Charity price offer email failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            if (Storage::disk('local')->exists($pdfRelativePath)) {
+                Storage::disk('local')->delete($pdfRelativePath);
+            }
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إرسال الإيميل. حاول مرة أخرى.' : 'Failed to send email. Please try again.']);
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', app()->getLocale() === 'ar' ? 'تم إرسال عرض السعر / الفاتورة الطبية للجمعية بنجاح. يمكن للجمعية التأكيد أو الرفض عبر الرابط في الإيميل.' : 'Price offer / medical invoice sent to charity. They can confirm or reject via the email link.');
+    }
+
     /** عرض نموذج تنفيذ الخدمة (GET) — نعيد توجيه لصفحة الفاتورة */
     public function showExecuteService(Invoice $invoice, \App\Models\InvoiceItem $item)
     {

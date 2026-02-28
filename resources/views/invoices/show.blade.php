@@ -42,10 +42,24 @@
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
                 @if(($invoice->payment_type === 'charity') || ($invoice->patient?->payment_type === 'charity'))
-                    <a href="{{ route('invoices.send-to-party', $invoice) }}"
-                        class="inline-flex items-center gap-2 bg-emerald-600  px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                        {{ app()->getLocale() === 'ar' ? '✉️ إرسال الفاتورة للجمعية الخيرية' : '✉️ Send invoice to charity' }}
-                    </a>
+                    @if($invoice->patient?->charityEntity?->email)
+                        <form method="POST" action="{{ route('invoices.send-charity-price-offer', $invoice) }}" class="inline"
+                            onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال ميل «عرض سعر / فاتورة طبية» للجمعية مع مرفق PDF وزرّي تأكيد/رفض؟' : 'Send «Price offer / Medical invoice» email to charity with PDF attachment and confirm/reject links?' }}');">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                                {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة الطبية للجمعية' : '✉️ Send price offer / medical invoice to charity' }}
+                            </button>
+                        </form>
+                        {{-- <a href="{{ route('invoices.send-to-party', $invoice) }}"
+                            class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200 border border-slate-300">
+                            {{ app()->getLocale() === 'ar' ? 'إرسال لطرف (تعديل البريد)' : 'Send to party (change email)' }}
+                        </a> --}}
+                    @else
+                        <a href="{{ route('invoices.send-to-party', $invoice) }}"
+                            class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                            {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة للجمعية' : '✉️ Send price offer / invoice to charity' }}
+                        </a>
+                    @endif
                 @endif
 
                 {{-- Record Payment button for Cash/Partially Paid --}}
