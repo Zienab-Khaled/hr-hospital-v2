@@ -25,7 +25,14 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useTailwind();
 
         Gate::before(function ($user, $ability) {
+            if (!$user) {
+                return null;
+            }
             if (method_exists($user, 'hasPermissionTo') && $user->hasPermissionTo($ability)) {
+                return true;
+            }
+            // تفويض: إذا المُستخدم مفوّض إليه من مدير/أدمن لفترة تشمل اليوم، يعامل كأنه يملك صلاحية المُفوّض
+            if (method_exists($user, 'hasPermissionViaDelegation') && $user->hasPermissionViaDelegation($ability)) {
                 return true;
             }
             return null;

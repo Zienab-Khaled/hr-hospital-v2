@@ -126,6 +126,35 @@ class UsersSeeder extends Seeder
         $insurance->assignRole('insurance_clerk');
         $insurance->givePermissionTo(['patients.view', 'invoices.view', 'invoices.create', 'procedures.contact_report']);
 
+        // Head of Insurance Department — رئيس قسم التأمين
+        $insuranceHead = User::updateOrCreate(
+            ['username' => 'insurance_head'],
+            [
+                'email' => 'insurance.head@hospital.sa',
+                'name' => 'رضي ناصر الكبيدان',
+                'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Insurance'),
+                'job_title' => 'Head of Insurance Department',
+                'job_title_ar' => 'رئيس قسم التأمين',
+            ]
+        );
+        $insuranceHead->assignRole('manager');
+
+        // Insurance Doctor — طبيب التأمين
+        $insuranceDoctor = User::updateOrCreate(
+            ['username' => 'insurance_doctor'],
+            [
+                'email' => 'insurance.doctor@hospital.sa',
+                'name' => 'محمد عوض',
+                'password' => Hash::make('password123'),
+                'department_id' => $getDeptId('Insurance'),
+                'job_title' => 'Insurance Doctor',
+                'job_title_ar' => 'طبيب التأمين',
+            ]
+        );
+        $insuranceDoctor->assignRole('doctor');
+        $insuranceDoctor->givePermissionTo(['patients.view', 'patients.edit', 'invoices.view']);
+
         // Create Charity Clerk
         $charity = User::updateOrCreate(
             ['username' => 'charity'],
@@ -193,11 +222,13 @@ class UsersSeeder extends Seeder
         echo "Admin:       username: admin       | password: admin123\n";
         echo "Reception:   username: reception1  | password: password123\n";
         echo "Reception:   username: reception2  | password: password123\n";
-        echo "Insurance:   username: insurance   | password: password123\n";
-        echo "Charity:     username: charity     | password: password123\n";
-        echo "Accountant:  username: accountant  | password: password123\n";
-        echo "Doctor:      username: doctor      | password: password123\n";
-        echo "Nurse:       username: nurse       | password: password123\n";
+        echo "Insurance:     username: insurance        | password: password123\n";
+        echo "Insur. Head:   username: insurance_head  | password: password123  (رئيس قسم التأمين)\n";
+        echo "Insur. Dr:     username: insurance_doctor| password: password123  (طبيب التأمين)\n";
+        echo "Charity:       username: charity         | password: password123\n";
+        echo "Accountant:    username: accountant      | password: password123\n";
+        echo "Doctor:        username: doctor          | password: password123\n";
+        echo "Nurse:         username: nurse           | password: password123\n";
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
     }
 }

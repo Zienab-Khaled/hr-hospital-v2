@@ -45,6 +45,38 @@ class User extends \Illuminate\Foundation\Auth\User
         return $this->belongsTo(Department::class);
     }
 
+    /** Delegations I created (I am the delegator). */
+    public function delegationsGiven(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Delegation::class, 'delegator_id');
+    }
+
+    /** Delegations assigned to me (I am the delegate). */
+    public function delegationsReceived(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Delegation::class, 'delegate_to_id');
+    }
+
+    /**
+     * Whether this user has an active delegation granting them the given permission
+     * (i.e. some delegator with that permission delegated to this user for today).
+     */
+    public function hasPermissionViaDelegation(string $ability): bool
+    {
+        $today = now()->toDateString();
+        $delegations = Delegation::query()
+            ->where('delegate_to_id', $this->id)
+            ->where('from_date', '<=', $today)
+            ->where('to_date', '>=', $today)
+            ->with('delegator')
+            ->get();
+        foreach ($delegations as $d) {
+            if ($d->delegator && method_exists($d->delegator, 'hasPermissionTo') && $d->delegator->hasPermissionTo($ability)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Get the manager user for electronic signatures on print documents

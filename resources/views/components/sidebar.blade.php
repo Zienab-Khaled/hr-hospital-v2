@@ -43,8 +43,9 @@
                 </svg>
                 <span>{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
             </div>
-            @if($unreadCount > 0)
-                <span class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-[10px] font-bold rounded-full animate-pulse">
+            @if ($unreadCount > 0)
+                <span
+                    class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-[10px] font-bold rounded-full animate-pulse">
                     {{ $unreadCount }}
                 </span>
             @endif
@@ -60,7 +61,8 @@
                 <a href="{{ route('visits.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('visits.index') ? 'bg-red-600 text-slate-50' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
@@ -139,7 +141,7 @@
 
         {{-- Authorizations --}}
         <!-- @if ($user->can('authorizations.view') || $isManager)
-            <a href="{{ route('authorizations.index') }}"
+<a href="{{ route('authorizations.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('authorizations.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
                 <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,14 +150,15 @@
                 </svg>
                 <span>{{ __('Authorizations') }}</span>
             </a>
-        @endif -->
+@endif -->
 
         {{-- Payments --}}
         @if ($user->can('payments.view') || $user->can('payments.approve') || $isManager)
             <a href="{{ route('payments.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('payments.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
-                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
@@ -168,7 +171,8 @@
             <a href="{{ route('charity-claims.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('charity-claims.*') ? 'bg-red-600' : 'text-slate-700 hover:bg-slate-100' }}">
-                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
@@ -182,6 +186,17 @@
                 <p class="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     {{ app()->getLocale() === 'ar' ? 'إدارة النظام' : 'System Admin' }}
                 </p>
+
+                <a href="{{ route('delegations.index') }}"
+                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                   {{ request()->routeIs('delegations.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'التفويضات' : 'Delegations' }}</span>
+                </a>
 
                 <a href="{{ route('departments.index') }}"
                     class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
@@ -277,31 +292,37 @@
 
         {{-- Reports --}}
         @if ($user->can('reports.view') || $isManager)
-                <a href="{{ route('revenue.control-room') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+            <a href="{{ route('revenue.control-room') }}"
+                class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('revenue.control-room') ? 'bg-indigo-600 shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'فواتير المحاسب (Control Room)' : 'Accountant Invoices (Control Room)' }}</span>
-                </a>
-                <a href="{{ route('revenue.treasury.index') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'فواتير المحاسب (Control Room)' : 'Accountant Invoices (Control Room)' }}</span>
+            </a>
+            <a href="{{ route('revenue.treasury.index') }}"
+                class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('revenue.treasury.*') ? 'bg-indigo-600 shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v2m9 4H10m4 0v2a2 2 0 01-2 2h-2m-4 0H5a2 2 0 01-2-2v-2m4 4h4m-4 0h4m-4 0H9" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
-                </a>
-                <a href="{{ route('revenue.daily-summary') }}"
-                    class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v2m9 4H10m4 0v2a2 2 0 01-2 2h-2m-4 0H5a2 2 0 01-2-2v-2m4 4h4m-4 0h4m-4 0H9" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
+            </a>
+            <a href="{{ route('revenue.daily-summary') }}"
+                class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                    {{ request()->routeIs('revenue.daily-summary') ? 'bg-indigo-600 shadow-md' : 'text-slate-700 hover:bg-slate-100' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'ملخص الإيرادات ' : 'Revenue Summary' }}</span>
-                </a>
-                <a href="{{ route('reports.index') }}"
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'ملخص الإيرادات ' : 'Revenue Summary' }}</span>
+            </a>
+            <a href="{{ route('reports.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('reports.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
                 <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"

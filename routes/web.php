@@ -183,6 +183,10 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadCluster'])->name('reports.upload-cluster');
     Route::post('reports/upload-cluster', [PlaceholderController::class, 'reportsUploadClusterStore'])->name('reports.upload-cluster.store');
 
+    Route::get('delegations', [App\Http\Controllers\DelegationController::class, 'index'])->name('delegations.index');
+    Route::post('delegations', [App\Http\Controllers\DelegationController::class, 'store'])->name('delegations.store');
+    Route::delete('delegations/{delegation}', [App\Http\Controllers\DelegationController::class, 'destroy'])->name('delegations.destroy');
+
     Route::get('departments', [PlaceholderController::class, 'departmentsIndex'])->name('departments.index');
     Route::get('departments/create', [PlaceholderController::class, 'departmentsCreate'])->name('departments.create');
     Route::post('departments', [PlaceholderController::class, 'departmentsStore'])->name('departments.store');

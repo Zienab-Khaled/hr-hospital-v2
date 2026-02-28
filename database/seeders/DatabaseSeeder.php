@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
         echo "║  • 35+ Services with Kingdom Codes                      ║\n";
         echo "║  • 6 Insurance Companies with Emails                    ║\n";
         echo "║  • 6 Charity Entities with Emails                       ║\n";
-        echo "║  • 8 Users with Different Roles                         ║\n";
+        echo "║  • 10 Users with Different Roles                        ║\n";
         echo "║  • 20 Sample Patients                                   ║\n";
         echo "║                                                          ║\n";
         echo "║  Start by logging in at: /login                         ║\n";
