@@ -298,14 +298,16 @@ class PlaceholderController extends Controller
             });
         }
 
-        // Custom status filter
-        if ($request->filled('status')) {
-            $status = $request->input('status');
+        // Custom status filter: غير مدفوعة = لم يُدفع منها أي مبلغ (paid_amount = 0)
+        $status = $request->query('status');
+        if ($status !== null && $status !== '') {
             if ($status === 'paid') {
                 $query->where('remaining_amount', '=', 0);
             } elseif ($status === 'unpaid') {
-                $query->where('remaining_amount', '>', 0);
-            } elseif (in_array($status, ['sent_to_insurance', 'sent_to_charity', 'approved', 'rejected'])) {
+                $query->where(function ($q) {
+                    $q->where('paid_amount', '=', 0)->orWhereNull('paid_amount');
+                });
+            } elseif (in_array($status, ['sent_to_insurance', 'sent_to_charity', 'approved', 'rejected'], true)) {
                 $query->where('status', $status);
             }
         }
