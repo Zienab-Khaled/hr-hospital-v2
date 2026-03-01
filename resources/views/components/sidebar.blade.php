@@ -166,8 +166,21 @@
             </a>
         @endif
 
-        {{-- Claims --}}
-        @if ($user->can('invoices.view') || $isManager)
+        {{-- تقارير التأمين (رئيس قسم التأمين فقط) --}}
+        @if ($user->can('insurance_reports.view'))
+            <a href="{{ route('insurance-reports.index') }}"
+                class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+               {{ request()->routeIs('insurance-reports.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'تقارير التأمين' : 'Insurance Reports' }}</span>
+            </a>
+        @endif
+
+        {{-- Claims (المطالبات: تأمين + جمعيات) --}}
+        @if ($user->can('invoices.view') || $user->can('claims.view') || $isManager)
             <a href="{{ route('charity-claims.index') }}"
                 class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
                {{ request()->routeIs('charity-claims.*') ? 'bg-red-600' : 'text-slate-700 hover:bg-slate-100' }}">

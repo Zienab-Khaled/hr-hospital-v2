@@ -15,7 +15,7 @@ class UsersSeeder extends Seeder
         // الأدوار والصلاحيات تُعرّف في RolesAndPermissionsSeeder (يُستدعى قبله في DatabaseSeeder).
         // هنا فقط التأكد من وجود الأدوار لـ web و api.
         $guards = ['web', 'api'];
-        $roleNames = ['admin', 'manager', 'doctor', 'nurse', 'reception', 'accountant', 'insurance_clerk', 'charity_clerk'];
+        $roleNames = ['admin', 'manager', 'doctor', 'nurse', 'reception', 'accountant', 'insurance_clerk', 'charity_clerk', 'insurance_doctor'];
         foreach ($guards as $guard) {
             foreach ($roleNames as $name) {
                 Role::firstOrCreate(['name' => $name, 'guard_name' => $guard]);
@@ -108,7 +108,7 @@ class UsersSeeder extends Seeder
                 'job_title_ar' => 'طبيب التأمين',
             ]
         );
-        $insuranceDoctor->assignRole('doctor');
+        $insuranceDoctor->assignRole('insurance_doctor');
 
         // Create Charity Clerk
         $charity = User::updateOrCreate(

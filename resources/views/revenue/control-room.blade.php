@@ -99,23 +99,23 @@
         <div class="premium-card rounded-2xl p-5 border-2 border-slate-200 flex-1 min-w-[180px]">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي فواتير اليوم' : 'Today\'s Invoices' }}</p>
             <p class="text-2xl font-black text-slate-800">{{ $controlRoomStats['total_count'] }}</p>
-            <p class="text-sm font-bold text-slate-600 mt-1">{{ number_format($controlRoomStats['total_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+            <p class="text-sm font-bold text-slate-600 mt-1">{{ number_format($controlRoomStats['total_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ريال سعودي' : 'SAR' }}</p>
         </div>
         <div class="premium-card rounded-2xl p-5 border-2 border-emerald-200 bg-emerald-50/50 flex-1 min-w-[180px]">
             <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">{{ app()->getLocale() === 'ar' ? 'تم تأكيده (مطابق)' : 'Confirmed (Matched)' }}</p>
             {{-- <p class="text-[9px] text-emerald-600/80 font-bold mb-1">{{ app()->getLocale() === 'ar' ? 'اللي اتبعتت لأمين الصندوق' : 'Sent to treasury' }}</p> --}}
             <p class="text-2xl font-black text-emerald-800">{{ $controlRoomStats['matched_count'] }}</p>
-            <p class="text-sm font-bold text-emerald-700 mt-1">{{ number_format($controlRoomStats['matched_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+            <p class="text-sm font-bold text-emerald-700 mt-1">{{ number_format($controlRoomStats['matched_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ريال سعودي' : 'SAR' }}</p>
         </div>
         <div class="premium-card rounded-2xl p-5 border-2 border-red-200 bg-red-50/50 flex-1 min-w-[180px]">
             <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'تم رفضه' : 'Rejected' }}</p>
             <p class="text-2xl font-black text-red-800">{{ $controlRoomStats['rejected_count'] }}</p>
-            <p class="text-sm font-bold text-red-700 mt-1">{{ number_format($controlRoomStats['rejected_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+            <p class="text-sm font-bold text-red-700 mt-1">{{ number_format($controlRoomStats['rejected_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ريال سعودي' : 'SAR' }}</p>
         </div>
         <div class="premium-card rounded-2xl p-5 border-2 border-amber-200 bg-amber-50/50 flex-1 min-w-[180px]">
             <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'قيد المراجعة' : 'Under Review' }}</p>
             <p class="text-2xl font-black text-amber-800">{{ $controlRoomStats['pending_count'] }}</p>
-            <p class="text-sm font-bold text-amber-700 mt-1">{{ number_format($controlRoomStats['pending_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ج.م' : 'EGP' }}</p>
+            <p class="text-sm font-bold text-amber-700 mt-1">{{ number_format($controlRoomStats['pending_amount'], 2) }} {{ app()->getLocale() === 'ar' ? 'ريال سعودي' : 'SAR' }}</p>
         </div>
     </div>
 
@@ -128,7 +128,7 @@
                 <h2 class="text-xl font-black text-slate-800 flex items-center gap-3">
                     <span class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">💻</span>
                     {{ app()->getLocale() === 'ar' ? 'عمليات المحصل' : 'Collector Operations' }}
-                    <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-600 text-white shadow-md">
+                    <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-600  shadow-md">
                         {{ $invoices->count() }}
                     </span>
                 </h2>
@@ -341,7 +341,7 @@
                     <div class="grid grid-cols-2 gap-10">
                         <div>
                             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المحصلات' : 'Gross Collected' }}</p>
-                            <p class="text-4xl font-black text-white tracking-tighter">{{ number_format($totalCollectedToday, 2) }}</p>
+                            <p class="text-4xl font-black  tracking-tighter">{{ number_format($totalCollectedToday, 2) }}</p>
                         </div>
                         <div class="text-right">
                              <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Trans Count' }}</p>

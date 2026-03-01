@@ -44,6 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             // الموافقات والمطالبات
             'authorizations.view',
             'claims.view',
+            'insurance_reports.view',
             // سجل النشاط
             'activity.view',
             // إدارة النظام
@@ -74,9 +75,17 @@ class RolesAndPermissionsSeeder extends Seeder
             $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => $guard]);
             $admin->syncPermissions($allPerms);
 
-            // مدير: نفس صلاحيات الأدمن (إدارة كاملة + كل التابات)
+            // مدير: نفس صلاحيات الأدمن (إدارة كاملة + كل التابات + تقارير التأمين)
             $manager = Role::firstOrCreate(['name' => 'manager', 'guard_name' => $guard]);
             $manager->syncPermissions($allPerms);
+
+            // طبيب التأمين: إضافة مرضى، متابعة مطالبات التأمين (بدون إدارة النظام أو تقارير التأمين)
+            $insuranceDoctor = Role::firstOrCreate(['name' => 'insurance_doctor', 'guard_name' => $guard]);
+            $insuranceDoctor->syncPermissions([
+                'patients.view', 'patients.create', 'patients.edit',
+                'visits.view', 'invoices.view', 'invoices.create',
+                'claims.view', 'authorizations.view',
+            ]);
 
             // استقبال: إدارة المرضى، الزيارات، إنشاء فواتير، الإجراءات
             $reception = Role::firstOrCreate(['name' => 'reception', 'guard_name' => $guard]);

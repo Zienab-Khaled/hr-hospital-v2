@@ -145,6 +145,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::post('charity-claims/{charityClaim}/notes', [App\Http\Controllers\CharityClaimController::class, 'addNote'])->name('charity-claims.notes.store');
 
     // Insurance Claims
+    Route::get('insurance-reports', [App\Http\Controllers\InsuranceReportController::class, 'index'])->name('insurance-reports.index');
     Route::get('insurance-claims/create', [App\Http\Controllers\InsuranceClaimController::class, 'create'])->name('insurance-claims.create');
     Route::post('insurance-claims', [App\Http\Controllers\InsuranceClaimController::class, 'store'])->name('insurance-claims.store');
     Route::get('insurance-claims/patients-search', [App\Http\Controllers\InsuranceClaimController::class, 'searchPatients'])->name('insurance-claims.patients-search');
