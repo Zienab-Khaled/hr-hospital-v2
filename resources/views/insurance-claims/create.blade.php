@@ -2,6 +2,7 @@
 @section('title', app()->getLocale() === 'ar' ? 'إنشاء مطالبة تأمين' : 'Create Insurance Claim')
 
 @section('content')
+    @php $prefillJson = isset($prefill) ? json_encode($prefill) : 'null'; @endphp
     <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-slate-800">
@@ -189,7 +190,7 @@
             });
 
             // --- INVOICE & ITEMS LOGIC ---
-            function loadInvoices(patientId) {
+            function loadInvoices(patientId, selectInvoiceId = null) {
                 invoiceSelect.innerHTML = '<option value="">{{ app()->getLocale() === 'ar' ? '--- جاري التحميل... ---' : '--- Loading... ---' }}</option>';
                 invoiceSelect.disabled = true;
                 itemsSection.classList.add('hidden');
@@ -205,8 +206,22 @@
                                 invoiceSelect.innerHTML += `<option value="${inv.id}">${inv.invoice_number} (${inv.invoice_date}) - ${inv.total_amount} ر.س (${inv.pending_items_count} خدمات معلقة)</option>`;
                             });
                             invoiceSelect.disabled = false;
+                            if (selectInvoiceId) {
+                                invoiceSelect.value = selectInvoiceId;
+                                invoiceSelect.dispatchEvent(new Event('change'));
+                            }
                         }
                     });
+            }
+
+            // --- PREFILL من تقارير التأمين (invoice_id + patient_id في الرابط) ---
+            const prefill = {!! $prefillJson !!};
+            if (prefill && prefill.patient_id && prefill.invoice_id) {
+                patientIdInput.value = prefill.patient_id;
+                selectedName.textContent = (prefill.patient_name || '') + ' (' + (prefill.patient_file_number || '') + ')';
+                patientSearch.parentElement.classList.add('hidden');
+                selectedBadge.classList.remove('hidden');
+                loadInvoices(prefill.patient_id, prefill.invoice_id);
             }
 
             invoiceSelect.addEventListener('change', function() {

@@ -13,12 +13,29 @@ class InsuranceClaimController extends Controller
 {
     /**
      * Show the form for creating a new insurance claim
+     * يقبل invoice_id و patient_id في الـ query لتعبيئة النموذج من صفحة تقارير التأمين
      */
-    public function create()
+    public function create(Request $request)
     {
         $this->authorize('invoices.create');
 
-        return view('insurance-claims.create');
+        $prefill = null;
+        if ($request->filled('invoice_id') && $request->filled('patient_id')) {
+            $invoice = Invoice::with('patient')->find($request->invoice_id);
+            if ($invoice && $invoice->patient_id == $request->patient_id && $invoice->patient->payment_type === 'insurance') {
+                $prefill = [
+                    'patient_id' => $invoice->patient_id,
+                    'patient_name' => $invoice->patient->name_ar ?? $invoice->patient->name,
+                    'patient_file_number' => $invoice->patient->file_number ?? '',
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'invoice_date' => $invoice->invoice_date?->format('Y-m-d'),
+                    'total_amount' => (float) $invoice->total_amount,
+                ];
+            }
+        }
+
+        return view('insurance-claims.create', compact('prefill'));
     }
 
     /**

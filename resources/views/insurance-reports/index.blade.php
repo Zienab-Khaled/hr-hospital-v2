@@ -12,32 +12,104 @@
         </a>
     </div>
 
-    {{-- بطاقات الإحصائيات --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow p-4 border border-slate-200">
-            <p class="text-xs font-semibold text-slate-500 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي الطلبات' : 'Total' }}</p>
-            <p class="text-2xl font-bold text-slate-800">{{ $total }}</p>
+    {{-- بطاقات الإحصائيات — جنب بعض في صف واحد --}}
+    <div class="flex flex-nowrap gap-3 sm:gap-4 mb-6 overflow-x-auto pb-1">
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-white rounded-xl shadow p-4 border border-slate-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي الطلبات' : 'Total' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-slate-800">{{ $total }}</p>
         </div>
-        <div class="bg-emerald-50 rounded-xl shadow p-4 border border-emerald-200">
-            <p class="text-xs font-semibold text-emerald-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'المدخول (معتمد/مدفوع)' : 'Approved / Paid' }}</p>
-            <p class="text-2xl font-bold text-emerald-800">{{ $approvedCount }}</p>
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-emerald-50 rounded-xl shadow p-4 border border-emerald-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-emerald-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'المدفوع المعتمد / مدفوع' : 'Approved / Paid' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-emerald-800">{{ $approvedCount }}</p>
         </div>
-        <div class="bg-red-50 rounded-xl shadow p-4 border border-red-200">
-            <p class="text-xs font-semibold text-red-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'المرفوض' : 'Rejected' }}</p>
-            <p class="text-2xl font-bold text-red-800">{{ $rejectedCount }}</p>
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-red-50 rounded-xl shadow p-4 border border-red-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-red-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'المرفوض' : 'Rejected' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-red-800">{{ $rejectedCount }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow p-4 border border-amber-200">
-            <p class="text-xs font-semibold text-amber-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'نسبة القبول' : 'Approval Rate' }}</p>
-            <p class="text-2xl font-bold text-amber-800">{{ $approvalRate }}%</p>
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-white rounded-xl shadow p-4 border border-amber-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-amber-700 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'نسبة القبول' : 'Approval Rate' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-amber-800">{{ $approvalRate }}%</p>
         </div>
-        <div class="bg-white rounded-xl shadow p-4 border border-red-200">
-            <p class="text-xs font-semibold text-red-600 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'نسبة الرفض' : 'Rejection Rate' }}</p>
-            <p class="text-2xl font-bold text-red-700">{{ $rejectionRate }}%</p>
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-white rounded-xl shadow p-4 border border-red-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-red-600 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'نسبة الرفض' : 'Rejection Rate' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-red-700">{{ $rejectionRate }}%</p>
         </div>
-        <div class="bg-slate-50 rounded-xl shadow p-4 border border-slate-200">
-            <p class="text-xs font-semibold text-slate-600 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'قيد المراجعة' : 'Under Review' }}</p>
-            <p class="text-2xl font-bold text-slate-800">{{ $underReviewCount }}</p>
+        <div class="flex-1 min-w-[100px] sm:min-w-0 bg-slate-50 rounded-xl shadow p-4 border border-slate-200 flex-shrink-0">
+            <p class="text-[10px] sm:text-xs font-semibold text-slate-600 uppercase mb-1">{{ app()->getLocale() === 'ar' ? 'قيد المراجعة' : 'Under Review' }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-slate-800">{{ $underReviewCount }}</p>
         </div>
+    </div>
+
+    {{-- فواتير مرضى التأمين — ليستينج + زر إنشاء فاتورة مطالبة والمبلغ المطلوب --}}
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <h3 class="px-4 py-3 border-b border-slate-200 font-semibold text-slate-800">
+            {{ app()->getLocale() === 'ar' ? 'فواتير مرضى التأمين' : 'Insured Patients Invoices' }}
+        </h3>
+        <p class="px-4 py-2 text-sm text-slate-600 border-b border-slate-100">
+            {{ app()->getLocale() === 'ar' ? 'كل فاتورة لمرضى التأمين — المبلغ المطلوب من شركة التأمين وزر لإنشاء فاتورة مطالبة.' : 'All invoices for insured patients — amount to claim from insurance and button to create claim.' }}
+        </p>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+                <thead class="bg-slate-100 border-b-2 border-slate-300">
+                    <tr>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</th>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'شركة التأمين' : 'Insurance Co' }}</th>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'مبلغ المطالبة (ريال)' : 'Claim Amount (SAR)' }}</th>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'حالة المطالبة' : 'Claim Status' }}</th>
+                        <th class="text-start p-3 font-bold text-slate-700">{{ app()->getLocale() === 'ar' ? 'إجراء' : 'Action' }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $claimStatusLabel = ['draft'=>'مسودة','sent'=>'مرسلة','under_review'=>'قيد المراجعة','approved'=>'معتمدة','rejected'=>'مرفوضة','paid'=>'مدفوعة'];
+                    @endphp
+                    @forelse($insuredInvoices as $inv)
+                        @php
+                            $claim = $inv->insuranceClaims->first();
+                            $claimAmount = (float) $inv->total_amount;
+                        @endphp
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3">
+                                <a href="{{ route('invoices.show', $inv) }}" class="text-blue-600 hover:underline font-medium">{{ $inv->invoice_number }}</a>
+                            </td>
+                            <td class="p-3">{{ $inv->patient->name_ar ?? $inv->patient->name ?? '—' }}</td>
+                            <td class="p-3">{{ $inv->patient->insuranceCompany->name_ar ?? $inv->patient->insuranceCompany->name ?? '—' }}</td>
+                            <td class="p-3 font-bold text-slate-800">{{ number_format($claimAmount, 2) }}</td>
+                            <td class="p-3">
+                                @if($claim)
+                                    <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold
+                                        @if($claim->status === 'approved' || $claim->status === 'paid') bg-emerald-100 text-emerald-800
+                                        @elseif($claim->status === 'rejected') bg-red-100 text-red-800
+                                        @elseif($claim->status === 'sent' || $claim->status === 'under_review') bg-amber-100 text-amber-800
+                                        @else bg-slate-100 text-slate-700 @endif">
+                                        {{ $claimStatusLabel[$claim->status] ?? $claim->status }}
+                                    </span>
+                                @else
+                                    <span class="text-slate-400 text-xs">{{ app()->getLocale() === 'ar' ? 'لا توجد مطالبة' : 'No claim' }}</span>
+                                @endif
+                            </td>
+                            <td class="p-3">
+                                @if($claim)
+                                    <a href="{{ route('insurance-claims.show', $claim) }}" class="inline-flex items-center gap-1 bg-slate-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-700 font-semibold">
+                                        {{ app()->getLocale() === 'ar' ? 'عرض المطالبة' : 'View Claim' }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('insurance-claims.create', ['invoice_id' => $inv->id, 'patient_id' => $inv->patient_id]) }}" class="inline-flex items-center gap-1 bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-700 font-semibold">
+                                        {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة مطالبة' : 'Create Claim' }}
+                                    </a>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="p-8 text-center text-slate-500">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير لمرضى التأمين' : 'No insured patient invoices' }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($insuredInvoices->hasPages())
+            <div class="px-4 py-3 border-t">{{ $insuredInvoices->withQueryString()->links() }}</div>
+        @endif
     </div>
 
     {{-- متابعة الطلبات --}}

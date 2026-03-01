@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InsuranceClaim;
 use App\Models\InsuranceCompany;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 
 class InsuranceReportController extends Controller
@@ -48,9 +49,20 @@ class InsuranceReportController extends Controller
         $claims = $claimsQuery->latest()->paginate(20)->withQueryString();
         $insuranceCompanies = InsuranceCompany::where('is_active', true)->orderBy('name_ar')->get(['id', 'name', 'name_ar']);
 
+        // فواتير مرضى التأمين — ليستينج لكل فاتورة مع إمكانية إنشاء مطالبة
+        $insuredInvoicesQuery = Invoice::whereHas('patient', fn ($q) => $q->where('payment_type', 'insurance'))
+            ->with(['patient.insuranceCompany', 'insuranceClaims']);
+        if ($request->filled('insured_invoice_from')) {
+            $insuredInvoicesQuery->whereDate('invoice_date', '>=', $request->insured_invoice_from);
+        }
+        if ($request->filled('insured_invoice_to')) {
+            $insuredInvoicesQuery->whereDate('invoice_date', '<=', $request->insured_invoice_to);
+        }
+        $insuredInvoices = $insuredInvoicesQuery->latest('invoice_date')->latest('id')->paginate(15, ['*'], 'insured_page')->withQueryString();
+
         return view('insurance-reports.index', compact(
             'total', 'approvedCount', 'rejectedCount', 'underReviewCount', 'sentCount', 'draftCount',
-            'approvalRate', 'rejectionRate', 'claims', 'insuranceCompanies'
+            'approvalRate', 'rejectionRate', 'claims', 'insuranceCompanies', 'insuredInvoices'
         ));
     }
 }
