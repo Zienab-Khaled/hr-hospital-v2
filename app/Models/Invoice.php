@@ -21,6 +21,7 @@ class Invoice extends Model implements HasMedia
         'sent_to_charity_mail_at', 'printed_commitment_at', 'printed_non_commitment_at',
         'payment_type', 'invoice_type', 'audit_status', 'rejection_reason',
         'cashier_otp', 'cashier_id', 'cashier_received_at', 'deposited_at',
+        'debt_status', 'debt_notified_at', 'debt_notified_by',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Invoice extends Model implements HasMedia
             'audit_status' => 'string',
             'cashier_received_at' => 'datetime',
             'deposited_at' => 'datetime',
+            'debt_notified_at' => 'datetime',
         ];
     }
 
@@ -87,6 +89,22 @@ class Invoice extends Model implements HasMedia
     public function cashier()
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function debtNotifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'debt_notified_by');
+    }
+
+    /** حالة متابعة المديونية للعرض */
+    public function getDebtStatusLabelAttribute(): string
+    {
+        $labels = [
+            null => app()->getLocale() === 'ar' ? 'لم يُبلّغ' : 'Not notified',
+            'notified' => app()->getLocale() === 'ar' ? 'تم التبليغ' : 'Notified',
+            'paid' => app()->getLocale() === 'ar' ? 'تم السداد' : 'Paid',
+        ];
+        return $labels[$this->debt_status] ?? $labels[null];
     }
 
     public function getStatusLabelAttribute(): string

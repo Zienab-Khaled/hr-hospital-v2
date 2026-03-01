@@ -351,6 +351,7 @@ class InvoiceController extends Controller
                     'remaining_amount' => $newRemainingAmount,
                     'status' => $newRemainingAmount <= 0 ? 'paid' : 'pending',
                     'audit_status' => 'under_review',
+                    'debt_status' => $newRemainingAmount <= 0 ? 'paid' : $invoice->debt_status,
                 ]);
 
                 $invoice->refresh(); // Sync the model state

@@ -179,6 +179,18 @@
             </a>
         @endif
 
+        {{-- المديونيات (حصر الفواتير غير المسددة + تبليغ المريض) --}}
+        @if ($user->can('procedures.debt_inventory') || $isManager)
+            <a href="{{ route('debts.index') }}"
+                class="flex items-center gap-2.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-normal transition-colors
+               {{ request()->routeIs('debts.*') ? 'bg-red-600 ' : 'text-slate-700 hover:bg-slate-100' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'المديونيات' : 'Debts' }}</span>
+            </a>
+        @endif
+
         {{-- Claims (المطالبات: تأمين + جمعيات) --}}
         @if ($user->can('invoices.view') || $user->can('claims.view') || $isManager)
             <a href="{{ route('charity-claims.index') }}"

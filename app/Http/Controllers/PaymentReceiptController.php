@@ -123,6 +123,7 @@ class PaymentReceiptController extends Controller
                 'paid_amount' => $newPaidAmount,
                 'remaining_amount' => $newRemainingAmount,
                 'status' => $newRemainingAmount <= 0 ? 'paid' : 'pending',
+                'debt_status' => $newRemainingAmount <= 0 ? 'paid' : $invoice->debt_status,
             ]);
 
             DB::commit();

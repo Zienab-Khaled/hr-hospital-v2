@@ -178,6 +178,9 @@ Route::middleware('auth:web,api')->group(function () {
         Route::post('/invoices/{invoice}/manager-confirmed', [RevenueWorkflowController::class, 'markManagerConfirmed'])->name('invoices.manager-confirmed');
         Route::post('/invoices/{invoice}/deposited', [RevenueWorkflowController::class, 'markDeposited'])->name('invoices.deposited');
     });
+    Route::get('debts', [App\Http\Controllers\DebtsController::class, 'index'])->name('debts.index');
+    Route::post('debts/invoices/{invoice}/notify', [App\Http\Controllers\DebtsController::class, 'notify'])->name('debts.notify');
+    Route::post('debts/invoices/{invoice}/mark-paid', [App\Http\Controllers\DebtsController::class, 'markPaid'])->name('debts.mark-paid');
     Route::get('revenue/cashier', [CashierWorkflowController::class, 'index'])->name('cashier.index');
     Route::post('revenue/cashier/{invoice}/receive', [CashierWorkflowController::class, 'receive'])->name('cashier.receive');
     Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController::class, 'exportExcel'])->name('reports.export.excel');
