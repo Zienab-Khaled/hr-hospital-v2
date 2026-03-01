@@ -33,6 +33,7 @@ class DepartmentsSeeder extends Seeder
             ['name' => 'Insurance', 'name_ar' => 'التأمين', 'category' => 'administrative', 'is_active' => true],
             ['name' => 'Social Services', 'name_ar' => 'الخدمة الاجتماعية', 'category' => 'administrative', 'is_active' => true],
             ['name' => 'Finance', 'name_ar' => 'المالية', 'category' => 'administrative', 'is_active' => true],
+            ['name' => 'Debts', 'name_ar' => 'المديونيات', 'category' => 'administrative', 'is_active' => true],
             ['name' => 'Nursing', 'name_ar' => 'التمريض', 'category' => 'medical', 'is_active' => true],
         ];
 

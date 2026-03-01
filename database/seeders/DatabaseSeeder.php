@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             CharityEntitiesSeeder::class,
             RolesAndPermissionsSeeder::class,
             UsersSeeder::class,
+            RevenueStaffSeeder::class,
             PatientsSeeder::class,
         ]);
 
@@ -43,7 +44,7 @@ class DatabaseSeeder extends Seeder
         echo "║  • 35+ Services with Kingdom Codes                      ║\n";
         echo "║  • 6 Insurance Companies with Emails                    ║\n";
         echo "║  • 6 Charity Entities with Emails                       ║\n";
-        echo "║  • 10 Users with Different Roles                        ║\n";
+        echo "║  • Users + Revenue Staff (محصلين، تأمين، محاسب، أمين صندوق، مديونيات) ║\n";
         echo "║  • 20 Sample Patients                                   ║\n";
         echo "║                                                          ║\n";
         echo "║  Start by logging in at: /login                         ║\n";

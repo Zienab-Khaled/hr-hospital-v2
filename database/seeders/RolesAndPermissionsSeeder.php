@@ -134,6 +134,46 @@ class RolesAndPermissionsSeeder extends Seeder
             // ممرضة: عرض المرضى فقط
             $nurse = Role::firstOrCreate(['name' => 'nurse', 'guard_name' => $guard]);
             $nurse->syncPermissions(['patients.view', 'visits.view']);
+
+            // محصل (الاستقبال - الطوارئ/العيادات): مرضى، فواتير، مدفوعات، إجراءات
+            $collection = Role::firstOrCreate(['name' => 'collection', 'guard_name' => $guard]);
+            $collection->syncPermissions([
+                'patients.view', 'patients.create',
+                'visits.view', 'visits.create', 'visits.edit',
+                'invoices.view', 'invoices.create',
+                'payments.view', 'payments.create',
+                'procedures.contact_report', 'procedures.written_commitment',
+                'procedures.non_commitment', 'procedures.debt_inventory',
+            ]);
+
+            // أمين صندوق: استلام من المحصل، اعتماد، إغلاق يومي، تقارير
+            $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => $guard]);
+            $cashier->syncPermissions([
+                'patients.view', 'invoices.view',
+                'payments.view', 'payments.create', 'payments.approve',
+                'reports.view', 'reports.generate',
+            ]);
+
+            // رئيس المديونيات: متابعة مديونيات، تقارير، إجراءات
+            $debtsHead = Role::firstOrCreate(['name' => 'debts_head', 'guard_name' => $guard]);
+            $debtsHead->syncPermissions([
+                'patients.view', 'visits.view',
+                'invoices.view', 'invoices.edit',
+                'payments.view', 'reports.view', 'reports.generate', 'reports.upload_cluster',
+                'procedures.contact_report', 'procedures.written_commitment',
+                'procedures.non_commitment', 'procedures.debt_inventory',
+                'activity.view',
+            ]);
+
+            // فني متابعة مرضى (قسم التأمين): مرضى، زيارات، فواتير، مطالبات
+            $patientFollowUp = Role::firstOrCreate(['name' => 'patient_follow_up', 'guard_name' => $guard]);
+            $patientFollowUp->syncPermissions([
+                'patients.view', 'patients.create', 'patients.edit',
+                'visits.view', 'visits.create',
+                'invoices.view', 'invoices.create',
+                'claims.view', 'authorizations.view',
+                'procedures.contact_report',
+            ]);
         }
     }
 }
