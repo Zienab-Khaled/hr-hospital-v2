@@ -816,7 +816,15 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="md:col-span-2">
+                    <div>
+                        <label class="block text-sm font-semibold text-rose-700 mb-1">
+                            {{ app()->getLocale() === 'ar' ? 'رقم الترقيم من الوزارة (يُطبع على إيصال التحصيل)' : 'Ministry receipt number (printed on q-1)' }}
+                        </label>
+                        <input type="text" name="ministry_receipt_number" value="{{ old('ministry_receipt_number') }}"
+                            placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: 5267859' : 'e.g. 5267859' }}"
+                            class="w-full rounded-lg border-2 border-rose-200 px-3 py-2 focus:ring-2 focus:ring-rose-500">
+                    </div>
+                    <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
                             {{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}
                         </label>

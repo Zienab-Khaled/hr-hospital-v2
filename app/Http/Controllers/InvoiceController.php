@@ -173,6 +173,7 @@ class InvoiceController extends Controller
             'collection_amount' => 'nullable|numeric|min:0',
             'collection_method' => 'nullable|string|in:cash,card,bank_transfer,cheque',
             'collection_reference' => 'nullable|string|max:100',
+            'ministry_receipt_number' => 'nullable|string|max:50',
             'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
@@ -308,6 +309,7 @@ class InvoiceController extends Controller
                     $s = \App\Models\Service::find($sData['service_id']);
                     $selectedItemsData[] = [
                         'id' => $sData['service_id'],
+                        'code' => $s?->code ?? '—',
                         'name' => $s?->name_ar ?? $s?->name ?? '—',
                         'qty' => (int) round((float) $sData['quantity']),
                         'unit_price' => (float) $sData['unit_price'],
@@ -319,6 +321,7 @@ class InvoiceController extends Controller
                 $receipt = \App\Models\PaymentReceipt::create([
                     'payment_id' => $payment->id,
                     'patient_id' => $invoice->patient_id,
+                    'ministry_receipt_number' => $validated['ministry_receipt_number'] ?? null,
                     'amount' => $validated['collection_amount'],
                     'payment_method' => $validated['collection_method'],
                     'reference_number' => $validated['collection_reference'] ?? null,

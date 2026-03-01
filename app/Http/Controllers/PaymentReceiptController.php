@@ -21,6 +21,7 @@ class PaymentReceiptController extends Controller
             'payment_method' => 'required|string|in:cash,card,bank_transfer,cheque,insurance,charity',
             'patient_cash_amount' => 'nullable|numeric|min:0',
             'reference_number' => 'nullable|string|max:100',
+            'ministry_receipt_number' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -89,6 +90,7 @@ class PaymentReceiptController extends Controller
             $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'patient_id' => $invoice->patient_id,
+                'ministry_receipt_number' => $validated['ministry_receipt_number'] ?? null,
                 'amount' => $amountToRecord,
                 'patient_cash_amount' => $validated['patient_cash_amount'],
                 'total_payment_amount' => ($validated['patient_cash_amount'] !== null && $validated['patient_cash_amount'] > 0) ? (float) $validated['amount'] : null,

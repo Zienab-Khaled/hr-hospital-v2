@@ -13,6 +13,7 @@ class PaymentReceipt extends Model implements HasMedia
     use InteractsWithMedia;
     protected $fillable = [
         'receipt_number',
+        'ministry_receipt_number',
         'payment_id',
         'patient_id',
         'amount',

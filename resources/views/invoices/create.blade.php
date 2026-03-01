@@ -486,12 +486,21 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 relative z-10">
-                            <label
-                                class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}</label>
-                            <input type="text" name="collection_reference" value="{{ old('collection_reference') }}"
-                                class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
-                                placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 relative z-10">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-rose-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم الترقيم من الوزارة (يُطبع على إيصال التحصيل)' : 'Ministry receipt number (printed on q-1)' }}</label>
+                                <input type="text" name="ministry_receipt_number" value="{{ old('ministry_receipt_number') }}"
+                                    class="w-full rounded-xl border-2 border-rose-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-500"
+                                    placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: 5267859' : 'e.g. 5267859' }}">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}</label>
+                                <input type="text" name="collection_reference" value="{{ old('collection_reference') }}"
+                                    class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}">
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 relative z-10">
