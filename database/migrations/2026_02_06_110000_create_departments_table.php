@@ -14,7 +14,12 @@ return new class extends Migration
             $table->string('name_ar')->nullable();
             $table->string('code', 20)->nullable()->unique();
             $table->boolean('is_active')->default(true);
+            $table->softDeletes();
             $table->timestamps();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('department_id')->references('id')->on('departments')->nullOnDelete();
         });
     }
 

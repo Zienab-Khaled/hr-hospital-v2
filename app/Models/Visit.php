@@ -5,14 +5,43 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Visit extends Model
+class Visit extends Model implements HasMedia
 {
-    protected $fillable = ['patient_id', 'visit_date', 'case_type', 'notes', 'transferred_department_id', 'registered_by'];
+    use SoftDeletes, InteractsWithMedia;
+
+    protected $fillable = [
+        'patient_id', 'department_id', 'visit_date', 'shift_id', 'case_type', 'notes',
+        'referral_number', 'transferred_department_id', 'registered_by',
+        'printed_eligibility_at', 'printed_price_inquiry_at'
+    ];
 
     protected function casts(): array
     {
-        return ['visit_date' => 'date'];
+        return [
+            'visit_date' => 'date',
+            'printed_eligibility_at' => 'datetime',
+            'printed_price_inquiry_at' => 'datetime',
+        ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('charity_approval')
+            ->singleFile(); // Only one approval doc per visit
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function transferredDepartment(): BelongsTo
@@ -43,5 +72,13 @@ class Visit extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the charity approval media item for this visit
+     */
+    public function charityApprovalDocument()
+    {
+        return $this->getFirstMedia('charity_approval');
     }
 }

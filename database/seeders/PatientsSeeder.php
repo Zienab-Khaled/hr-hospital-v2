@@ -2,44 +2,82 @@
 
 namespace Database\Seeders;
 
-use App\Models\CharityEntity;
-use App\Models\InsuranceCompany;
 use App\Models\Patient;
+use App\Models\InsuranceCompany;
+use App\Models\CharityEntity;
 use Illuminate\Database\Seeder;
+use Faker\Factory as Faker;
 
 class PatientsSeeder extends Seeder
 {
     public function run(): void
     {
-        $bupa = InsuranceCompany::where('name', 'Bupa')->first();
-        $tawuniya = InsuranceCompany::where('name', 'Tawuniya')->first();
-        $charity1 = CharityEntity::first();
-
-        $patients = [
-            ['file' => 'P-2024-001', 'name' => 'Mohammed Ali', 'name_ar' => 'محمد علي', 'payment_type' => 'cash', 'phone' => '0501234567'],
-            ['file' => 'P-2024-002', 'name' => 'Fatima Hassan', 'name_ar' => 'فاطمة حسن', 'payment_type' => 'insurance', 'insurance_id' => $bupa?->id, 'id_number' => '1234567890'],
-            ['file' => 'P-2024-003', 'name' => 'Khalid Omar', 'name_ar' => 'خالد عمر', 'payment_type' => 'insurance', 'insurance_id' => $tawuniya?->id, 'id_number' => '1234567891'],
-            ['file' => 'P-2024-004', 'name' => 'Nora Ahmed', 'name_ar' => 'نورة أحمد', 'payment_type' => 'charity', 'charity_id' => $charity1?->id],
-            ['file' => 'P-2024-005', 'name' => 'Abdulrahman Saleh', 'name_ar' => 'عبدالرحمن صالح', 'payment_type' => 'cash', 'phone' => '0501234568'],
-            ['file' => 'P-2024-006', 'name' => 'Sara Mohammed', 'name_ar' => 'سارة محمد', 'payment_type' => 'insurance', 'insurance_id' => $bupa?->id],
-            ['file' => 'P-2024-007', 'name' => 'Youssef Ibrahim', 'name_ar' => 'يوسف إبراهيم', 'payment_type' => 'charity', 'charity_id' => $charity1?->id],
+        $faker = Faker::create('ar_SA');
+        $insuranceCompanies = InsuranceCompany::pluck('id')->toArray();
+        $charityEntities = CharityEntity::pluck('id')->toArray();
+        
+        // Sample Arabic names
+        $arabicNames = [
+            'محمد أحمد السعيد', 'فاطمة علي الأحمد', 'عبدالله خالد العتيبي',
+            'نورة محمد القحطاني', 'سعد عبدالرحمن المطيري', 'منى سعيد الدوسري',
+            'خالد يوسف الشمري', 'ريم عبدالله الزهراني', 'عمر حسن العمري',
+            'هدى ماجد السليمان', 'طارق فيصل البكر', 'سارة ناصر الحربي',
+            'عبدالعزيز سلطان آل سعود', 'لطيفة راشد المنصور', 'فهد عادل النمر',
+            'أمل حمد الجبرين', 'وليد ثامر الرشيد', 'سلمى عماد الخليفة',
+            'بدر جمال الفريح', 'شهد راكان العصيمي'
         ];
-
-        foreach ($patients as $p) {
-            Patient::firstOrCreate(
-                ['file_number' => $p['file']],
-                [
-                    'name' => $p['name'],
-                    'name_ar' => $p['name_ar'] ?? null,
-                    'payment_type' => $p['payment_type'],
-                    'insurance_company_id' => $p['insurance_id'] ?? null,
-                    'charity_entity_id' => $p['charity_id'] ?? null,
-                    'id_number' => $p['id_number'] ?? null,
-                    'phone' => $p['phone'] ?? null,
-                    'notes' => $p['notes'] ?? null,
-                    'is_active' => true,
-                ]
-            );
+        
+        $englishNames = [
+            'Mohammed Ahmed Al-Saeed', 'Fatima Ali Al-Ahmad', 'Abdullah Khalid Al-Otaibi',
+            'Noura Mohammed Al-Qahtani', 'Saad Abdulrahman Al-Mutairi', 'Mona Saeed Al-Dosari',
+            'Khalid Youssef Al-Shammari', 'Reem Abdullah Al-Zahrani', 'Omar Hassan Al-Omari',
+            'Huda Majed Al-Sulaiman', 'Tariq Faisal Al-Bakr', 'Sarah Nasser Al-Harbi',
+            'Abdulaziz Sultan Al-Saud', 'Latifa Rashed Al-Mansour', 'Fahad Adel Al-Nimer',
+            'Amal Hamad Al-Jebreen', 'Waleed Thamer Al-Rasheed', 'Salma Emad Al-Khalifa',
+            'Badr Jamal Al-Freih', 'Shahad Rakan Al-Osaimi'
+        ];
+        
+        for ($i = 0; $i < 20; $i++) {
+            $paymentTypes = ['cash', 'insurance', 'charity'];
+            $paymentType = $faker->randomElement($paymentTypes);
+            
+            $insuranceCompanyId = null;
+            $charityEntityId = null;
+            
+            if ($paymentType === 'insurance' && !empty($insuranceCompanies)) {
+                $insuranceCompanyId = $faker->randomElement($insuranceCompanies);
+            } elseif ($paymentType === 'charity' && !empty($charityEntities)) {
+                $charityEntityId = $faker->randomElement($charityEntities);
+            }
+            
+            // Generate unique identifiers
+            $hasIdNumber = $faker->boolean(70);
+            $identityTypes = ['national_id', 'visit_visa', 'iqama', 'passport', 'border_number', 'visa_number'];
+            $identityType = $faker->randomElement($identityTypes);
+            $identityValue = $identityType === 'national_id' ? '1' . $faker->numerify('##########')
+                : ($identityType === 'iqama' ? '2' . $faker->numerify('##########')
+                : $faker->bothify('?######'));
+            
+            Patient::create([
+                'file_number' => 'F-' . date('Ymd') . '-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                'name' => $englishNames[$i],
+                'name_ar' => $arabicNames[$i],
+                'identity_type' => $identityType,
+                'identity_value' => $identityValue,
+                'age' => $faker->numberBetween(18, 80),
+                'gender' => $faker->randomElement(['male', 'female']),
+                'phone' => '+966' . $faker->numerify('#########'),
+                'country_of_origin' => $faker->randomElement(['Saudi Arabia', 'Egypt', 'Jordan', 'Yemen', 'Syria', 'Sudan', 'India', 'Pakistan', 'Bangladesh']),
+                'current_location' => $faker->randomElement(['Riyadh', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar', 'Tabuk']),
+                'sponsor_name' => $faker->boolean(40) ? $faker->name() : null,
+                'sponsor_phone' => $faker->boolean(40) ? '+966' . $faker->numerify('#########') : null,
+                'payment_type' => $paymentType,
+                'insurance_company_id' => $insuranceCompanyId,
+                'charity_entity_id' => $charityEntityId,
+                'notes' => $faker->boolean(30) ? $faker->sentence() : null,
+            ]);
         }
+        
+        echo "\n✅ 20 patients created successfully!\n\n";
     }
 }

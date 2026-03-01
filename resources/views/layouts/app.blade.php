@@ -4,13 +4,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', __('Hospital Revenue Management'))</title>
 
-    {{-- خطوط Google Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -22,125 +22,193 @@
                 theme: {
                     extend: {
                         fontFamily: {
-                            sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
-                        }
+                            sans: ['Inter', 'SF Pro Text', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI',
+                                'sans-serif'
+                            ],
+                            arabic: ['Cairo', 'system-ui', '-apple-system', 'sans-serif'],
+                        },
                     }
                 }
             }
         </script>
     @endif
+
     <style>
         * {
-            font-family: 'Cairo', 'Inter', system-ui, -apple-system, sans-serif;
-            font-weight: 500;
+            font-family: Inter, 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         [dir="rtl"] * {
-            font-family: 'Cairo', system-ui, sans-serif;
-            font-weight: 600;
+            font-family: Cairo, Inter, 'Segoe UI', Tahoma, sans-serif;
         }
 
         [dir="ltr"] * {
-            font-family: 'Inter', system-ui, sans-serif;
-            font-weight: 500;
+            font-family: Inter, 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
-        body {
-            font-feature-settings: 'kern' 1;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
         }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        .font-bold,
-        .font-semibold {
-            font-weight: 700 !important;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* بوردر واضح حول كل الانبوتات + لون نص داكن (عدم استخدام نص أبيض) */
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="email"],
+        form input[type="password"],
+        form input[type="search"],
+        form input[type="tel"],
+        form input[type="date"],
+        form input[type="datetime-local"],
+        form textarea,
+        form select {
+            border-width: 2px;
+            border-style: solid;
+            border-color: #94a3b8;
+            border-radius: 0.5rem;
+            color: #1e293b;
+        }
+
+        form input:focus,
+        form textarea:focus,
+        form select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+
+        form input[type="file"]:not(.hidden) {
+            border: 2px solid #94a3b8;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
         }
     </style>
 </head>
 
-<body class="bg-slate-100 min-h-screen">
-    <header class="bg-white border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <h1 class="text-lg font-semibold text-slate-800">{{ __('Hospital Revenue Management') }}</h1>
-                <div class="flex items-center gap-4">
-                    <div class="flex gap-2">
-                        <a href="{{ url()->current() }}?lang=ar"
-                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'ar' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700' }}">{{ __('Arabic') }}</a>
-                        <a href="{{ url()->current() }}?lang=en"
-                            class="px-3 py-1 rounded text-sm {{ app()->getLocale() === 'en' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700' }}">{{ __('English') }}</a>
-                    </div>
-                    <span class="text-sm text-slate-600"
-                        title="{{ app()->getLocale() === 'ar' ? 'الموظف المسجل' : 'Logged-in employee' }}">
-                        {{ auth()->user()->employee?->name ?: auth()->user()->name ?: auth()->user()->username }}
-                        @php
-                            $isManagerRole = auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager');
-                            $roleLabel = $isManagerRole
-                                ? (app()->getLocale() === 'ar'
-                                    ? 'مدير'
-                                    : 'Manager')
-                                : (app()->getLocale() === 'ar'
-                                    ? 'موظف'
-                                    : 'Employee');
-                        @endphp
-                        <span class="text-slate-500">({{ $roleLabel }})</span>
-                    </span>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit"
-                            class="text-sm text-red-600 hover:underline">{{ __('Logout') }}</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @hasSection('tabs')
-            <div class="max-w-7xl mx-auto px-4 border-t border-slate-100">
-                <nav class="flex gap-1 pt-2">
-                    @yield('tabs')
-                </nav>
-            </div>
-        @endif
-    </header>
-    <div class="flex max-w-7xl mx-auto p-4">
+<body class="min-h-screen bg-gray-50">
+    <div class="flex min-h-screen">
         @auth
             @include('components.sidebar')
         @endauth
-        <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6 {{ auth()->check() ? '' : 'max-w-7xl mx-auto' }}">
-            @if (session('success'))
-                <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
-            @endif
-            @if (session('error'))
-                <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
-            @endif
-            @yield('content')
+
+        <main class="flex-1 overflow-x-hidden" style="background-color: #f2f4f6;">
+            {{-- Top Bar --}}
+            <div class="sticky top-0 z-10 bg-white border-b border-slate-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-semibold text-slate-800">@yield('title', 'Operations')</h1>
+
+                    @auth
+                        <div class="flex items-center gap-6">
+                            {{-- Notifications Icon --}}
+                            @php
+                                $unreadCount = auth()->user()->unreadNotifications()->count();
+                            @endphp
+                            <a href="{{ route('notifications.index') }}"
+                                class="relative p-2 text-slate-600 hover:text-slate-800 transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                @if ($unreadCount > 0)
+                                    <span
+                                        class="absolute top-0 right-1 flex items-center justify-center w-[16px] h-[16px] bg-rose-500 text-white text-[9px] font-bold rounded-full border border-white z-20">
+                                        {{ $unreadCount }}
+                                    </span>
+                                @endif
+                            </a>
+
+                            {{-- User Info --}}
+                            <div class="flex items-center gap-3">
+                                <div class="flex flex-col text-right">
+                                    <span class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</span>
+                                    <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
+                                </div>
+                                <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {{-- Language Switcher --}}
+                            <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                                <a href="{{ route('locale.switch', 'en') }}"
+                                    class="px-3 py-1.5 text-sm font-medium rounded transition-all {{ app()->getLocale() === 'en' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
+                                    EN
+                                </a>
+                                <a href="{{ route('locale.switch', 'ar') }}"
+                                    class="px-3 py-1.5 text-sm font-medium rounded transition-all {{ app()->getLocale() === 'ar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
+                                    عربي
+                                </a>
+                            </div>
+
+                            {{-- Logout --}}
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="p-2 text-slate-600 hover:text-red-600 transition-colors"
+                                    title="{{ __('Logout') }}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    @endauth
+                </div>
+            </div>
+
+            {{-- Content --}}
+            <div class="p-8 main-content-area">
+                @if (session('success'))
+                    <div class="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if (session('error'))
+                    <div class="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                @yield('content')
+            </div>
+
+            {{-- Footer --}}
+            <footer class="mt-auto px-8 py-6 border-t border-slate-200 bg-white/50">
+                <div
+                    class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
+                    <div>
+                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Suleiman</span>.
+                        {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+                    </div>
+
+                </div>
+            </footer>
         </main>
     </div>
-    <script>
-        (function() {
-            var key = 'app_locale';
-            var params = new URLSearchParams(window.location.search);
-            var lang = params.get('lang');
-            if (lang && (lang === 'ar' || lang === 'en')) {
-                try {
-                    localStorage.setItem(key, lang);
-                } catch (e) {}
-            }
-            window.addEventListener('storage', function(e) {
-                if (e.key === key && e.newValue) {
-                    var url = new URL(window.location.href);
-                    url.searchParams.set('lang', e.newValue);
-                    window.location.href = url.toString();
-                }
-            });
-        })();
-    </script>
 </body>
 
 </html>

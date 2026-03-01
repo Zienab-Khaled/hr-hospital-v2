@@ -28,6 +28,6 @@ class ActivityLogger
     public static function currentEmployeeName(): ?string
     {
         $user = Auth::user();
-        return $user?->employee?->name ?: $user?->name ?: $user?->username;
+        return $user?->name ?: $user?->username;
     }
 }

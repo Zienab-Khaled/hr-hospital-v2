@@ -7,7 +7,7 @@
             <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الرقم المرجعي' : 'Reference' }}</th>
-                    <th class="text-start p-3">{{ __("Patients") }}</th>
+                    <th class="text-start p-3">{{ __('Patients') }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'تاريخ الإصدار' : 'Issue date' }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'تاريخ الانتهاء' : 'Expiry' }}</th>
                     <th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment type' }}</th>
@@ -25,10 +25,15 @@
                         <td class="p-3">{{ $auth->status ?? '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="p-6 text-center text-slate-500">{{ app()->getLocale() === 'ar' ? 'لا توجد موافقات' : 'No authorizations yet' }}</td></tr>
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-slate-500">
+                            {{ app()->getLocale() === 'ar' ? 'لا توجد موافقات' : 'No authorizations yet' }}</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
-        @if($authorizations->hasPages())<div class="p-3 border-t">{{ $authorizations->links() }}</div>@endif
+        @if ($authorizations->hasPages())
+            <div class="p-3 border-t">{{ $authorizations->links() }}</div>
+        @endif
     </div>
 @endsection

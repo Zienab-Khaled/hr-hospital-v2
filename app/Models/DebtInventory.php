@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DebtInventory extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['patient_id', 'inventory_date', 'total_debt', 'details', 'created_by'];
 
     protected function casts(): array

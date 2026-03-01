@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
-        'invoice_id', 'payment_type', 'amount', 'received_date', 'received_by', 'approved_by', 'approved_at', 'reference_no', 'status', 'notes',
+        'invoice_id', 'payment_type', 'amount', 'received_date', 'received_by', 'approved_by', 'approved_at', 'reference_no', 'status', 'notes', 'audit_status',
     ];
 
     protected function casts(): array
@@ -17,6 +20,7 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'received_date' => 'date',
             'approved_at' => 'datetime',
+            'audit_status' => 'string',
         ];
     }
 
@@ -33,5 +37,30 @@ class Payment extends Model
     public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(PaymentReceipt::class);
+    }
+
+    /** تسمية طريقة الدفع للعرض (كاش / تأمين / جمعية) */
+    public function getPaymentTypeLabelAttribute(): string
+    {
+        $labels = [
+            'ar' => [
+                'cash' => 'كاش',
+                'insurance' => 'تأمين',
+                'charity' => 'جمعية',
+            ],
+            'en' => [
+                'cash' => 'Cash',
+                'insurance' => 'Insurance',
+                'charity' => 'Charity',
+            ],
+        ];
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        $key = $this->payment_type ?? 'cash';
+        return $labels[$locale][$key] ?? $labels['ar'][$key] ?? $key;
     }
 }

@@ -52,6 +52,47 @@
                 </select>
                 @error('department_id')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
+
+            <!-- Multi-Session Service -->
+            <div>
+                <div class="flex items-center mb-2">
+                    <input type="hidden" name="is_multi_session" value="0">
+                    <input type="checkbox" name="is_multi_session" id="is_multi_session" value="1" {{ old('is_multi_session') ? 'checked' : '' }} class="rounded border-slate-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500" onclick="toggleMultiSession()">
+                    <label for="is_multi_session" class="ms-2 text-sm font-medium text-slate-700">{{ app()->getLocale() === 'ar' ? 'خدمة متعددة الجلسات' : 'Multi-Session Service' }}</label>
+                </div>
+            </div>
+
+            <!-- Multi-Session Fields -->
+            <div id="multi_session_fields" class="{{ old('is_multi_session') ? '' : 'hidden' }} grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'عدد الجلسات' : 'Number of Sessions' }}</label>
+                    <input type="number" name="session_count" value="{{ old('session_count') }}" min="1" class="w-full rounded border border-slate-300 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المدة بين كل جلسة' : 'Wait Time' }}</label>
+                    <input type="number" name="session_wait_time" value="{{ old('session_wait_time') }}" min="1" class="w-full rounded border border-slate-300 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الوحدة' : 'Unit' }}</label>
+                    <select name="session_wait_unit" class="w-full rounded border border-slate-300 px-3 py-2">
+                        <option value="days" {{ old('session_wait_unit') == 'days' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'يوم' : 'Days' }}</option>
+                        <option value="weeks" {{ old('session_wait_unit') == 'weeks' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'أسبوع' : 'Weeks' }}</option>
+                        <option value="months" {{ old('session_wait_unit') == 'months' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'شهر' : 'Months' }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <script>
+                function toggleMultiSession() {
+                    const isChecked = document.getElementById('is_multi_session').checked;
+                    const fields = document.getElementById('multi_session_fields');
+                    if (isChecked) {
+                        fields.classList.remove('hidden');
+                    } else {
+                        fields.classList.add('hidden');
+                    }
+                }
+            </script>
         </div>
 
         <div class="mt-6 flex gap-2">

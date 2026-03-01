@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tesseract OCR (identity document extraction)
+    |--------------------------------------------------------------------------
+    | Set TESSERACT_EXECUTABLE if tesseract is not in system PATH.
+    | Windows example: TESSERACT_EXECUTABLE="C:/Program Files/Tesseract-OCR/tesseract.exe"
+    | Install: https://github.com/UB-Mannheim/tesseract/wiki (Windows)
+    */
+    'tesseract' => [
+        'executable' => env('TESSERACT_EXECUTABLE', 'tesseract'),
+    ],
+
 ];

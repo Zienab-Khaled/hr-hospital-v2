@@ -15,11 +15,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
         ]);
+
+        $middleware->alias([
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        ]);
+
+        $middleware->redirectGuestsTo(fn ($request) => route('login'));
+        $middleware->redirectUsersTo(fn ($request) => route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (TokenMismatchException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => __('Session expired. Please try again.')], 419);
+            }
+            // If session expired on logout, send to login instead of back (avoids 419 page)
+            if ($request->is('logout')) {
+                return redirect()->route('login')
+                    ->with('error', __('Session expired. Please try again.'));
             }
             return redirect()->back()
                 ->withInput($request->except('password', '_token'))

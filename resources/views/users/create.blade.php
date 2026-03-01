@@ -12,7 +12,7 @@
         </div>
     @endif
 
-    <form action="{{ route('users.store') }}" method="POST" class="bg-white rounded-lg shadow p-6 max-w-2xl">
+    <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 max-w-2xl">
         @csrf
         
         {{-- Employee Information Section --}}
@@ -111,6 +111,14 @@
                         @endforeach
                     </select>
                     @error('role')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="md:col-span-2 pt-4 border-t border-slate-200">
+                    <x-signature-pad
+                        name="signature_data"
+                        :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني للموظف (اختياري)' : 'Employee electronic signature (optional)')"
+                    />
+                    @error('signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>

@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('users.update', $user) }}" method="POST" class="bg-white rounded-lg shadow p-6 max-w-2xl">
+    <form action="{{ route('users.update', $user) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 max-w-2xl">
         @csrf
         @method('PUT')
 
@@ -33,7 +33,7 @@
                     <select name="department_id" required class="w-full rounded border border-slate-300 px-3 py-2 @error('department_id') border-red-500 @enderror">
                         <option value="">{{ app()->getLocale() === 'ar' ? '-- اختر قسم --' : '-- Select Department --' }}</option>
                         @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" {{ old('department_id', $user->employee?->department_id) == $dept->id ? 'selected' : '' }}>
+                            <option value="{{ $dept->id }}" {{ old('department_id', $user->department_id) == $dept->id ? 'selected' : '' }}>
                                 {{ app()->getLocale() === 'ar' && $dept->name_ar ? $dept->name_ar : $dept->name }}
                             </option>
                         @endforeach
@@ -43,33 +43,33 @@
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الاسم (إنجليزي)' : 'Name (English)' }} <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $user->employee?->name) }}" required class="w-full rounded border border-slate-300 px-3 py-2 @error('name') border-red-500 @enderror">
+                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required class="w-full rounded border border-slate-300 px-3 py-2 @error('name') border-red-500 @enderror">
                     @error('name')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }}</label>
-                    <input type="text" name="name_ar" value="{{ old('name_ar', $user->employee?->name_ar) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar') border-red-500 @enderror">
+                    <input type="text" name="name_ar" value="{{ old('name_ar', $user->name_ar) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar') border-red-500 @enderror">
                     @error('name_ar')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المسمى الوظيفي (إنجليزي)' : 'Job Title (English)' }}</label>
-                    <input type="text" name="job_title" value="{{ old('job_title', $user->employee?->job_title) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('job_title') border-red-500 @enderror">
+                    <input type="text" name="job_title" value="{{ old('job_title', $user->job_title) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('job_title') border-red-500 @enderror">
                     @error('job_title')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المسمى الوظيفي (عربي)' : 'Job Title (Arabic)' }}</label>
-                    <input type="text" name="job_title_ar" value="{{ old('job_title_ar', $user->employee?->job_title_ar) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('job_title_ar') border-red-500 @enderror">
+                    <input type="text" name="job_title_ar" value="{{ old('job_title_ar', $user->job_title_ar) }}" class="w-full rounded border border-slate-300 px-3 py-2 @error('job_title_ar') border-red-500 @enderror">
                     @error('job_title_ar')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</label>
                     <select name="status" class="w-full rounded border border-slate-300 px-3 py-2 @error('status') border-red-500 @enderror">
-                        <option value="active" {{ old('status', $user->employee?->status) === 'active' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'نشط' : 'Active' }}</option>
-                        <option value="inactive" {{ old('status', $user->employee?->status) === 'inactive' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'غير نشط' : 'Inactive' }}</option>
+                        <option value="active" {{ old('status', $user->status) === 'active' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'نشط' : 'Active' }}</option>
+                        <option value="inactive" {{ old('status', $user->status) === 'inactive' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'غير نشط' : 'Inactive' }}</option>
                     </select>
                     @error('status')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
@@ -106,6 +106,15 @@
                         @endforeach
                     </select>
                     @error('role')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="md:col-span-2 pt-4 border-t border-slate-200">
+                    <x-signature-pad
+                        name="signature_data"
+                        :current-image="$user->signature"
+                        :label="(app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني للموظف' : 'Employee electronic signature')"
+                    />
+                    @error('signature_data')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>
