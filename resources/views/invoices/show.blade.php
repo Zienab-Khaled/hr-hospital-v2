@@ -4,11 +4,16 @@
 @section('content')
     @php
         $hasInsuranceCoverage = $invoice->items->contains(fn($i) => !empty($i->insurance_coverage_type));
+        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
         $totalInsuranceCovered = $invoice->items->sum(fn($i) => (float) $i->insurance_covered_amount);
         $totalPatientShare = $invoice->items->sum(fn($i) => (float) $i->patient_amount);
-        $effectiveRemaining = $hasInsuranceCoverage
-            ? max(0, round($totalPatientShare - (float) $invoice->paid_amount, 2))
+        // المتبقي للمريض = حصة المريض − ما دفعه المريض فقط (لا نحتسب دفعات التأمين/الجمعية)
+        $patientPaidOnly = (float) ($invoice->payments ?? collect())->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
+        $effectiveRemaining = ($hasInsuranceCoverage || $isInsuranceOrCharity)
+            ? max(0, round($totalPatientShare - $patientPaidOnly, 2))
             : (float) $invoice->remaining_amount;
+        // المتبقي الإجمالي (يدخل فيه جزء التأمين حتى تُدفع المطالبة)
+        $totalRemaining = (float) $invoice->remaining_amount;
     @endphp
     <div class="max-w-5xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -582,9 +587,18 @@
                 </div>
                 <div class="flex justify-between text-sm pt-2 border-t border-slate-300">
                     <span
-                        class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:' }}</span>
+                        class="font-semibold text-slate-700">{{ ($hasInsuranceCoverage || $isInsuranceOrCharity) ? (app()->getLocale() === 'ar' ? 'المتبقي للمريض (حصته):' : 'Remaining (patient share):') : (app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:') }}</span>
                     <span class="font-bold text-slate-900">@currency($effectiveRemaining)</span>
                 </div>
+                @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && $totalRemaining != $effectiveRemaining)
+                    <div class="flex justify-between text-sm">
+                        <span class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة التأمين):' : 'Total remaining (debt — until claim paid):' }}</span>
+                        <span class="font-bold text-slate-800">@currency($totalRemaining)</span>
+                    </div>
+                @endif
+                @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && (float) $invoice->paid_amount == 0)
+                    <p class="text-xs text-amber-700 mt-2">{{ app()->getLocale() === 'ar' ? 'لم يُدفع شيء — الإجمالي المستحق = حصة المريض كاملة.' : 'Nothing paid — total due = full patient share.' }}</p>
+                @endif
             </div>
             @if ($printMedia->isNotEmpty())
                 <div class="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
@@ -647,12 +661,12 @@
                         </div>
                         <div>
                             <label
-                                class="block text-xs font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الملف (PDF أو صورة):' : 'File (PDF or Image):' }}</label>
+                                class="block text-xs  font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الملف (PDF أو صورة):' : 'File (PDF or Image):' }}</label>
                             <input type="file" name="signed_file" required accept=".pdf,image/*"
                                 class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                         </div>
                         <button type="submit"
-                            class="w-full bg-emerald-600 text-slate-50 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow transition-colors">
+                            class="w-full m-2 bg-emerald-600 text-slate-50 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow transition-colors">
                             {{ app()->getLocale() === 'ar' ? '⬆️ رفع المستند' : '⬆️ Upload Document' }}
                         </button>
                     </form>
@@ -779,8 +793,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'إجمالي الدفع' : 'Total Payment' }} *
+                            {{ app()->getLocale() === 'ar' ? 'إجمالي الدفع (حصة المريض فقط)' : 'Total Payment (patient share only)' }} *
                         </label>
+                        @if ($hasInsuranceCoverage || $isInsuranceOrCharity)
+                            <p class="text-xs text-amber-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المبلغ المستحق من المريض فقط — لا يدخل مبلغ شركة التأمين/الجمعية هنا.' : 'Amount due from patient only — do not enter insurance/charity portion here.' }}</p>
+                            @if ((float) $invoice->paid_amount == 0)
+                                <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الفاتورة غير مدفوعة — الإجمالي = المبلغ كامل حصة المريض.' : 'Invoice unpaid — total = full patient share amount.' }}</p>
+                            @endif
+                        @endif
                         <input type="number" name="amount" id="payment-total-amount" step="0.01"
                             max="{{ $effectiveRemaining }}" value="{{ $effectiveRemaining }}" required readonly
                             class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-slate-100 cursor-not-allowed">
@@ -862,6 +882,7 @@
 
                 <div class="flex gap-3">
                     <button type="submit" id="submit-payment-btn"
+                    style="background-color: #77786c;"
                         class="flex-1 bg-green-600  px-4 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg flex items-center justify-center gap-2">
                         ✅ {{ app()->getLocale() === 'ar' ? 'حفظ وإرسال للمحاسب' : 'Save & Send to Accountant' }}
                     </button>

@@ -41,14 +41,16 @@ class PaymentReceiptController extends Controller
             ? (float) $validated['patient_cash_amount']
             : (float) $validated['amount'];
 
-        // المتبقي على المريض = حصة المريض − المدفوع (لو فيه تغطية تأمين)، وإلا إجمالي الفاتورة − المدفوع
+        // عند تسجيل دفعة من المريض: لا يتجاوز المبلغ حصة المريض المتبقية (بدون احتساب دفعات التأمين/الجمعية)
         $hasCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
-        $effectiveTotalDue = $hasCoverage
+        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
+        $totalPatientShare = ($hasCoverage || $isInsuranceOrCharity)
             ? (float) $invoice->items->sum(fn ($i) => (float) $i->patient_amount)
             : (float) $invoice->total_amount;
-        $effectiveRemaining = max(0, round($effectiveTotalDue - (float) $invoice->paid_amount, 2));
+        $patientPaidSoFar = (float) $invoice->payments->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
+        $effectiveRemainingPatient = max(0, round($totalPatientShare - $patientPaidSoFar, 2));
 
-        if ($amountToRecord > $effectiveRemaining) {
+        if ($amountToRecord > $effectiveRemainingPatient) {
             return back()->withErrors(['amount' => __('Amount cannot exceed the remaining balance.')])->withInput();
         }
 
@@ -85,8 +87,9 @@ class PaymentReceiptController extends Controller
                 'audit_status' => 'matched',
             ]);
 
-            // 2. Create Payment Receipt (amount = المبلغ المسجّل فعلاً؛ total_payment_amount = إجمالي الدفعة للعرض إن وُجد)
-            $newRemainingForReceipt = max(0, round($effectiveTotalDue - ($invoice->paid_amount + $amountToRecord), 2));
+            // 2. Create Payment Receipt
+            $newPaidTotal = $invoice->paid_amount + $amountToRecord;
+            $newRemainingTotal = max(0, round((float) $invoice->total_amount - $newPaidTotal, 2));
             $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'patient_id' => $invoice->patient_id,
@@ -97,8 +100,8 @@ class PaymentReceiptController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
                 'invoice_snapshot_total' => $invoice->total_amount,
-                'invoice_snapshot_paid' => $invoice->paid_amount + $amountToRecord,
-                'invoice_snapshot_remaining' => $newRemainingForReceipt,
+                'invoice_snapshot_paid' => $newPaidTotal,
+                'invoice_snapshot_remaining' => $newRemainingTotal,
                 'collected_by' => auth()->user()->id,
                 'collected_at' => now(),
                 'notes' => $validated['notes'],
@@ -115,9 +118,9 @@ class PaymentReceiptController extends Controller
                     ->toMediaCollection('collector_screenshot');
             }
 
-            // 4. Update Invoice: المتبقي = حصة المريض − المدفوع (حتى يتسق مع عرض "المتبقي عليه")
+            // 4. Update Invoice: paid_amount = إجمالي المستلم (مريض + تأمين)، remaining_amount = الإجمالي − المستلم (حتى يدخل جزء التأمين في المديونية حتى تُدفع المطالبة)
             $newPaidAmount = $invoice->paid_amount + $amountToRecord;
-            $newRemainingAmount = max(0, round($effectiveTotalDue - $newPaidAmount, 2));
+            $newRemainingAmount = max(0, round((float) $invoice->total_amount - $newPaidAmount, 2));
 
             $invoice->update([
                 'paid_amount' => $newPaidAmount,

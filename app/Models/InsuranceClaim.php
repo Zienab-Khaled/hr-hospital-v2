@@ -14,33 +14,51 @@ class InsuranceClaim extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
 
+    /**
+     * تسجيل سداد المطالبة من شركة التأمين.
+     * المبلغ المغطى من التأمين يبقى في المديونية حتى تُدفع المطالبة؛ عند الدفع نُنشئ دفعة من نوع تأمين ونحدّث الفاتورة.
+     */
     public function markAsPaid(): void
     {
         DB::transaction(function () {
             $this->update(['status' => 'paid']);
 
-            $invoice = $this->invoice;
-            $amount = $this->approved_amount ?: $invoice->remaining_amount;
+            $invoice = $this->invoice->load('items');
+            // مبلغ المطالبة = المعتمد من الشركة أو مجموع المغطى من بنود الفاتورة
+            $amount = $this->approved_amount !== null && (float) $this->approved_amount > 0
+                ? (float) $this->approved_amount
+                : (float) $invoice->items->sum(fn ($i) => (float) $i->insurance_covered_amount);
 
-            // 1. Create Payment record
+            if ($amount <= 0) {
+                return;
+            }
+
+            $userId = auth()->id() ?? \App\Models\User::role('admin')->first()?->id;
+
+            // 1. إنشاء دفعة في النظام من شركة التأمين
             Payment::create([
                 'invoice_id' => $invoice->id,
-                'payment_type' => $invoice->payment_type, // 'insurance'
+                'payment_type' => 'insurance',
                 'amount' => $amount,
                 'received_date' => now(),
-                'received_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'received_by' => $userId,
+                'approved_by' => $userId,
+                'approved_at' => now(),
                 'status' => 'approved',
                 'audit_status' => 'matched',
                 'notes' => __('Payment received from insurance claim: :claim', ['claim' => $this->id]),
             ]);
 
-            // 2. Update Invoice balance
-            $invoice->increment('paid_amount', $amount);
-            $invoice->decrement('remaining_amount', $amount);
+            // 2. تحديث الفاتورة: paid_amount = كل المستلم، remaining_amount = الإجمالي − المستلم
+            $newPaidAmount = (float) $invoice->paid_amount + $amount;
+            $newRemainingAmount = max(0, round((float) $invoice->total_amount - $newPaidAmount, 2));
 
-            if ($invoice->remaining_amount <= 0) {
-                $invoice->update(['status' => 'paid']);
-            }
+            $invoice->update([
+                'paid_amount' => $newPaidAmount,
+                'remaining_amount' => $newRemainingAmount,
+                'status' => $newRemainingAmount <= 0 ? 'paid' : 'pending',
+                'debt_status' => $newRemainingAmount <= 0 ? 'paid' : $invoice->debt_status,
+            ]);
         });
     }
 

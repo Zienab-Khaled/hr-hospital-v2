@@ -42,9 +42,9 @@
 
     {{-- فواتير مرضى التأمين — ليستينج + زر إنشاء فاتورة مطالبة والمبلغ المطلوب --}}
     <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
-        <h3 class="px-4 py-3 border-b border-slate-200 font-semibold text-slate-800">
+        <h1 class="px-4 py-3 border-b border-slate-200 font-semibold text-slate-800">
             {{ app()->getLocale() === 'ar' ? 'فواتير مرضى التأمين' : 'Insured Patients Invoices' }}
-        </h3>
+        </h1>
         <p class="px-4 py-2 text-sm text-slate-600 border-b border-slate-100">
             {{ app()->getLocale() === 'ar' ? 'كل فاتورة لمرضى التأمين — المبلغ المطلوب من شركة التأمين وزر لإنشاء فاتورة مطالبة.' : 'All invoices for insured patients — amount to claim from insurance and button to create claim.' }}
         </p>
@@ -67,7 +67,8 @@
                     @forelse($insuredInvoices as $inv)
                         @php
                             $claim = $inv->insuranceClaims->first();
-                            $claimAmount = (float) $inv->total_amount;
+                            // مبلغ المطالبة = ما تتحمله شركة التأمين فقط (المغطى)، وليس إجمالي الفاتورة
+                            $claimAmount = (float) $inv->items->sum(fn($i) => (float) $i->insurance_covered_amount);
                         @endphp
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="p-3">
@@ -95,7 +96,9 @@
                                         {{ app()->getLocale() === 'ar' ? 'عرض المطالبة' : 'View Claim' }}
                                     </a>
                                 @else
-                                    <a href="{{ route('insurance-claims.create', ['invoice_id' => $inv->id, 'patient_id' => $inv->patient_id]) }}" class="inline-flex items-center gap-1 bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-700 font-semibold">
+                                    <a href="{{ route('insurance-claims.create', ['invoice_id' => $inv->id, 'patient_id' => $inv->patient_id]) }}"
+                                        style="background-color: #818acc;"
+                                        class="inline-flex items-center gap-1 text-white  bg-red-600 text-xs px-3 py-1.5 rounded-lg hover:bg-red-700 font-semibold">
                                         {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة مطالبة' : 'Create Claim' }}
                                     </a>
                                 @endif

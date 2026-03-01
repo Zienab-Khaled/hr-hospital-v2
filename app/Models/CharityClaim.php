@@ -89,35 +89,45 @@ class CharityClaim extends Model
         ]);
     }
 
+    /**
+     * تسجيل سداد المطالبة من الجمعية.
+     * المبلغ اللي الجمعية تتحمله يبقى في المديونية حتى تُدفع المطالبة؛ عند الدفع نُنشئ دفعة من نوع جمعية ونحدّث الفاتورة.
+     */
     public function markAsPaid(): void
     {
         DB::transaction(function () {
             $this->update(['status' => 'paid']);
 
             $invoice = $this->invoice;
-            $amount = $this->approved_amount ?: $invoice->remaining_amount;
+            $amount = (float) ($this->approved_amount ?: $invoice->remaining_amount);
+            if ($amount <= 0) {
+                return;
+            }
 
-            // 1. Create Payment record — دائماً جمعية لأن الدفع تحويل بنكي من الجمعية (ليس كاش)
-            $payment = Payment::create([
+            $userId = auth()->id() ?? User::role('admin')->first()?->id;
+
+            Payment::create([
                 'invoice_id' => $invoice->id,
                 'payment_type' => 'charity',
                 'amount' => $amount,
                 'received_date' => now(),
-                'received_by' => auth()->id() ?? User::role('admin')->first()?->id,
-                'approved_by' => auth()->id() ?? User::role('admin')->first()?->id,
+                'received_by' => $userId,
+                'approved_by' => $userId,
                 'approved_at' => now(),
-                'status' => 'approved', // Claims are usually pre-approved or approved upon payment
+                'status' => 'approved',
                 'audit_status' => 'matched',
                 'notes' => __('Payment received from charity claim: :claim', ['claim' => $this->id]),
             ]);
 
-            // 2. Update Invoice balance
-            $invoice->increment('paid_amount', $amount);
-            $invoice->decrement('remaining_amount', $amount);
+            $newPaidAmount = (float) $invoice->paid_amount + $amount;
+            $newRemainingAmount = max(0, round((float) $invoice->total_amount - $newPaidAmount, 2));
 
-            if ($invoice->remaining_amount <= 0) {
-                $invoice->update(['status' => 'paid']);
-            }
+            $invoice->update([
+                'paid_amount' => $newPaidAmount,
+                'remaining_amount' => $newRemainingAmount,
+                'status' => $newRemainingAmount <= 0 ? 'paid' : 'pending',
+                'debt_status' => $newRemainingAmount <= 0 ? 'paid' : $invoice->debt_status,
+            ]);
         });
     }
 

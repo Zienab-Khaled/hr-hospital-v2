@@ -51,7 +51,7 @@ class InsuranceReportController extends Controller
 
         // فواتير مرضى التأمين — ليستينج لكل فاتورة مع إمكانية إنشاء مطالبة
         $insuredInvoicesQuery = Invoice::whereHas('patient', fn ($q) => $q->where('payment_type', 'insurance'))
-            ->with(['patient.insuranceCompany', 'insuranceClaims']);
+            ->with(['patient.insuranceCompany', 'insuranceClaims', 'items']);
         if ($request->filled('insured_invoice_from')) {
             $insuredInvoicesQuery->whereDate('invoice_date', '>=', $request->insured_invoice_from);
         }
