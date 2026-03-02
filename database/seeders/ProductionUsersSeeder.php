@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * إنشاء مستخدمين للإنتاج: مدير النظام عبير الرويلي + موظفين.
- * الـ username يُشتق من اسم الموظف (إنجليزي): حروف صغيرة، المسافات نقطة.
- * تشغيل: php artisan db:seed --class=ProductionUsersSeeder
+ * قيادات النظام فقط (مدير تنمية الإيرادات، مسؤولة الجمعيات، رئيس قسم التأمين).
+ * باقي الموظفين (المحصلين، التأمين، المحاسب، أمين الصندوق، المديونيات) في RevenueStaffSeeder.
+ * الـ username يُشتق من الاسم. تشغيل: php artisan db:seed --class=ProductionUsersSeeder
  */
 class ProductionUsersSeeder extends Seeder
 {
@@ -30,96 +30,34 @@ class ProductionUsersSeeder extends Seeder
     {
         $getDeptId = fn (string $name) => Department::where('name', $name)->orWhere('name_ar', $name)->value('id');
 
+        // قيادات فقط (الباقي من RevenueStaffSeeder: محصلين، تأمين، محاسب، أمين صندوق، مديونيات)
         $usersConfig = [
+            [
+                'name' => 'Jasar Mohammed Al-Duwayhi',
+                'name_ar' => 'جسار محمد الضويحي',
+                'email' => 'jasar@hospital.sa',
+                'role' => 'manager',
+                'department' => 'Management',
+                'job_title' => 'Revenue Development Manager',
+                'job_title_ar' => 'مدير تنمية الإيرادات / مدير النظام',
+            ],
             [
                 'name' => 'Abeer Al-Ruwaili',
                 'name_ar' => 'عبير الرويلي',
                 'email' => 'abeer@hospital.sa',
                 'role' => 'admin',
-                'department' => 'Management',
-                'job_title' => 'System Administrator',
-                'job_title_ar' => 'مدير النظام',
+                'department' => 'Social Services',
+                'job_title' => 'Charity Officer',
+                'job_title_ar' => 'مسؤولة الجمعيات',
             ],
             [
-                'name' => 'Ahmad Mohammed',
-                'name_ar' => 'أحمد محمد - استقبال',
-                'email' => 'reception1@hospital.sa',
-                'role' => 'reception',
-                'department' => 'Reception',
-                'job_title' => 'Receptionist',
-                'job_title_ar' => 'موظف استقبال',
-            ],
-            [
-                'name' => 'Fatima Ali',
-                'name_ar' => 'فاطمة علي - استقبال',
-                'email' => 'reception2@hospital.sa',
-                'role' => 'reception',
-                'department' => 'Reception',
-                'job_title' => 'Receptionist',
-                'job_title_ar' => 'موظف استقبال',
-            ],
-            [
-                'name' => 'Khalid Abdullah',
-                'name_ar' => 'خالد عبدالله - موظف تأمين',
-                'email' => 'insurance@hospital.sa',
-                'role' => 'insurance_clerk',
-                'department' => 'Insurance',
-                'job_title' => 'Insurance Clerk',
-                'job_title_ar' => 'موظف تأمين',
-            ],
-            [
-                'name' => 'Radi Nasser Al-Kubaidan',
-                'name_ar' => 'رضي ناصر الكبيدان',
-                'email' => 'insurance.head@hospital.sa',
+                'name' => 'Radi Al-Kubaidan',
+                'name_ar' => 'د. رضي الكبيدان',
+                'email' => 'radi.insurance@hospital.sa',
                 'role' => 'manager',
                 'department' => 'Insurance',
                 'job_title' => 'Head of Insurance Department',
                 'job_title_ar' => 'رئيس قسم التأمين',
-            ],
-            [
-                'name' => 'Mohammed Awad',
-                'name_ar' => 'محمد عوض - طبيب التأمين',
-                'email' => 'insurance.doctor@hospital.sa',
-                'role' => 'insurance_doctor',
-                'department' => 'Insurance',
-                'job_title' => 'Insurance Doctor',
-                'job_title_ar' => 'طبيب التأمين',
-            ],
-            [
-                'name' => 'Nora Saeed',
-                'name_ar' => 'نورة سعيد - موظفة جمعيات',
-                'email' => 'charity@hospital.sa',
-                'role' => 'charity_clerk',
-                'department' => 'Social Services',
-                'job_title' => 'Charity Clerk',
-                'job_title_ar' => 'موظف جمعيات',
-            ],
-            [
-                'name' => 'Abdulrahman Hassan',
-                'name_ar' => 'عبدالرحمن حسن - محاسب',
-                'email' => 'accountant@hospital.sa',
-                'role' => 'accountant',
-                'department' => 'Finance',
-                'job_title' => 'Accountant',
-                'job_title_ar' => 'محاسب',
-            ],
-            [
-                'name' => 'Mohammed Ahmed',
-                'name_ar' => 'د. محمد أحمد - طبيب',
-                'email' => 'doctor@hospital.sa',
-                'role' => 'doctor',
-                'department' => 'Internal Medicine',
-                'job_title' => 'Doctor',
-                'job_title_ar' => 'طبيب',
-            ],
-            [
-                'name' => 'Mariam Khalid',
-                'name_ar' => 'مريم خالد - ممرضة',
-                'email' => 'nurse@hospital.sa',
-                'role' => 'nurse',
-                'department' => 'Nursing',
-                'job_title' => 'Nurse',
-                'job_title_ar' => 'ممرضة',
             ],
         ];
 
