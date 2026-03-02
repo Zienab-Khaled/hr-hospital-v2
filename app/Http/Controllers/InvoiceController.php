@@ -45,7 +45,7 @@ class InvoiceController extends Controller
 
         $patients = Patient::where('is_active', true)->orderBy('name')->get();
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
-        $charityEntities = CharityEntity::orderBy('name')->get();
+        $charityEntities = CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
 
         return view('invoices.create', compact('patients', 'patient', 'visit', 'insuranceCompanies', 'charityEntities'));
     }

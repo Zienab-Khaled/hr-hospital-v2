@@ -118,7 +118,7 @@ class PatientController extends Controller
     {
         $this->authorize('patients.create');
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
-        $charityEntities = CharityEntity::orderBy('name')->get();
+        $charityEntities = CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
         return view('patients.create', compact('insuranceCompanies', 'charityEntities'));
     }
 
@@ -267,7 +267,7 @@ class PatientController extends Controller
     {
         $this->authorize('patients.edit');
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
-        $charityEntities = CharityEntity::orderBy('name')->get();
+        $charityEntities = CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
         return view('patients.edit', compact('patient', 'insuranceCompanies', 'charityEntities', 'departments'));
     }

@@ -11,12 +11,12 @@ class SettingsSeeder extends Seeder
     {
         $settings = [
             // Hospital Information
-            ['key' => 'hospital_name', 'value' => 'مستشفى النور الطبي', 'group' => 'hospital'],
-            ['key' => 'hospital_name_en', 'value' => 'Al-Nour Medical Hospital', 'group' => 'hospital'],
+            ['key' => 'hospital_name', 'value' => 'مستشفى الملك عبدالعزيز التخصصي', 'group' => 'hospital'],
+            ['key' => 'hospital_name_en', 'value' => 'King Abdulaziz Specialist Hospital', 'group' => 'hospital'],
             ['key' => 'hospital_address', 'value' => 'شارع الملك فهد، الرياض، المملكة العربية السعودية', 'group' => 'hospital'],
             ['key' => 'hospital_phone', 'value' => '+966 11 234 5678', 'group' => 'hospital'],
-            ['key' => 'hospital_email', 'value' => 'info@alnourhospital.sa', 'group' => 'hospital'],
-            ['key' => 'hospital_website', 'value' => 'www.alnourhospital.sa', 'group' => 'hospital'],
+            ['key' => 'hospital_email', 'value' => 'info@hospital.sa', 'group' => 'hospital'],
+            ['key' => 'hospital_website', 'value' => 'www.hospital.sa', 'group' => 'hospital'],
             
             // Manager Information
             ['key' => 'manager_name', 'value' => 'د. محمد أحمد السعيد', 'group' => 'hospital'],
@@ -42,8 +42,8 @@ class SettingsSeeder extends Seeder
             ['key' => 'time_format', 'value' => 'H:i', 'group' => 'general'],
             
             // Email Settings
-            ['key' => 'default_email_from', 'value' => 'noreply@alnourhospital.sa', 'group' => 'general'],
-            ['key' => 'default_email_name', 'value' => 'Al-Nour Hospital System', 'group' => 'general'],
+            ['key' => 'default_email_from', 'value' => 'noreply@hospital.sa', 'group' => 'general'],
+            ['key' => 'default_email_name', 'value' => 'مستشفى الملك عبدالعزيز التخصصي', 'group' => 'general'],
             
             // System Settings
             ['key' => 'invoice_prefix', 'value' => 'INV', 'group' => 'general'],

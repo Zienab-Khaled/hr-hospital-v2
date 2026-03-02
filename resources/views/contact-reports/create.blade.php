@@ -42,7 +42,7 @@
                     @if($patient->payment_type === 'charity' && $patient->charityEntity)
                         <div class="md:col-span-3">
                             <span class="text-blue-700 font-medium">{{ app()->getLocale() === 'ar' ? 'الجمعية:' : 'Charity:' }}</span>
-                            <span class="text-slate-900 font-semibold">{{ $patient->charityEntity->name }}</span>
+                            <span class="text-slate-900 font-semibold">{{ $patient->charityEntity->name_ar ?: $patient->charityEntity->name }}</span>
                         </div>
                     @endif
                 </div>

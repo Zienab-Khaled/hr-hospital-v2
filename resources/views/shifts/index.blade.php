@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', app()->getLocale() === 'ar' ? 'إدارة الورديات (الشيفتات)' : 'Shifts Management')
+@section('title', app()->getLocale() === 'ar' ? 'إدارة  (الشيفتات)' : 'Shifts Management')
 
 @section('content')
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'الورديات المسجلة' : 'Registered Shifts' }}</h2>
-        <p class="text-sm text-slate-500 mt-1">{{ app()->getLocale() === 'ar' ? 'إدارة أوقات العمل والورديات الرسمية في المستشفى' : 'Manage official work times and shifts in the hospital' }}</p>
+        <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'الشيفتات المسجلة' : 'Registered Shifts' }}</h2>
+        <p class="text-sm text-slate-500 mt-1">{{ app()->getLocale() === 'ar' ? 'إدارة أوقات العمل  الرسمية في المستشفى' : 'Manage official work times and shifts in the hospital' }}</p>
     </div>
     <a href="{{ route('shifts.create') }}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>

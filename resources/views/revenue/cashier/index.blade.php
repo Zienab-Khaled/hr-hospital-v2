@@ -28,7 +28,7 @@
             </h1>
             <div class="flex items-center gap-2 text-slate-500 font-bold">
                 <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                {{ app()->getLocale() === 'ar' ? 'استلام المبالغ وتوريدها للبنك (بواسطة OTP)' : 'Receive & deposit funds (Via OTP)' }}
+                {{ app()->getLocale() === 'ar' ? 'استلام المبالغ وإيداعها للبنك (بواسطة OTP)' : 'Receive & deposit funds (Via OTP)' }}
             </div>
         </div>
 
@@ -116,7 +116,7 @@
         @empty
             <div class="premium-card rounded-[3rem] p-24 text-center border-2 border-dashed border-slate-200 bg-transparent opacity-60">
                 <div class="text-6xl mb-6 grayscale">💰</div>
-                <h3 class="text-xl font-black text-slate-400">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للتوريد حالياً' : 'No invoices ready for deposit' }}</h3>
+                <h3 class="text-xl font-black text-slate-400">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للإيداع حالياً' : 'No invoices ready for deposit' }}</h3>
                 <p class="text-sm text-slate-300 font-bold mt-2">{{ app()->getLocale() === 'ar' ? 'بانتظار اعتماد المحاسب المالي' : 'Awaiting financial accountant approval' }}</p>
             </div>
         @endforelse

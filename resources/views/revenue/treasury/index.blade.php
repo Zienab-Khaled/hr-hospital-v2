@@ -42,7 +42,7 @@
                 </h1>
                 <div class="flex items-center gap-2 text-slate-500 font-bold">
                     <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    {{ app()->getLocale() === 'ar' ? 'قائمة الواردة من المحصل + جاهز للتوريد للبنك' : 'Transferred from collector & ready for bank deposit' }}
+                    {{ app()->getLocale() === 'ar' ? 'قائمة الواردة من المحصل + جاهز للإيداع للبنك' : 'Transferred from collector & ready for bank deposit' }}
                 </div>
             </div>
 
@@ -86,7 +86,7 @@
             </div>
             <div class="premium-card rounded-2xl p-5 border-2 border-amber-200 bg-amber-50/50 flex-1 min-w-[200px]">
                 <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">
-                    {{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد (بانتظار المدير)' : 'Ready (Awaiting Manager)' }}</p>
+                    {{ app()->getLocale() === 'ar' ? 'جاهزة للإيداع (بانتظار المدير)' : 'Ready (Awaiting Manager)' }}</p>
                 <p class="text-2xl font-black text-amber-800">{{ $treasuryStats['ready_count'] }}</p>
                 <p class="text-sm font-bold text-amber-700 mt-1">{{ number_format($treasuryStats['ready_amount'], 2) }}
                     {{ app()->getLocale() === 'ar' ? 'ريال' : 'EGP' }}</p>
@@ -101,7 +101,7 @@
             </div>
             <div class="premium-card rounded-2xl p-5 border-2 border-emerald-200 bg-emerald-50/50 flex-1 min-w-[200px]">
                 <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">
-                    {{ app()->getLocale() === 'ar' ? 'تم التقفيل والتوريد' : 'Deposited (Closed)' }}</p>
+                    {{ app()->getLocale() === 'ar' ? 'تم التقفيل والإيداع' : 'Deposited (Closed)' }}</p>
                 <p class="text-2xl font-black text-emerald-800">{{ $treasuryStats['deposited_count'] }}</p>
                 <p class="text-sm font-bold text-emerald-700 mt-1">
                     {{ number_format($treasuryStats['deposited_amount'], 2) }}
@@ -109,7 +109,7 @@
             </div>
         </div>
 
-        {{-- القسم 1: وردت من المحصل (matched) — زرار "جاهز للتوريد للبنك" --}}
+        {{-- القسم 1: وردت من المحصل (matched) — زرار "جاهز للإيداع للبنك" --}}
         <div class="mb-12">
             <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
                 <span class="w-10 h-10 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">📥</span>
@@ -158,7 +158,7 @@
                                 <button type="submit"
                                     class="btn-ready inline-flex items-center justify-center px-6 py-3 text-white text-xs font-black rounded-2xl gap-2">
                                     <span>🏦</span>
-                                    {{ app()->getLocale() === 'ar' ? 'جاهز للتوريد للبنك' : 'Ready for Bank Deposit' }}
+                                    {{ app()->getLocale() === 'ar' ? 'جاهز للإيداع للبنك' : 'Ready for Bank Deposit' }}
                                 </button>
                             </form>
                         </div>
@@ -173,11 +173,11 @@
             @endforelse
         </div>
 
-        {{-- القسم 2: جاهزة للتوريد (ready_for_deposit) — بانتظار تأكيد المدير فقط، بدون زر تم التوريد --}}
+        {{-- القسم 2: جاهزة للإيداع (ready_for_deposit) — بانتظار تأكيد المدير فقط، بدون زر تم الإيداع --}}
         <div class="mb-12">
             <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
                 <span class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">🏦</span>
-                {{ app()->getLocale() === 'ar' ? 'جاهزة للتوريد للبنك (بانتظار تأكيد المدير)' : 'Ready for Deposit (Awaiting Manager)' }}
+                {{ app()->getLocale() === 'ar' ? 'جاهزة للإيداع للبنك (بانتظار تأكيد المدير)' : 'Ready for Deposit (Awaiting Manager)' }}
                 <span
                     class="px-3 py-1 rounded-full text-xs font-black bg-amber-600 text-white">{{ $readyForDepositInvoices->count() }}</span>
             </h2>
@@ -218,7 +218,7 @@
                             <div class="flex flex-col items-end gap-3">
                                 <div
                                     class="px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs font-black">
-                                    {{ app()->getLocale() === 'ar' ? '⏳ بانتظار تأكيد المدير (لا يمكن تسجيل التوريد في البنك إلا بعد التأكيد)' : 'Awaiting manager confirmation (deposit can only be recorded after confirmation)' }}
+                                    {{ app()->getLocale() === 'ar' ? '⏳ بانتظار تأكيد المدير (لا يمكن تسجيل الإيداع في البنك إلا بعد التأكيد)' : 'Awaiting manager confirmation (deposit can only be recorded after confirmation)' }}
                                 </div>
                                 <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST">
                                     @csrf
@@ -235,17 +235,17 @@
             @empty
                 <div class="premium-card rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
                     <p class="text-slate-400 font-bold">
-                        {{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للتوريد بهذا التاريخ' : 'No invoices ready for deposit for this date' }}
+                        {{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للإيداع بهذا التاريخ' : 'No invoices ready for deposit for this date' }}
                     </p>
                 </div>
             @endforelse
         </div>
 
-        {{-- القسم 3: تم التأكيد من المدير (manager_confirmed) — زرار "تم التوريد في البنك" --}}
+        {{-- القسم 3: تم التأكيد من المدير (manager_confirmed) — زر "تم الإيداع في البنك" --}}
         <div class="mb-12">
             <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
                 <span class="w-10 h-10 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center">✓</span>
-                {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير (يمكن تسجيل التوريد في البنك)' : 'Manager Confirmed (Can Record Deposit)' }}
+                {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير (يمكن تسجيل الإيداع في البنك)' : 'Manager Confirmed (Can Record Deposit)' }}
                 <span
                     class="px-3 py-1 rounded-full text-xs font-black bg-violet-600 text-white">{{ $managerConfirmedInvoices->count() }}</span>
             </h2>
@@ -285,7 +285,7 @@
                             @endif
                             <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST"
                                 enctype="multipart/form-data" class="flex flex-col gap-2 items-end"
-                                onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل التوريد في البنك وإقفال المعاملة؟' : 'Confirm bank deposit and close transaction?' }}');">
+                                onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل الإيداع في البنك وإقفال المعاملة؟' : 'Confirm bank deposit and close transaction?' }}');">
                                 @csrf
                                 <label class="flex items-center gap-2 text-xs font-bold text-slate-600 w-full justify-end">
                                     <span>{{ app()->getLocale() === 'ar' ? 'صورة إيداع (اختياري):' : 'Deposit slip image (optional):' }}</span>
@@ -295,7 +295,7 @@
                                 <button type="submit"
                                     class="btn-deposited inline-flex items-center justify-center px-6 py-3 text-white text-xs font-black rounded-2xl gap-2">
                                     <span>✅</span>
-                                    {{ app()->getLocale() === 'ar' ? 'تم التوريد في البنك (إقفال)' : 'Deposited at Bank (Close)' }}
+                                    {{ app()->getLocale() === 'ar' ? 'تم الإيداع في البنك (إقفال)' : 'Deposited at Bank (Close)' }}
                                 </button>
                             </form>
                         </div>
@@ -310,12 +310,12 @@
             @endforelse
         </div>
 
-        {{-- القسم 4: تم التوريد (اتدفعت) — للعرض فقط --}}
+        {{-- القسم 4: تم الإيداع (اتدفعت) — للعرض فقط --}}
         <div class="mt-12">
             <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
                 <span
                     class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">✅</span>
-                {{ app()->getLocale() === 'ar' ? 'تم التوريد (اتدفعت)' : 'Deposited' }}
+                {{ app()->getLocale() === 'ar' ? 'تم الإيداع (اتدفعت)' : 'Deposited' }}
                 <span
                     class="px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white">{{ $depositedInvoices->count() }}</span>
             </h2>
@@ -344,7 +344,7 @@
                                 <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)</p>
                                 @if ($invoice->deposited_at)
                                     <p class="text-xs font-bold text-emerald-600 mt-1">
-                                        {{ app()->getLocale() === 'ar' ? 'تاريخ التوريد:' : 'Deposited at:' }}
+                                        {{ app()->getLocale() === 'ar' ? 'تاريخ الإيداع:' : 'Deposited at:' }}
                                         {{ $invoice->deposited_at->translatedFormat('d/m/Y H:i') }}</p>
                                 @endif
                             </div>
@@ -377,7 +377,7 @@
             @empty
                 <div class="premium-card rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
                     <p class="text-slate-400 font-bold">
-                        {{ app()->getLocale() === 'ar' ? 'لا توجد فواتير تم توريدها بهذا التاريخ' : 'No deposited invoices for this date' }}
+                        {{ app()->getLocale() === 'ar' ? 'لا توجد فواتير تم إيداعها بهذا التاريخ' : 'No deposited invoices for this date' }}
                     </p>
                 </div>
             @endforelse

@@ -47,7 +47,7 @@
             </h1>
             <div class="flex items-center gap-2 text-slate-500 font-bold">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                {{ app()->getLocale() === 'ar' ? 'نظام تدقيق العمليات والتوريد المتقدم' : 'Advanced Audit & Deposit System' }}
+                {{ app()->getLocale() === 'ar' ? 'نظام تدقيق العمليات والإيداع المتقدم' : 'Advanced Audit & Deposit System' }}
             </div>
         </div>
 
@@ -64,7 +64,7 @@
             <div class="flex flex-col gap-1.5">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{{ app()->getLocale() === 'ar' ? 'الوردية' : 'Shift' }}</label>
                 <select name="shift_id" class="block w-44 rounded-2xl border-slate-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-bold py-2.5">
-                    <option value="">{{ app()->getLocale() === 'ar' ? 'كل الورديات' : 'All Shifts' }}</option>
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'كل الشيفتات' : 'All Shifts' }}</option>
                     @foreach($shifts as $shift)
                         <option value="{{ $shift->id }}" {{ $shiftId == $shift->id ? 'selected' : '' }}>
                             {{ app()->getLocale() === 'ar' ? ($shift->name_ar ?? $shift->name) : $shift->name }}
@@ -286,7 +286,7 @@
                             </div>
                         @elseif($invoice->audit_status === 'ready_for_deposit')
                             <div class="w-full flex flex-col gap-3">
-                                <p class="text-amber-700 text-xs font-black text-center">{{ app()->getLocale() === 'ar' ? 'أمين الصندوق سجّل جاهزية التوريد. يرجى التأكيد أن الاستلام تم.' : 'Cashier marked ready for deposit. Please confirm receipt.' }}</p>
+                                <p class="text-amber-700 text-xs font-black text-center">{{ app()->getLocale() === 'ar' ? 'أمين الصندوق سجّل جاهزية الإيداع. يرجى التأكيد أن الاستلام تم.' : 'Cashier marked ready for deposit. Please confirm receipt.' }}</p>
                                 <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST" class="w-full">
                                     @csrf
                                     <button type="submit" class="w-full py-4 bg-violet-600 text-white text-xs font-black rounded-2xl shadow-xl hover:bg-violet-700 flex items-center justify-center gap-2">
@@ -297,14 +297,14 @@
                         @elseif($invoice->audit_status === 'manager_confirmed')
                             <div class="w-full py-4 bg-violet-50 text-violet-700 text-xs font-black rounded-2xl text-center border-2 border-violet-100 shadow-inner flex flex-col items-center justify-center gap-3">
                                 <span>✓</span>
-                                {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير — أمين الصندوق يمكنه تسجيل التوريد في البنك' : 'Manager confirmed — Cashier can record bank deposit' }}
+                                {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير — أمين الصندوق يمكنه تسجيل الإيداع في البنك' : 'Manager confirmed — Cashier can record bank deposit' }}
                                 <a href="{{ route('revenue.treasury.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700">
                                     {{ app()->getLocale() === 'ar' ? 'تبويب أمين الصندوق' : 'Treasury' }}
                                 </a>
                             </div>
                         @elseif($invoice->audit_status === 'deposited')
                             <div class="w-full py-4 bg-emerald-50 text-emerald-700 text-xs font-black rounded-2xl text-center border-2 border-emerald-100 shadow-inner flex items-center justify-center gap-3">
-                                <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم التوريد في البنك (إقفال)' : 'Deposited at Bank (Closed)' }}
+                                <span>✅</span> {{ app()->getLocale() === 'ar' ? 'تم الإيداع في البنك (إقفال)' : 'Deposited at Bank (Closed)' }}
                             </div>
                         @else
                            <div class="w-full py-4 bg-slate-50 text-slate-600 text-xs font-black rounded-2xl text-center border-2 border-slate-100 shadow-inner flex items-center justify-center gap-3">
@@ -369,7 +369,7 @@
 
                     <div class="space-y-4">
                         <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ app()->getLocale() === 'ar' ? 'حالة التوريد البنكي' : 'Bank Deposit Progress' }}</h4>
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ app()->getLocale() === 'ar' ? 'حالة الإيداع البنكي' : 'Bank Deposit Progress' }}</h4>
                             <span class="text-[10px] font-black text-emerald-500">{{ round($invoices->count() > 0 ? ($invoices->where('audit_status', 'ready_for_deposit')->count() / $invoices->count() * 100) : 0) }}%</span>
                         </div>
                         <div class="w-full bg-slate-100 rounded-full h-3 p-0.5 border border-slate-200">
@@ -385,7 +385,7 @@
                     <div class="pt-8 border-t border-slate-100">
                         <div class="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                             <p class="text-[10px] text-indigo-900 font-bold leading-relaxed italic">
-                                {{ app()->getLocale() === 'ar' ? 'ملاحظة: عند الضغط على "مطابقة"، تنتقل الفاتورة إلى عهدة المحاسب المركزية قبل تحويلها للتوريد البنكي النهائي.' : 'Note: matching validates the operation, moving it to central audit before final bank deposit clearance.' }}
+                                {{ app()->getLocale() === 'ar' ? 'ملاحظة: عند الضغط على "مطابقة"، تنتقل الفاتورة إلى عهدة المحاسب المركزية قبل تحويلها للإيداع البنكي النهائي.' : 'Note: matching validates the operation, moving it to central audit before final bank deposit clearance.' }}
                             </p>
                         </div>
                     </div>

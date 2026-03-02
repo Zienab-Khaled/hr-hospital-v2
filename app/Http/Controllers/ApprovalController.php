@@ -77,7 +77,7 @@ class ApprovalController extends Controller
         })->get();
         if ($notifyUsers->isNotEmpty()) {
             $statusLabel = $approval->status === 'approved' ? (app()->getLocale() === 'ar' ? 'موافقة' : 'Approved') : (app()->getLocale() === 'ar' ? 'مرفوض' : 'Rejected');
-            $partyName = $approval->insuranceCompany?->name ?? $approval->charityEntity?->name ?? 'External Party';
+            $partyName = $approval->insuranceCompany?->name ?? $approval->charityEntity?->name_ar ?? $approval->charityEntity?->name ?? 'External Party';
 
             Notification::send($notifyUsers, new SystemNotification([
                 'title' => (app()->getLocale() === 'ar' ? 'تحديث طلب موافقة: ' : 'Approval update: ') . $statusLabel,
