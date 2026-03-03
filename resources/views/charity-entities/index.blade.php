@@ -31,7 +31,7 @@
             <tbody>
                 @foreach ($entities as $e)
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
-                        <td class="p-3">{{ app()->getLocale() === 'ar' ? ($e->name_ar ?: $e->name) : $e->name }}</td>
+                        <td class="p-3">{{ $e->name_ar ?: $e->name }}</td>
                         <td class="p-3">{{ $e->contact_person ?: '-' }}</td>
                         <td class="p-3">{{ $e->phone ?: '-' }}</td>
                         <td class="p-3">{{ $e->patients_count }}</td>

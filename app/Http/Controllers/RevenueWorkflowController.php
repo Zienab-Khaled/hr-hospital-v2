@@ -83,7 +83,7 @@ class RevenueWorkflowController extends Controller
 
         $this->notifyWorkflowUsers($invoice, 'match');
 
-        return back()->with('success', app()->getLocale() === 'ar' ? 'تمت المطابقة بنجاح (جاهز للتوريد).' : 'Matched successfully (Ready for deposit).');
+        return back()->with('success', app()->getLocale() === 'ar' ? 'تمت المطابقة بنجاح (جاهز للإيداع).' : 'Matched successfully (Ready for deposit).');
     }
 
     public function reject(Request $request, Invoice $invoice)
@@ -103,7 +103,7 @@ class RevenueWorkflowController extends Controller
     }
 
     /**
-     * أمين الصندوق يعلن أن الفاتورة جاهزة للتوريد للبنك (استلم المبلغ).
+     * أمين الصندوق يعلن أن الفاتورة جاهزة للإيداع للبنك (استلم المبلغ).
      */
     public function markReadyForDeposit(Invoice $invoice)
     {
@@ -121,7 +121,7 @@ class RevenueWorkflowController extends Controller
         $this->notifyWorkflowUsers($invoice, 'ready_for_deposit');
 
         return back()->with('success', app()->getLocale() === 'ar'
-            ? 'تم تسجيل جاهزية التوريد للبنك. بانتظار تأكيد المدير.'
+            ? 'تم تسجيل جاهزية الإيداع للبنك. بانتظار تأكيد المدير.'
             : 'Marked ready for bank deposit. Awaiting manager confirmation.');
     }
 
@@ -133,7 +133,7 @@ class RevenueWorkflowController extends Controller
         Gate::authorize('reports.view');
 
         if ($invoice->audit_status !== 'ready_for_deposit') {
-            return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'يجب أن تكون الفاتورة في حالة "جاهز للتوريد" لتأكيد المدير.' : 'Invoice must be ready for deposit to confirm.']);
+            return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'يجب أن تكون الفاتورة في حالة "جاهز للإيداع" لتأكيد المدير.' : 'Invoice must be ready for deposit to confirm.']);
         }
 
         $invoice->update(['audit_status' => 'manager_confirmed']);
@@ -141,12 +141,12 @@ class RevenueWorkflowController extends Controller
         $this->notifyWorkflowUsers($invoice, 'manager_confirmed');
 
         return back()->with('success', app()->getLocale() === 'ar'
-            ? 'تم التأكيد من المدير. أمين الصندوق يمكنه الآن تسجيل التوريد في البنك.'
+            ? 'تم التأكيد من المدير. أمين الصندوق يمكنه الآن تسجيل الإيداع في البنك.'
             : 'Manager confirmed. Cashier can now record bank deposit.');
     }
 
     /**
-     * تبويب أمين الصندوق: قائمة الفواتير المُحوّلة بعد المطابقة + جاهزة للتوريد.
+     * تبويب أمين الصندوق: قائمة الفواتير المُحوّلة بعد المطابقة + جاهزة للإيداع.
      */
     public function treasuryIndex(Request $request)
     {
@@ -193,7 +193,7 @@ class RevenueWorkflowController extends Controller
     }
 
     /**
-     * تم التوريد في البنك (إقفال). مسموح فقط بعد تأكيد المدير (manager_confirmed).
+     * تم الإيداع في البنك (إقفال). مسموح فقط بعد تأكيد المدير (manager_confirmed).
      */
     public function markDeposited(Request $request, Invoice $invoice)
     {
@@ -201,7 +201,7 @@ class RevenueWorkflowController extends Controller
 
         if ($invoice->audit_status !== 'manager_confirmed') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar'
-                ? 'لا يمكن تسجيل التوريد إلا بعد تأكيد المدير أن أمين الصندوق استلم. الحالة الحالية: ' . ($invoice->getStatusLabelAttribute() ?? $invoice->audit_status)
+                ? 'لا يمكن تسجيل الإيداع إلا بعد تأكيد المدير أن أمين الصندوق استلم. الحالة الحالية: ' . ($invoice->getStatusLabelAttribute() ?? $invoice->audit_status)
                 : 'Deposit can only be recorded after manager confirmation.']);
         }
 
@@ -220,7 +220,7 @@ class RevenueWorkflowController extends Controller
         $this->notifyWorkflowUsers($invoice, 'deposited');
 
         return back()->with('success', app()->getLocale() === 'ar'
-            ? 'تم تسجيل التوريد وإقفال المعاملة.'
+            ? 'تم تسجيل الإيداع وإقفال المعاملة.'
             : 'Deposit recorded and transaction closed.');
     }
 
@@ -240,19 +240,19 @@ class RevenueWorkflowController extends Controller
 
         $messages = [
             'match' => [
-                'ar' => "تمت مطابقة الفاتورة #{$invNum} (مبلغ {$amount} ريال). جاهزة لأمين الصندوق لتسجيل جاهزية التوريد.",
+                'ar' => "تمت مطابقة الفاتورة #{$invNum} (مبلغ {$amount} ريال). جاهزة لأمين الصندوق لتسجيل جاهزية الإيداع.",
                 'en' => "Invoice #{$invNum} matched (amount {$amount}). Ready for cashier to mark ready for deposit.",
             ],
             'ready_for_deposit' => [
-                'ar' => "أمين الصندوق سجّل جاهزية التوريد للبنك للفاتورة #{$invNum}. يرجى التأكيد من المدير.",
+                'ar' => "أمين الصندوق سجّل جاهزية الإيداع للبنك للفاتورة #{$invNum}. يرجى التأكيد من المدير.",
                 'en' => "Cashier marked invoice #{$invNum} ready for bank deposit. Manager confirmation required.",
             ],
             'manager_confirmed' => [
-                'ar' => "تم التأكيد من المدير للفاتورة #{$invNum}. يمكن تسجيل التوريد في البنك من تبويب أمين الصندوق.",
+                'ar' => "تم التأكيد من المدير للفاتورة #{$invNum}. يمكن تسجيل الإيداع في البنك من تبويب أمين الصندوق.",
                 'en' => "Manager confirmed invoice #{$invNum}. You can now record bank deposit in Treasury.",
             ],
             'deposited' => [
-                'ar' => "تم تسجيل التوريد في البنك للفاتورة #{$invNum} (مبلغ {$amount} ريال).",
+                'ar' => "تم تسجيل الإيداع في البنك للفاتورة #{$invNum} (مبلغ {$amount} ريال).",
                 'en' => "Bank deposit recorded for invoice #{$invNum} (amount {$amount}).",
             ],
         ];
@@ -261,7 +261,7 @@ class RevenueWorkflowController extends Controller
         $msg = $messages[$step][$locale] ?? $messages[$step]['ar'];
 
         Notification::send($users, new SystemNotification([
-            'title' => app()->getLocale() === 'ar' ? 'فلو التوريد - تحديث' : 'Deposit workflow update',
+            'title' => app()->getLocale() === 'ar' ? 'فلو الإيداع - تحديث' : 'Deposit workflow update',
             'message' => $msg,
             'action_url' => $url,
             'type' => 'info',

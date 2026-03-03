@@ -162,14 +162,13 @@
         .payment-type-section .bank-row span { font-size: 12px; }
         .payment-type-section .bank-row input { width: 100px; padding: 2px 5px; border: 1px solid #999; font-size: 11px; }
 
-        /* توقيعات: المحصل، التوقيع، الختم + ثلاثة صناديق الأصل للمسدة، صورة المحصل، صورة للملف */
+        /* توقيعات: المحصل، التوقيع، الختم (بدون تسمية نسخ) */
         .footer-sigs { margin-top: 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
         .footer-sigs .col { flex: 1; min-width: 120px; max-width: 180px; text-align: center; }
         .footer-sigs .col-title { font-weight: 700; margin-bottom: 6px; font-size: 12px; }
         .footer-sigs .col-content { min-height: 50px; border: 1px solid #333; padding: 6px; }
         .footer-sigs .sig-img img { max-width: 100px; max-height: 44px; margin-bottom: 2px; display: block; margin-left: auto; margin-right: auto; }
         .footer-sigs .sig-line { border-top: 1px solid #000; padding-top: 3px; font-size: 11px; margin-top: 4px; }
-        .footer-sigs .copy-note { font-size: 9px; color: #222; margin-top: 6px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -225,26 +224,26 @@
             </div>
         </div>
 
-        {{-- جدول الخدمات المقدمة --}}
+        {{-- جدول الخدمات — ترتيب الأعمدة كالإيصال الورقي: البيان ثم الكمية ثم السعر ثم المبلغ ثم الرمز (يسار) --}}
         <table class="services-table">
             <thead>
                 <tr>
-                    <th class="col-code">الرمز</th>
                     <th class="col-desc">البيان</th>
                     <th class="col-qty">الكمية</th>
                     <th class="col-unit">السعر الافرادي</th>
                     <th class="col-amount">المبلغ</th>
+                    <th class="col-code">الرمز</th>
                 </tr>
             </thead>
             <tbody>
                 @if(!empty($receipt->selected_items))
                     @foreach($receipt->selected_items as $item)
                     <tr>
-                        <td class="col-code">{{ $item['code'] ?? '—' }}</td>
                         <td class="col-desc">{{ $item['name'] ?? '—' }}</td>
                         <td class="col-qty">{{ $item['qty'] ?? 0 }}</td>
                         <td class="col-unit">{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
                         <td class="col-amount">{{ number_format($item['total'] ?? 0, 2) }}</td>
+                        <td class="col-code">{{ $item['code'] ?? '—' }}</td>
                     </tr>
                     @endforeach
                 @else
@@ -280,7 +279,7 @@
             </div>
         </div>
 
-        {{-- المحصل، التوقيع، الختم — ثلاثة صناديق: الأصل للمسدة، صورة المحصل، صورة للملف --}}
+        {{-- المحصل، التوقيع، الختم — بدون تسمية (أصل للمسدد / صورة المحصل / صورة للملف) --}}
         <div class="footer-sigs">
             <div class="col">
                 <div class="col-title">المحصل</div>
@@ -292,12 +291,10 @@
                     @endif
                     <div class="sig-line">{{ $receipt->collectedBy->name_ar ?? $receipt->collectedBy->name ?? '________________' }}</div>
                 </div>
-                <div class="copy-note">الأصل للمسدة</div>
             </div>
             <div class="col">
                 <div class="col-title">التوقيع</div>
                 <div class="col-content" style="min-height:50px;"></div>
-                <div class="copy-note">صورة المحصل</div>
             </div>
             <div class="col">
                 <div class="col-title">الختم</div>
@@ -308,7 +305,6 @@
                         <div style="min-height:40px;"></div>
                     @endif
                 </div>
-                <div class="copy-note">صورة للملف</div>
             </div>
         </div>
     </div>

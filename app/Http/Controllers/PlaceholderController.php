@@ -1218,7 +1218,7 @@ class PlaceholderController extends Controller
             []
         );
 
-        $entities = $query->orderBy('name')
+        $entities = $query->orderByRaw('COALESCE(name_ar, name)')
             ->paginate($this->getPerPage($request))
             ->withQueryString();
 

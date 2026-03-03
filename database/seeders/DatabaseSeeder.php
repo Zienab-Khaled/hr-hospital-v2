@@ -28,7 +28,8 @@ class DatabaseSeeder extends Seeder
             InsuranceCompaniesSeeder::class,
             CharityEntitiesSeeder::class,
             RolesAndPermissionsSeeder::class,
-            UsersSeeder::class,
+            // UsersSeeder::class,
+            ProductionUsersSeeder::class,
             RevenueStaffSeeder::class,
             PatientsSeeder::class,
         ]);

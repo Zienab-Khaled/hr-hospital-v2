@@ -49,10 +49,10 @@
                 <select name="charity_entity_id"
                     class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                    @foreach (\App\Models\CharityEntity::orderBy('name')->get() as $charity)
+                    @foreach (\App\Models\CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get() as $charity)
                         <option value="{{ $charity->id }}"
                             {{ request('charity_entity_id') == $charity->id ? 'selected' : '' }}>
-                            {{ app()->getLocale() === 'ar' && $charity->name_ar ? $charity->name_ar : $charity->name }}
+                            {{ $charity->name_ar ?: $charity->name }}
                         </option>
                     @endforeach
                 </select>
@@ -171,10 +171,10 @@
                 <select name="charity_entity_id"
                     class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
-                    @foreach (\App\Models\CharityEntity::orderBy('name')->get() as $charity)
+                    @foreach (\App\Models\CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get() as $charity)
                         <option value="{{ $charity->id }}"
                             {{ request('charity_entity_id') == $charity->id ? 'selected' : '' }}>
-                            {{ app()->getLocale() === 'ar' && $charity->name_ar ? $charity->name_ar : $charity->name }}
+                            {{ $charity->name_ar ?: $charity->name }}
                         </option>
                     @endforeach
                 </select>

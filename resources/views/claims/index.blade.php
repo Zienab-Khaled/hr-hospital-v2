@@ -27,7 +27,7 @@
                 <thead class="bg-slate-50 border-b"><tr><th class="text-start p-3">{{ __("Patients") }}</th><th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الجمعية' : 'Entity' }}</th><th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'تاريخ الإرسال' : 'Sent' }}</th><th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'المبلغ المعتمد' : 'Approved amount' }}</th><th class="text-start p-3">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th></tr></thead>
                 <tbody>
                     @forelse($charityClaims as $c)
-                        <tr class="border-b hover:bg-slate-50"><td class="p-3">{{ $c->invoice?->patient?->name }}</td><td class="p-3">{{ $c->charityEntity?->name }}</td><td class="p-3">{{ $c->sent_date?->format('Y-m-d') }}</td><td class="p-3">@currency($c->approved_amount ?? 0)</td><td class="p-3">{{ $c->status ?? '—' }}</td></tr>
+                        <tr class="border-b hover:bg-slate-50"><td class="p-3">{{ $c->invoice?->patient?->name }}</td><td class="p-3">{{ $c->charityEntity?->name_ar ?? $c->charityEntity?->name ?? '—' }}</td><td class="p-3">{{ $c->sent_date?->format('Y-m-d') }}</td><td class="p-3">@currency($c->approved_amount ?? 0)</td><td class="p-3">{{ $c->status ?? '—' }}</td></tr>
                     @empty
                         <tr><td colspan="5" class="p-6 text-center text-slate-500">{{ app()->getLocale() === 'ar' ? 'لا توجد مطالبات جمعيات' : 'No charity claims' }}</td></tr>
                     @endforelse

@@ -119,9 +119,9 @@ class Invoice extends Model implements HasMedia
                 'paid' => 'مدفوعة',
                 'under_review' => 'قيد المراجعة',
                 'matched' => 'مكتمل (مطابق)',
-                'ready_for_deposit' => 'جاهز للتوريد',
+                'ready_for_deposit' => 'جاهز للإيداع',
                 'manager_confirmed' => 'تم التأكيد من المدير',
-                'deposited' => 'تم التوريد',
+                'deposited' => 'تم الإيداع',
             ],
             'en' => [
                 'pending' => 'Pending',
@@ -219,7 +219,7 @@ class Invoice extends Model implements HasMedia
         $this->addMediaCollection('signed_other')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']);
 
-        /** صورة إيداع البنك (اختياري) — يرفقها أمين الصندوق عند تسجيل التوريد */
+        /** صورة إيداع البنك (اختياري) — يرفقها أمين الصندوق عند تسجيل الإيداع */
         $this->addMediaCollection('bank_deposit')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp']);
     }

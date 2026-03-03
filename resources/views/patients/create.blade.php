@@ -327,7 +327,7 @@
                                 @foreach ($charityEntities as $e)
                                     <option value="{{ $e->id }}"
                                         {{ old('charity_entity_id') == $e->id ? 'selected' : '' }}>
-                                        {{ $e->name }}
+                                        {{ $e->name_ar ?: $e->name }}
                                     </option>
                                 @endforeach
                             </select>

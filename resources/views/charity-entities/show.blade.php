@@ -3,7 +3,7 @@
 @section('content')
     <div class="max-w-2xl mx-auto">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? ($charity_entity->name_ar ?: $charity_entity->name) : $charity_entity->name }}</h2>
+            <h2 class="text-xl font-semibold text-slate-800">{{ $charity_entity->name_ar ?: $charity_entity->name }}</h2>
             <a href="{{ route('charity-entities.index') }}" class="text-slate-500 hover:text-slate-700">{{ app()->getLocale() === 'ar' ? 'عودة' : 'Back' }}</a>
         </div>
         <div class="bg-white rounded-lg shadow overflow-hidden">

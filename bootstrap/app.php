@@ -30,7 +30,6 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json(['message' => __('Session expired. Please try again.')], 419);
             }
-            // If session expired on logout, send to login instead of back (avoids 419 page)
             if ($request->is('logout')) {
                 return redirect()->route('login')
                     ->with('error', __('Session expired. Please try again.'));
@@ -38,5 +37,20 @@ return Application::configure(basePath: dirname(__DIR__))
             return redirect()->back()
                 ->withInput($request->except('password', '_token'))
                 ->with('error', __('Session expired. Please try again.'));
+        });
+
+        // عند خطأ صلاحيات مفتاح OAuth (بعد فترة عدم استخدام أو على السيرفر): إعادة توجيه لتسجيل الدخول بدل 500
+        $exceptions->renderable(function (\Throwable $e, $request) {
+            $msg = $e->getMessage();
+            $isOauthKeyError = (str_contains($msg, 'oauth-public.key') || str_contains($msg, 'oauth-private.key'))
+                && (str_contains($msg, 'permission') || str_contains($msg, '644'));
+            if ($isOauthKeyError) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => __('Session or server error. Please log in again.')], 500);
+                }
+                return redirect()->route('login')
+                    ->with('error', __('Session or server error. Please log in again.'));
+            }
+            return null;
         });
     })->create();

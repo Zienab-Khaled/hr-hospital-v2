@@ -43,7 +43,7 @@ class CharityClaimController extends Controller
         }
 
         $claims = $query->latest()->paginate(20, ['*'], 'charity_page');
-        $charityEntities = \App\Models\CharityEntity::orderBy('name')->get();
+        $charityEntities = \App\Models\CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
 
         // Insurance claims tab
         $insuranceClaims = \App\Models\InsuranceClaim::with(['invoice.patient', 'insuranceCompany', 'sentByUser'])
