@@ -6,33 +6,23 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * قيادات النظام فقط (مدير تنمية الإيرادات، مسؤولة الجمعيات، رئيس قسم التأمين).
  * باقي الموظفين (المحصلين، التأمين، المحاسب، أمين الصندوق، المديونيات) في RevenueStaffSeeder.
- * الـ username يُشتق من الاسم. تشغيل: php artisan db:seed --class=ProductionUsersSeeder
+ * تشغيل: php artisan db:seed --class=ProductionUsersSeeder
  */
 class ProductionUsersSeeder extends Seeder
 {
-    /** اشتقاق username من الاسم الإنجليزي: مثال "Abeer Al-Ruwaili" → abeer.alruwaili */
-    private static function usernameFromName(string $name): string
-    {
-        $name = preg_replace('/^\s*(Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+/i', '', $name);
-        $slug = strtolower($name);
-        $slug = preg_replace('/[^a-z0-9\s\-]/', '', $slug);
-        $slug = preg_replace('/[\s\-]+/', '.', trim($slug));
-        $slug = preg_replace('/\.+/', '.', $slug);
-        return $slug ?: 'user';
-    }
-
     public function run(): void
     {
         $getDeptId = fn (string $name) => Department::where('name', $name)->orWhere('name_ar', $name)->value('id');
 
-        // قيادات فقط (الباقي من RevenueStaffSeeder: محصلين، تأمين، محاسب، أمين صندوق، مديونيات)
+        // قيادات — username + باسورد قوي خاص بكل مستخدم
         $usersConfig = [
             [
+                'username' => 'jasar.alduwayhi',
+                'password' => 'J@sar#Rev2025!Duwayhi',
                 'name' => 'Jasar Mohammed Al-Duwayhi',
                 'name_ar' => 'جسار محمد الضويحي',
                 'email' => 'jasar@hospital.sa',
@@ -42,6 +32,8 @@ class ProductionUsersSeeder extends Seeder
                 'job_title_ar' => 'مدير تنمية الإيرادات / مدير النظام',
             ],
             [
+                'username' => 'abeer.alruwaili',
+                'password' => 'Ab33r!Ruw#2025$Revenue',
                 'name' => 'Abeer Al-Ruwaili',
                 'name_ar' => 'عبير الرويلي',
                 'email' => 'abeer@hospital.sa',
@@ -51,6 +43,8 @@ class ProductionUsersSeeder extends Seeder
                 'job_title_ar' => 'مسؤولة الجمعيات',
             ],
             [
+                'username' => 'radi.alkubaidan',
+                'password' => 'R@di#Ins2025!Kubaidan',
                 'name' => 'Radi Al-Kubaidan',
                 'name_ar' => 'د. رضي الكبيدان',
                 'email' => 'radi.insurance@hospital.sa',
@@ -62,18 +56,10 @@ class ProductionUsersSeeder extends Seeder
         ];
 
         $credentials = [];
-        $usedUsernames = [];
 
         foreach ($usersConfig as $config) {
-            $baseUsername = self::usernameFromName($config['name']);
-            $username = $baseUsername;
-            $n = 1;
-            while (in_array($username, $usedUsernames, true) || User::where('username', $username)->exists()) {
-                $username = $baseUsername . '.' . (++$n);
-            }
-            $usedUsernames[] = $username;
-
-            $password = Str::password(14, true, true, true, false);
+            $username = $config['username'];
+            $password = $config['password'];
             $deptId = $getDeptId($config['department']);
 
             $user = User::updateOrCreate(

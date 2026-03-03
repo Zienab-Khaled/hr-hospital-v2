@@ -34,15 +34,18 @@
         class="flex flex-col justify-center p-8 md:p-20 bg-[#F3F7FA]">
             <div class="max-w-md w-full">
                 {{-- Brand --}}
-                <p class="text-blue-600 font-bold text-xl mb-12">{{ app()->getLocale() === 'ar' ? 'إيرادات المستشفى' : 'Hospital Revenue' }}</p>
+                <p class="text-blue-600 font-bold text-xl mb-12">
+                    IRD - إيراد</p>
 
                 {{-- Heading --}}
                 <h1 class="text-3xl md:text-4xl font-extrabold text-[#1F2937] leading-tight mb-4">
-                    {{ app()->getLocale() === 'ar' ? 'تحليلات متقدمة لنمو وتنمية إيرادات المستشفيات' : 'Advanced Analytics Driving Growth For Hospital Revenue Management' }}
+                    {{ app()->getLocale() === 'ar' ? 'IRAD – Internal Revenue & Development' : 'IRAD – Internal Revenue & Development' }}
                 </h1>
 
                 {{-- Welcome Text --}}
-                <p class="text-slate-400 text-sm mb-10">Welcome back! Please login to your account.</p>
+                {{-- <p class="text-slate-400 text-sm mb-10">
+                    {{ app()->getLocale() === 'ar' ? 'IRAD – Internal Revenue & Development' : 'IRAD – Internal Revenue & Development' }}
+                </p> --}}
 
                 @if (session('error'))
                     <div class="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
@@ -93,7 +96,7 @@
             </div>
         </div>
     </div>
-    <footer class="mt-8 text-center text-slate-400 text-xs">
+    <footer class="mt-8 text-center text-slate-400 text-lg">
         &copy; {{ date('Y') }} <span class="font-semibold text-slate-500">Abeer Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
     </footer>
 </body>
