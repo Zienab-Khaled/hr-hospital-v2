@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,11 @@ class ReportExportController extends Controller
             ];
         })->sortByDesc('total')->values();
 
+        $logoKey = Setting::get('logo');
+        $logoPath = $logoKey && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $logoKey))
+            ? storage_path('app/public/' . $logoKey)
+            : null;
+
         return [
             'start' => $start,
             'end' => $end,
@@ -67,6 +73,11 @@ class ReportExportController extends Controller
             'collectionRate' => $collectionRate,
             'paymentsByType' => $paymentsByType,
             'deptPerformance' => $deptPerformance,
+            'logoPath' => $logoPath,
+            'hospitalName' => Setting::get('hospital_name', ''),
+            'healthClusterName' => Setting::get('health_cluster_name', ''),
+            'managerTitle' => Setting::get('manager_title', app()->getLocale() === 'ar' ? 'مدير إدارة تنمية الإيرادات' : 'Revenue Development Manager'),
+            'managerName' => Setting::get('manager_name', 'جسار محمد الضويحي'),
         ];
     }
 
