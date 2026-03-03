@@ -25,6 +25,7 @@ Route::get('/', function () {
 
 // بديل لـ storage:link عندما exec/symlink معطّلين على الاستضافة — تقديم ملفات storage/app/public عبر رووت
 Route::get('storage/{path}', function (string $path) {
+    $path = rawurldecode($path);
     $path = str_replace(['..', '\\'], '', $path);
     $fullPath = storage_path('app/public/' . $path);
     $publicRoot = realpath(storage_path('app/public'));
