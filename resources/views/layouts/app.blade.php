@@ -201,10 +201,14 @@
                 <div
                     class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
                     <div>
-                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">Abeer Suleiman</span>.
+                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">عبير سليمان الرويلي</span>.
                         {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
                     </div>
-
+                    <div class="flex items-center gap-4 text-slate-400">
+                        <span class="hover:text-slate-600 transition-colors">إيراد: حوكمة | تحول رقمي | استدامة</span>
+                        <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                        <span class="hover:text-slate-600 transition-colors">إشراف وتطوير النظام</span>
+                    </div>
                 </div>
             </footer>
         </main>
