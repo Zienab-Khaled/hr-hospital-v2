@@ -224,26 +224,26 @@
             </div>
         </div>
 
-        {{-- جدول الخدمات المقدمة --}}
+        {{-- جدول الخدمات — ترتيب الأعمدة كالإيصال الورقي: البيان ثم الكمية ثم السعر ثم المبلغ ثم الرمز (يسار) --}}
         <table class="services-table">
             <thead>
                 <tr>
-                    <th class="col-code">الرمز</th>
                     <th class="col-desc">البيان</th>
                     <th class="col-qty">الكمية</th>
                     <th class="col-unit">السعر الافرادي</th>
                     <th class="col-amount">المبلغ</th>
+                    <th class="col-code">الرمز</th>
                 </tr>
             </thead>
             <tbody>
                 @if(!empty($receipt->selected_items))
                     @foreach($receipt->selected_items as $item)
                     <tr>
-                        <td class="col-code">{{ $item['code'] ?? '—' }}</td>
                         <td class="col-desc">{{ $item['name'] ?? '—' }}</td>
                         <td class="col-qty">{{ $item['qty'] ?? 0 }}</td>
                         <td class="col-unit">{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
                         <td class="col-amount">{{ number_format($item['total'] ?? 0, 2) }}</td>
+                        <td class="col-code">{{ $item['code'] ?? '—' }}</td>
                     </tr>
                     @endforeach
                 @else
