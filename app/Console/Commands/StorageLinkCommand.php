@@ -6,14 +6,14 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
 /**
- * بديل آمن عندما exec/symlink معطّلين على الاستضافة (مثل Hostinger).
- * تشغيل: php artisan storage:link-safe — يوضح أن المشروع يخدم الملفات عبر رووت ولا يحتاج تشغيل storage:link.
+ * بديل آمن لـ storage:link عندما exec/symlink معطّلين على الاستضافة (مثل Hostinger).
+ * نفس الاسم storage:link عشان يستبدل أمر Laravel الافتراضي ولا يطلع خطأ exec().
  */
 class StorageLinkCommand extends Command
 {
-    protected $signature = 'storage:link-safe';
+    protected $signature = 'storage:link';
 
-    protected $description = 'Show storage fallback info (use this on server instead of storage:link when symlink/exec are disabled)';
+    protected $description = 'Create the symbolic link from public/storage to storage/app/public (or show fallback message when disabled)';
 
     public function handle(Filesystem $files): int
     {
@@ -36,7 +36,7 @@ class StorageLinkCommand extends Command
             $this->line('This project serves storage files via a route — no symlink needed.');
             $this->line('Ensure storage/app/public exists and has correct permissions (e.g. 755).');
             $this->newLine();
-            $this->info('OK — you can ignore this command. Uploaded files (signatures, logo) will work.');
+            $this->info('OK — uploaded files (signatures, logo) will work via the route.');
             return self::SUCCESS;
         }
 
@@ -46,7 +46,7 @@ class StorageLinkCommand extends Command
             return self::SUCCESS;
         } catch (\Throwable $e) {
             $this->warn('Could not create symlink: ' . $e->getMessage());
-            $this->line('This project can serve storage via route instead — see docs/STORAGE-LINK-HOSTINGER.md');
+            $this->line('This project serves storage via route — see docs/STORAGE-LINK-HOSTINGER.md');
             return self::SUCCESS;
         }
     }

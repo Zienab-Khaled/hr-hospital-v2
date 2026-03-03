@@ -12,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // تجنّب خطأ exec() عند تشغيل storage:link على استضافة معطّل فيها exec/symlink (مثل Hostinger)
+        $this->app->bind(\Illuminate\Filesystem\Filesystem::class, \App\Filesystem\FilesystemSafeLink::class);
     }
 
     public function boot(): void
