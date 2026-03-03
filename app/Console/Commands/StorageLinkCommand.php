@@ -6,14 +6,14 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
 /**
- * بديل آمن لـ storage:link عندما exec/symlink معطّلين على الاستضافة (مثل Hostinger).
- * يوضح أن المشروع يخدم الملفات عبر رووت ولا يحتاج symlink.
+ * بديل آمن عندما exec/symlink معطّلين على الاستضافة (مثل Hostinger).
+ * تشغيل: php artisan storage:link-safe — يوضح أن المشروع يخدم الملفات عبر رووت ولا يحتاج تشغيل storage:link.
  */
 class StorageLinkCommand extends Command
 {
-    protected $signature = 'storage:link';
+    protected $signature = 'storage:link-safe';
 
-    protected $description = 'Create the symbolic link from public/storage to storage/app/public (or show fallback message)';
+    protected $description = 'Show storage fallback info (use this on server instead of storage:link when symlink/exec are disabled)';
 
     public function handle(Filesystem $files): int
     {

@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Console\Commands\StorageLinkCommand;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -19,12 +17,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // استبدال أمر storage:link بأمر آمن عندما exec/symlink معطّلين (مثل Hostinger)
-        Artisan::starting(function () {
-            Artisan::forgetCommand('storage:link');
-            Artisan::registerCommand(new StorageLinkCommand);
-        });
-
         Passport::tokensExpireIn(now()->addHours(1));
         Passport::refreshTokensExpireIn(now()->addDays(30));
         Passport::personalAccessTokensExpireIn(now()->addMonths(6));
