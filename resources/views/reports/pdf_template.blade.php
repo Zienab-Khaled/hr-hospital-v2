@@ -84,9 +84,75 @@
             border-top: 1px solid #e2e8f0;
             padding-top: 10px;
         }
+        .report-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 15px;
+        }
+        .report-header .logo-cell {
+            width: 80px;
+            vertical-align: middle;
+        }
+        .report-header .logo-cell img {
+            max-height: 60px;
+            max-width: 80px;
+            object-fit: contain;
+        }
+        .report-header .title-cell {
+            vertical-align: middle;
+            text-align: center;
+        }
+        .report-header .hospital-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin: 0 0 4px 0;
+        }
+        .report-header .cluster-name {
+            font-size: 13px;
+            color: #64748b;
+            margin: 0;
+        }
+        .manager-signature {
+            margin-top: 45px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .manager-signature .title {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .manager-signature .name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+        }
     </style>
 </head>
 <body>
+    <div class="report-header">
+        <table style="width:100%; border:0;">
+            <tr>
+                <td class="logo-cell" style="width:80px;">
+                    @if(!empty($logoPath) && file_exists($logoPath))
+                        <img src="{{ $logoPath }}" alt="Logo" style="max-height:60px; max-width:80px; object-fit:contain;">
+                    @endif
+                </td>
+                <td class="title-cell">
+                    @if(!empty($hospitalName))
+                        <p class="hospital-name">{{ $hospitalName }}</p>
+                    @endif
+                    @if(!empty($healthClusterName))
+                        <p class="cluster-name">{{ $healthClusterName }}</p>
+                    @endif
+                </td>
+            </tr>
+        </table>
+    </div>
     <div class="header">
         <h1>{{ app()->getLocale() === 'ar' ? 'تقرير الإيرادات والتحصيل' : 'Revenue & Collection Report' }}</h1>
         <div class="date-range">
@@ -161,6 +227,11 @@
             @endforeach
         </tbody>
     </table>
+
+    <div class="manager-signature">
+        <div class="title">{{ $managerTitle ?? (app()->getLocale() === 'ar' ? 'مدير إدارة تنمية الإيرادات' : 'Revenue Development Manager') }}</div>
+        <div class="name">{{ $managerName ?? 'جسار محمد الضويحي' }}</div>
+    </div>
 
     <div class="footer">
         {{ app()->getLocale() === 'ar' ? 'تم إنشاء هذا التقرير آلياً بتاريخ' : 'Generated automatically on' }}: {{ date('Y-m-d H:i') }}

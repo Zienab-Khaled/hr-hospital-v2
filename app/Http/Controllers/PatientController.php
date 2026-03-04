@@ -35,6 +35,10 @@ class PatientController extends Controller
             ->with(['insuranceCompany', 'charityEntity', 'visits'])
             ->first();
 
+        if ($patient && auth()->user()->hasRole('insurance_clerk') && $patient->payment_type !== 'insurance') {
+            $patient = null;
+        }
+
         return view('patients.search', compact('patient'));
     }
 
@@ -219,6 +223,9 @@ class PatientController extends Controller
     public function show(Patient $patient)
     {
         $this->authorize('patients.view');
+        if (auth()->user()->hasRole('insurance_clerk') && $patient->payment_type !== 'insurance') {
+            abort(403);
+        }
 
         $patient->load([
             'insuranceCompany',
@@ -266,6 +273,9 @@ class PatientController extends Controller
     public function edit(Patient $patient)
     {
         $this->authorize('patients.edit');
+        if (auth()->user()->hasRole('insurance_clerk') && $patient->payment_type !== 'insurance') {
+            abort(403);
+        }
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
         $charityEntities = CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
         $departments = Department::where('is_active', true)->orderBy('name')->get();
@@ -275,6 +285,9 @@ class PatientController extends Controller
     public function update(Request $request, Patient $patient)
     {
         $this->authorize('patients.edit');
+        if (auth()->user()->hasRole('insurance_clerk') && $patient->payment_type !== 'insurance') {
+            abort(403);
+        }
 
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,

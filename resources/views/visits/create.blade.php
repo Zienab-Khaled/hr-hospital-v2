@@ -319,7 +319,7 @@
                                 @if ($visitForPrint)
                                     <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
                                         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 text-sm shadow-sm transition-colors">
-                                        {{ app()->getLocale() === 'ar' ? '📄 طباعة إحقاق علاج (بدون خدمات)' : '📄 Print eligibility (no services)' }}
+                                        {{ app()->getLocale() === 'ar' ? '📄 طباعة إحقية علاج (بدون خدمات)' : '📄 Print eligibility (no services)' }}
                                     </a>
                                 @endif
 

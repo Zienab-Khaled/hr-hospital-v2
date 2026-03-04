@@ -26,7 +26,7 @@ class VisitController extends Controller
     use HasIndexFilters;
 
     /**
-     * شاشة إنشاء زيارة: اختيار مريض (بحث أو إضافة جديد) ثم تسجيل دخول القسم ثم تحويل / إحقاق علاج / خدمات / فاتورة
+     * شاشة إنشاء زيارة: اختيار مريض (بحث أو إضافة جديد) ثم تسجيل دخول القسم ثم تحويل / إحقية علاج / خدمات / فاتورة
      */
     public function create(Request $request)
     {
@@ -211,7 +211,7 @@ class VisitController extends Controller
     }
 
     /**
-     * طباعة إحقاق علاج — GET بدون خدمات، POST مع قائمة الخدمات المختارة
+     * طباعة إحقية علاج — GET بدون خدمات، POST مع قائمة الخدمات المختارة
      */
     public function treatmentEligibilityPrint(Request $request, Visit $visit)
     {
@@ -376,7 +376,7 @@ class VisitController extends Controller
     }
 
     /**
-     * معالجة طباعة إحقاق العلاج (POST)
+     * معالجة طباعة إحقية العلاج (POST)
      */
     public function treatmentEligibilityPrintSubmit(Request $request, Visit $visit)
     {

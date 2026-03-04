@@ -8,10 +8,13 @@ use Illuminate\Notifications\DatabaseNotification;
 class NotificationController extends Controller
 {
     /**
-     * عرض كل الإشعارات
+     * عرض كل الإشعارات (المحصل لا يصل لهذه الصفحة)
      */
     public function index()
     {
+        if (auth()->user()->hasRole('collection')) {
+            abort(403);
+        }
         $notifications = auth()->user()->notifications()->paginate(20);
         return view('notifications.index', compact('notifications'));
     }
@@ -21,6 +24,9 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
+        if (auth()->user()->hasRole('collection')) {
+            abort(403);
+        }
         auth()->user()->unreadNotifications->markAsRead();
         return back()->with('success', app()->getLocale() === 'ar' ? 'تم تحديد الكل كمقروء.' : 'All notifications marked as read.');
     }
@@ -30,6 +36,9 @@ class NotificationController extends Controller
      */
     public function markAsRead(DatabaseNotification $notification)
     {
+        if (auth()->user()->hasRole('collection')) {
+            abort(403);
+        }
         if ($notification->notifiable_id == auth()->id()) {
             $notification->markAsRead();
 

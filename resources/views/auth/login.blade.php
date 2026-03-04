@@ -34,15 +34,18 @@
         class="flex flex-col justify-center p-8 md:p-20 bg-[#F3F7FA]">
             <div class="max-w-md w-full">
                 {{-- Brand --}}
-                <p class="text-blue-600 font-bold text-xl mb-12">{{ app()->getLocale() === 'ar' ? 'إيرادات المستشفى' : 'Hospital Revenue' }}</p>
+                <p class="text-blue-600 font-bold text-xl mb-12">
+                    IRD - إيراد</p>
 
                 {{-- Heading --}}
                 <h1 class="text-3xl md:text-4xl font-extrabold text-[#1F2937] leading-tight mb-4">
-                    {{ app()->getLocale() === 'ar' ? 'تحليلات متقدمة لنمو وتنمية إيرادات المستشفيات' : 'Advanced Analytics Driving Growth For Hospital Revenue Management' }}
+                    {{ app()->getLocale() === 'ar' ? 'IRAD – Internal Revenue & Development' : 'IRAD – Internal Revenue & Development' }}
                 </h1>
 
                 {{-- Welcome Text --}}
-                <p class="text-slate-400 text-sm mb-10">Welcome back! Please login to your account.</p>
+                {{-- <p class="text-slate-400 text-sm mb-10">
+                    {{ app()->getLocale() === 'ar' ? 'IRAD – Internal Revenue & Development' : 'IRAD – Internal Revenue & Development' }}
+                </p> --}}
 
                 @if (session('error'))
                     <div class="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
@@ -60,7 +63,8 @@
                     <div class="bg-[#EEF2F6] p-6 mb-8">
                         <div class="mb-6">
                             <label for="username" class="block text-[10px]
-                            font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">{{ __('Email Address') }}</label>
+                            font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">
+                            {{ app()->getLocale() === 'ar' ? 'البريد الإلكتروني' : 'Email Address' }}</label>
                             <div class="bg-white ">
                                 <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus placeholder="hakeem@digital.com"
                                 class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">
@@ -93,9 +97,22 @@
             </div>
         </div>
     </div>
-    <footer class="mt-8 text-center text-slate-400 text-xs">
-        &copy; {{ date('Y') }} <span class="font-semibold text-slate-500">Abeer Suleiman</span>. {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
-    </footer>
+    {{-- Footer --}}
+<footer class="mt-auto px-8 py-6 border-t border-slate-200 bg-white/50">
+    <div
+        class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
+        <div>
+            &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">عبير سليمان الرويلي</span>.
+            {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+        </div>
+        <div class="flex items-center gap-4 text-slate-400">
+            <span class="hover:text-slate-600 transition-colors">إيراد: حوكمة | تحول رقمي | استدامة</span>
+            <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+            <span class="hover:text-slate-600 transition-colors">إشراف وتطوير النظام</span>
+        </div>
+    </div>
+</footer>
+
 </body>
 
 </html>

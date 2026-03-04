@@ -2,7 +2,10 @@
 @section('title', app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims')
 
 @section('content')
-    @php $activeTab = request('tab', 'charity'); @endphp
+    @php
+        $isInsuranceClerk = auth()->user()->hasRole('insurance_clerk');
+        $activeTab = $isInsuranceClerk ? (request('tab', 'insurance') === 'charity' ? 'insurance' : request('tab', 'insurance')) : request('tab', 'charity');
+    @endphp
 
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h2 class="text-2xl font-bold text-slate-800">
@@ -16,14 +19,16 @@
         @endif
     </div>
 
-    {{-- Tabs --}}
+    {{-- Tabs (موظف التأمين يرى تبويب التأمين فقط) --}}
     <div class="flex gap-1 mb-6 border-b-2 border-slate-200">
-        <a href="{{ request()->fullUrlWithQuery(['tab' => 'charity']) }}"
-           class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors
-                  {{ $activeTab === 'charity' ? 'bg-slate-100 border-2 border-b-0 border-slate-200 text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
-            🤝 {{ app()->getLocale() === 'ar' ? 'مطالبات الجمعيات' : 'Charity Claims' }}
-            <span class="ms-1 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{{ $claims->total() }}</span>
-        </a>
+        @if(!$isInsuranceClerk)
+            <a href="{{ request()->fullUrlWithQuery(['tab' => 'charity']) }}"
+               class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors
+                      {{ $activeTab === 'charity' ? 'bg-slate-100 border-2 border-b-0 border-slate-200 text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+                🤝 {{ app()->getLocale() === 'ar' ? 'مطالبات الجمعيات' : 'Charity Claims' }}
+                <span class="ms-1 text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{{ $claims->total() }}</span>
+            </a>
+        @endif
         <a href="{{ request()->fullUrlWithQuery(['tab' => 'insurance']) }}"
            class="px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors
                   {{ $activeTab === 'insurance' ? 'bg-slate-100 border-2 border-b-0 border-slate-200 text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">

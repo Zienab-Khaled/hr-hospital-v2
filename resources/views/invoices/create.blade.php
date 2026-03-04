@@ -490,14 +490,16 @@
                             <div>
                                 <label
                                     class="block text-[10px] font-black text-rose-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم الترقيم من الوزارة (يُطبع على إيصال التحصيل)' : 'Ministry receipt number (printed on q-1)' }}</label>
-                                <input type="text" name="ministry_receipt_number" value="{{ old('ministry_receipt_number') }}"
+                                <input type="text" name="ministry_receipt_number"
+                                    value="{{ old('ministry_receipt_number') }}"
                                     class="w-full rounded-xl border-2 border-rose-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-500"
                                     placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: 5267859' : 'e.g. 5267859' }}">
                             </div>
                             <div>
                                 <label
                                     class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}</label>
-                                <input type="text" name="collection_reference" value="{{ old('collection_reference') }}"
+                                <input type="text" name="collection_reference"
+                                    value="{{ old('collection_reference') }}"
                                     class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
                                     placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}">
                             </div>
@@ -1001,7 +1003,8 @@
             if (patientIdInput && !patientIdInput.value) {
                 e.preventDefault();
                 alert(
-                    '{{ app()->getLocale() === 'ar' ? 'يرجى البحث عن المريض واختياره أولاً' : 'Please search and select a patient first' }}');
+                    '{{ app()->getLocale() === 'ar' ? 'يرجى البحث عن المريض واختياره أولاً' : 'Please search and select a patient first' }}'
+                    );
                 return false;
             }
             const container = document.getElementById('services-container');
@@ -1009,7 +1012,8 @@
             if (rows.length === 0) {
                 e.preventDefault();
                 alert(
-                    '{{ app()->getLocale() === 'ar' ? 'يجب إضافة خدمة واحدة على الأقل' : 'Please add at least one service' }}');
+                    '{{ app()->getLocale() === 'ar' ? 'يجب إضافة خدمة واحدة على الأقل' : 'Please add at least one service' }}'
+                    );
                 return false;
             }
         });

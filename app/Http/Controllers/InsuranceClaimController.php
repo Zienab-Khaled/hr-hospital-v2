@@ -17,7 +17,7 @@ class InsuranceClaimController extends Controller
      */
     public function create(Request $request)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $prefill = null;
         if ($request->filled('invoice_id') && $request->filled('patient_id')) {
@@ -43,6 +43,7 @@ class InsuranceClaimController extends Controller
      */
     public function searchPatients(Request $request)
     {
+        $this->authorize('claims.view');
         $q = $request->get('q');
         if (strlen($q) < 2) {
             return response()->json([]);
@@ -67,7 +68,7 @@ class InsuranceClaimController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
@@ -104,6 +105,7 @@ class InsuranceClaimController extends Controller
      */
     public function getInvoices(Patient $patient)
     {
+        $this->authorize('claims.view');
         $invoices = $patient->invoices()
             ->withCount(['items as pending_items_count' => function ($query) {
                 $query->where('status', 'pending');
@@ -119,6 +121,7 @@ class InsuranceClaimController extends Controller
      */
     public function getItems(Invoice $invoice)
     {
+        $this->authorize('claims.view');
         $items = $invoice->items()
             ->where('status', 'pending')
             ->with('service')
@@ -132,7 +135,7 @@ class InsuranceClaimController extends Controller
      */
     public function show(InsuranceClaim $insuranceClaim)
     {
-        $this->authorize('invoices.view');
+        $this->authorize('claims.view');
         $insuranceClaim->load(['invoice.patient', 'invoice.items.service', 'insuranceCompany', 'sentByUser']);
         return view('insurance-claims.show', compact('insuranceClaim'));
     }
@@ -142,7 +145,7 @@ class InsuranceClaimController extends Controller
      */
     public function updateStatus(Request $request, InsuranceClaim $insuranceClaim)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $request->validate([
             'status' => 'required|in:under_review,approved,rejected,paid',

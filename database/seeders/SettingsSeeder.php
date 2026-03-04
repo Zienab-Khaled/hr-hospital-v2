@@ -18,11 +18,11 @@ class SettingsSeeder extends Seeder
             ['key' => 'hospital_email', 'value' => 'info@hospital.sa', 'group' => 'hospital'],
             ['key' => 'hospital_website', 'value' => 'www.hospital.sa', 'group' => 'hospital'],
             
-            // Manager Information
-            ['key' => 'manager_name', 'value' => 'د. محمد أحمد السعيد', 'group' => 'hospital'],
-            ['key' => 'manager_name_en', 'value' => 'Dr. Mohammed Ahmed Al-Saeed', 'group' => 'hospital'],
-            ['key' => 'manager_title', 'value' => 'المدير العام', 'group' => 'hospital'],
-            ['key' => 'manager_title_en', 'value' => 'General Manager', 'group' => 'hospital'],
+            // Manager Information (للتقارير والطباعة)
+            ['key' => 'manager_name', 'value' => 'جسار محمد الضويحي', 'group' => 'hospital'],
+            ['key' => 'manager_name_en', 'value' => 'Jasar Mohammed Al-Duwayhi', 'group' => 'hospital'],
+            ['key' => 'manager_title', 'value' => 'مدير إدارة تنمية الإيرادات', 'group' => 'hospital'],
+            ['key' => 'manager_title_en', 'value' => 'Revenue Development Manager', 'group' => 'hospital'],
             
             // Banking Information
             ['key' => 'bank_name', 'value' => 'البنك الأهلي السعودي', 'group' => 'general'],

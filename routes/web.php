@@ -17,10 +17,27 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\WrittenCommitmentController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
 
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
+
+// بديل لـ storage:link عندما exec/symlink معطّلين على الاستضافة — تقديم ملفات storage/app/public عبر رووت
+Route::get('storage/{path}', function (string $path) {
+    $path = rawurldecode($path);
+    $path = str_replace(['..', '\\'], '', $path);
+    $fullPath = storage_path('app/public/' . $path);
+    $publicRoot = realpath(storage_path('app/public'));
+    if (!$publicRoot || !File::exists($fullPath) || File::isDirectory($fullPath)) {
+        abort(404);
+    }
+    $resolved = realpath($fullPath);
+    if ($resolved === false || !str_starts_with($resolved, $publicRoot)) {
+        abort(404);
+    }
+    return response()->file($resolved);
+})->where('path', '.*')->name('storage.serve');
 
 // Language switcher
 Route::get('/locale/{locale}', function ($locale) {

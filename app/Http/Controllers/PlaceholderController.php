@@ -39,6 +39,10 @@ class PlaceholderController extends Controller
 
         $query = Patient::with(['insuranceCompany', 'charityEntity']);
 
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $query->where('payment_type', 'insurance');
+        }
+
         $this->applyIndexFilters(
             $query,
             $request,
@@ -94,7 +98,15 @@ class PlaceholderController extends Controller
             abort(404);
         }
 
+        if (auth()->user()->hasRole('insurance_clerk') && in_array($section, ['charity', 'cash'])) {
+            abort(403);
+        }
+
         $query = Patient::with(['insuranceCompany', 'charityEntity']);
+
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $query->where('payment_type', 'insurance');
+        }
 
         // Apply section-specific filters
         switch ($section) {
@@ -191,6 +203,9 @@ class PlaceholderController extends Controller
                 $q->where('department_id', $department->id)
                     ->orWhereHas('transfers', fn ($q2) => $q2->where('from_department_id', $department->id));
             });
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $query->where('payment_type', 'insurance');
+        }
         $this->applyIndexFilters(
             $query,
             request(),
@@ -214,6 +229,10 @@ class PlaceholderController extends Controller
         $currentShift = Shift::currentAt();
 
         $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
+
+        if ($user->hasRole('insurance_clerk')) {
+            $query->whereHas('patient', fn ($q) => $q->where('payment_type', 'insurance'));
+        }
 
         if (!$isAdmin) {
             $deptId = $user->department_id;
@@ -259,6 +278,10 @@ class PlaceholderController extends Controller
         Gate::authorize('invoices.view');
 
         $query = Invoice::with(['patient', 'visit.shift', 'visit.department']);
+
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $query->whereHas('patient', fn ($q) => $q->where('payment_type', 'insurance'));
+        }
 
         // Default filters
         if (!$request->has('date')) {
