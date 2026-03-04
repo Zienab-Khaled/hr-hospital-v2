@@ -43,7 +43,11 @@ class InvoiceController extends Controller
             }
         }
 
-        $patients = Patient::where('is_active', true)->orderBy('name')->get();
+        $patients = Patient::where('is_active', true)->orderBy('name');
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $patients = $patients->where('payment_type', 'insurance');
+        }
+        $patients = $patients->get();
         $insuranceCompanies = InsuranceCompany::orderBy('name')->get();
         $charityEntities = CharityEntity::orderByRaw('COALESCE(name_ar, name)')->get();
 
@@ -62,6 +66,7 @@ class InvoiceController extends Controller
         }
 
         $patients = Patient::where('is_active', true)
+            ->when(auth()->user()->hasRole('insurance_clerk'), fn ($q) => $q->where('payment_type', 'insurance'))
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
                     ->orWhere('name_ar', 'like', "%{$q}%")
@@ -423,6 +428,9 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice)
     {
         $this->authorize('invoices.view');
+        if (auth()->user()->hasRole('insurance_clerk') && $invoice->patient && $invoice->patient->payment_type !== 'insurance') {
+            abort(403);
+        }
 
         $invoice->load([
             'patient.insuranceCompany',
@@ -790,9 +798,16 @@ class InvoiceController extends Controller
 
     {
         $this->authorize('invoices.edit');
+        if (auth()->user()->hasRole('insurance_clerk') && $invoice->patient && $invoice->patient->payment_type !== 'insurance') {
+            abort(403);
+        }
 
         $invoice->load(['items.service', 'items.completedByUser']);
-        $patients = Patient::where('is_active', true)->orderBy('name')->get();
+        $patientsQuery = Patient::where('is_active', true)->orderBy('name');
+        if (auth()->user()->hasRole('insurance_clerk')) {
+            $patientsQuery->where('payment_type', 'insurance');
+        }
+        $patients = $patientsQuery->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
 
         return view('invoices.edit', compact('invoice', 'patients', 'services'));

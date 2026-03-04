@@ -15,7 +15,11 @@ class CharityClaimController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('invoices.view');
+        $this->authorize('claims.view');
+
+        if (auth()->user()->hasRole('insurance_clerk') && $request->get('tab', 'charity') === 'charity') {
+            return redirect()->route('charity-claims.index', array_merge($request->query(), ['tab' => 'insurance']));
+        }
 
         $query = CharityClaim::with(['invoice.patient', 'charityEntity', 'sentByUser']);
 
@@ -58,7 +62,7 @@ class CharityClaimController extends Controller
      */
     public function create(Request $request)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $invoice = null;
         if ($request->filled('invoice_id')) {
@@ -87,7 +91,7 @@ class CharityClaimController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
@@ -128,7 +132,7 @@ class CharityClaimController extends Controller
      */
     public function show(CharityClaim $charityClaim)
     {
-        $this->authorize('invoices.view');
+        $this->authorize('claims.view');
 
         $charityClaim->load(['invoice.patient', 'invoice.items.service', 'charityEntity', 'sentByUser']);
 
@@ -142,7 +146,7 @@ class CharityClaimController extends Controller
      */
     public function addNote(Request $request, CharityClaim $charityClaim)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $request->validate([
             'body' => 'required|string|max:2000',
@@ -164,7 +168,7 @@ class CharityClaimController extends Controller
      */
     public function send(CharityClaim $charityClaim)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         if (!$charityClaim->canBeSent()) {
             return back()->withErrors(['status' => app()->getLocale() === 'ar'
@@ -185,7 +189,7 @@ class CharityClaimController extends Controller
      */
     public function updateStatus(Request $request, CharityClaim $charityClaim)
     {
-        $this->authorize('invoices.create');
+        $this->authorize('claims.view');
 
         $request->validate([
             'status' => 'required|in:under_review,approved,rejected,paid',

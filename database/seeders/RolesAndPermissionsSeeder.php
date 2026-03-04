@@ -97,12 +97,13 @@ class RolesAndPermissionsSeeder extends Seeder
                 'procedures.non_commitment', 'procedures.debt_inventory',
             ]);
 
-            // موظف تأمين: مرضى عرض، فواتير عرض/إنشاء، مطالبات، إجراءات
+            // موظف تأمين: مرضى تأمين فقط، فواتير، مطالبات تأمين، تفويضات، شركات تأمين، تقارير تأمين
             $insuranceClerk = Role::firstOrCreate(['name' => 'insurance_clerk', 'guard_name' => $guard]);
             $insuranceClerk->syncPermissions([
                 'patients.view', 'visits.view',
                 'invoices.view', 'invoices.create',
                 'claims.view', 'authorizations.view',
+                'insurance_reports.view', 'insurance_companies.manage',
                 'procedures.contact_report',
             ]);
 
@@ -135,7 +136,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $nurse = Role::firstOrCreate(['name' => 'nurse', 'guard_name' => $guard]);
             $nurse->syncPermissions(['patients.view', 'visits.view']);
 
-            // محصل (الاستقبال - الطوارئ/العيادات): مرضى، فواتير، مدفوعات، إجراءات
+            // محصل (الاستقبال - الطوارئ/العيادات): مرضى، فواتير، مدفوعات، إجراءات — بدون مديونيات أو مطالبات
             $collection = Role::firstOrCreate(['name' => 'collection', 'guard_name' => $guard]);
             $collection->syncPermissions([
                 'patients.view', 'patients.create',
@@ -143,7 +144,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices.view', 'invoices.create',
                 'payments.view', 'payments.create',
                 'procedures.contact_report', 'procedures.written_commitment',
-                'procedures.non_commitment', 'procedures.debt_inventory',
+                'procedures.non_commitment',
             ]);
 
             // أمين صندوق: استلام من المحصل، اعتماد، إغلاق يومي، تقارير

@@ -151,6 +151,9 @@ class RevenueWorkflowController extends Controller
     public function treasuryIndex(Request $request)
     {
         Gate::authorize('reports.view');
+        if (auth()->user()->hasRole('accountant')) {
+            abort(403);
+        }
 
         $date = $request->input('date', Carbon::today()->toDateString());
 
@@ -198,6 +201,9 @@ class RevenueWorkflowController extends Controller
     public function markDeposited(Request $request, Invoice $invoice)
     {
         Gate::authorize('reports.view');
+        if (auth()->user()->hasRole('accountant')) {
+            abort(403);
+        }
 
         if ($invoice->audit_status !== 'manager_confirmed') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar'

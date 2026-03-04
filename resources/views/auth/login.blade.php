@@ -63,7 +63,8 @@
                     <div class="bg-[#EEF2F6] p-6 mb-8">
                         <div class="mb-6">
                             <label for="username" class="block text-[10px]
-                            font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">{{ __('Email Address') }}</label>
+                            font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">
+                            {{ app()->getLocale() === 'ar' ? 'البريد الإلكتروني' : 'Email Address' }}</label>
                             <div class="bg-white ">
                                 <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus placeholder="hakeem@digital.com"
                                 class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">

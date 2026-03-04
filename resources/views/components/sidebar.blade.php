@@ -24,11 +24,11 @@
             </span>
 
             <div class="h-[1px] w-12 bg-white/10 my-1"></div>
-            <span class="text-[11px] font-medium text-slate-400">
+            {{-- <span class="text-[11px] font-medium text-slate-400">
                  {{ __('إشراف وتطوير :') }}
                  {{ __('عبير سليمان الرويلي') }}
             </span>
-            <span class="text-[12px] font-bold text-slate-200">
+            <span class="text-[12px] font-bold text-slate-200"> --}}
             </span>
         </div>
     </div>
@@ -46,27 +46,29 @@
             <span>{{ __('Dashboard') }}</span>
         </a>
 
-        {{-- Notifications --}}
-        @php
-            $unreadCount = $user->unreadNotifications->count();
-        @endphp
-        <a href="{{ route('notifications.index') }}"
-            class="flex items-center justify-between px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
-           {{ request()->routeIs('notifications.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-            <div class="flex items-center gap-2.5">
-                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span>{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
-            </div>
-            @if ($unreadCount > 0)
-                <span
-                    class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-[10px] font-bold rounded-full animate-pulse">
-                    {{ $unreadCount }}
-                </span>
-            @endif
-        </a>
+        {{-- Notifications (hidden for collector / محصل) --}}
+        @if (!$user->hasRole('collection'))
+            @php
+                $unreadCount = $user->unreadNotifications->count();
+            @endphp
+            <a href="{{ route('notifications.index') }}"
+                class="flex items-center justify-between px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+               {{ request()->routeIs('notifications.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'الإشعارات' : 'Notifications' }}</span>
+                </div>
+                @if ($unreadCount > 0)
+                    <span
+                        class="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-amber-500 text-[10px] font-bold rounded-full animate-pulse">
+                        {{ $unreadCount }}
+                    </span>
+                @endif
+            </a>
+        @endif
 
         {{-- Patients Section --}}
         @if ($user->can('patients.view') || $isManager)
@@ -85,27 +87,33 @@
                     <span>{{ app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits' }}</span>
                 </a>
 
-                <a href="{{ route('patients.section.charity') }}"
-                    class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
-                   {{ request()->routeIs('patients.section.charity') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    <span>{{ __('Charity') }}</span>
-                </a>
+                {{-- Charity: مخفي عن موظف التأمين (يرى مرضى التأمين فقط) --}}
+                @if (!$user->hasRole('insurance_clerk'))
+                    <a href="{{ route('patients.section.charity') }}"
+                        class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+                       {{ request()->routeIs('patients.section.charity') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>{{ __('Charity') }}</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('patients.section.cash') }}"
-                    class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
-                   {{ request()->routeIs('patients.section.cash') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span>{{ __('Cash') }}</span>
-                </a>
+                {{-- Cash: مخفي عن موظف التأمين --}}
+                @if (!$user->hasRole('insurance_clerk'))
+                    <a href="{{ route('patients.section.cash') }}"
+                        class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+                       {{ request()->routeIs('patients.section.cash') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>{{ __('Cash') }}</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('patients.section.insurance') }}"
                     class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
@@ -195,6 +203,20 @@
             </a>
         @endif
 
+        {{-- شركات التأمين (للمدير وموظف التأمين) --}}
+        @if ($user->can('insurance_companies.manage'))
+            <a href="{{ route('insurance-companies.index') }}"
+                class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+               {{ request()->routeIs('insurance-companies.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'شركات التأمين' : 'Insurance Companies' }}</span>
+            </a>
+        @endif
+
         {{-- المديونيات (حصر الفواتير غير المسددة + تبليغ المريض) --}}
         @if ($user->can('procedures.debt_inventory') || $isManager)
             <a href="{{ route('debts.index') }}"
@@ -207,8 +229,8 @@
             </a>
         @endif
 
-        {{-- Claims (المطالبات: تأمين + جمعيات) --}}
-        @if ($user->can('invoices.view') || $user->can('claims.view') || $isManager)
+        {{-- Claims (المطالبات: تأمين + جمعيات) — للموظفين الذين لديهم صلاحية claims.view فقط (المحصل لا يراها) --}}
+        @if ($user->can('claims.view') || $isManager)
             <a href="{{ route('charity-claims.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('charity-claims.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
@@ -343,16 +365,19 @@
                 </svg>
                 <span>{{ app()->getLocale() === 'ar' ? 'فواتير المحاسب (Control Room)' : 'Accountant Invoices (Control Room)' }}</span>
             </a>
-            <a href="{{ route('revenue.treasury.index') }}"
-                class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+            {{-- أمين الصندوق: مخفي عن المحاسب (يرى Control Room فقط) --}}
+            @if (!$user->hasRole('accountant') || $isManager)
+                <a href="{{ route('revenue.treasury.index') }}"
+                    class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('revenue.treasury.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v2m9 4H10m4 0v2a2 2 0 01-2 2h-2m-4 0H5a2 2 0 01-2-2v-2m4 4h4m-4 0h4m-4 0H9" />
-                </svg>
-                <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
-            </a>
+                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v2m9 4H10m4 0v2a2 2 0 01-2 2h-2m-4 0H5a2 2 0 01-2-2v-2m4 4h4m-4 0h4m-4 0H9" />
+                    </svg>
+                    <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
+                </a>
+            @endif
             <a href="{{ route('revenue.daily-summary') }}"
                 class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('revenue.daily-summary') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
