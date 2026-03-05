@@ -295,7 +295,7 @@
                     @if ($invoice->patient->payment_type === 'insurance' && $invoice->patient->insuranceCompany)
                         <p><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance company:' }}</span>
-                            {{ $invoice->patient->insuranceCompany->name }}</p>
+                            {{ app()->getLocale() === 'ar' ? ($invoice->patient->insuranceCompany->name_ar ?? $invoice->patient->insuranceCompany->name) : $invoice->patient->insuranceCompany->name }}</p>
                     @endif
                     @if ($invoice->patient->payment_type === 'charity' && $invoice->patient->charityEntity)
                         <p><span

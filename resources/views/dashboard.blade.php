@@ -3,17 +3,26 @@
 @section('title', __('Dashboard'))
 
 @section('tabs')
-    <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-t bg-blue-600 text-white text-sm font-medium">{{ __("Patient File") }}</a>
-    <a href="{{ route('invoices.index') }}" class="px-4 py-2 rounded-t bg-slate-100 text-slate-600 text-sm hover:bg-slate-200">{{ __("Invoices") }}</a>
-    <a href="{{ route('authorizations.index') }}" class="px-4 py-2 rounded-t bg-slate-100 text-slate-600 text-sm hover:bg-slate-200">{{ __("Authorizations") }}</a>
+    <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-t bg-blue-600  text-sm font-medium">{{ __("Patient File") }}</a>
+    @can('invoices.view')
+        <a href="{{ route('invoices.index') }}" class="px-4 py-2 rounded-t bg-slate-100 text-slate-600 text-sm hover:bg-slate-200">{{ __("Invoices") }}</a>
+    @endcan
+    @can('authorizations.view')
+        <a href="{{ route('authorizations.index') }}" class="px-4 py-2 rounded-t bg-slate-100 text-slate-600 text-sm hover:bg-slate-200">{{ __("Authorizations") }}</a>
+    @endcan
 
-    {{-- Quick Action Tabs --}}
-    <button onclick="openDashboardModal('visit')" class="ml-4 px-4 py-2 rounded-t bg-green-600  text-sm font-bold hover:bg-green-700 flex items-center gap-1">
-        <span>🩺</span> {{ app()->getLocale() === 'ar' ? 'إضافة زيارة' : 'Add Visit' }}
-    </button>
-    <button onclick="openDashboardModal('invoice')" class="ml-1 px-4 py-2 rounded-t bg-amber-600 text-sm font-bold hover:bg-orange-600 flex items-center gap-1">
-        <span>💰</span> {{ app()->getLocale() === 'ar' ? 'إضافة فاتورة' : 'Add Invoice' }}
-    </button>
+    {{-- Quick Action Tabs (حسب الصلاحيات — توديك لصفحات الإنشاء) --}}
+    @can('visits.create')
+        <a href="{{ route('visits.create') }}" class="ml-4 px-4 py-2 rounded-t bg-green-600 text-sm font-bold hover:bg-green-700 flex items-center gap-1 "
+        {{ app()->getLocale() === 'ar' ? 'إضافة زيارة' : 'Add Visit' }}>
+            <span>🩺</span> {{ app()->getLocale() === 'ar' ? 'إضافة زيارة' : 'Add Visit' }}
+        </a>
+    @endcan
+    @can('invoices.create')
+        <a href="{{ route('invoices.create') }}" class="ml-1 px-4 py-2 rounded-t bg-amber-600 text-sm font-bold hover:bg-orange-600 flex items-center gap-1 ">
+            <span>💰</span> {{ app()->getLocale() === 'ar' ? 'إضافة فاتورة' : 'Add Invoice' }}
+        </a>
+    @endcan
 @endsection
 
 @section('content')
@@ -60,7 +69,7 @@
                         <button type="button" onclick="closeDashboardModal()" class="px-6 py-2 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50">
                             {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}
                         </button>
-                        <button type="submit" id="submitBtn" class="px-8 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50">
+                        <button type="submit" id="submitBtn" class="px-8 py-2 bg-blue-600  rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50">
                             {{ app()->getLocale() === 'ar' ? 'حفظ' : 'Save' }}
                         </button>
                     </div>
@@ -70,14 +79,17 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {{-- Visits Section --}}
+        {{-- Visits Section (حسب صلاحية visits.view) --}}
+        @can('visits.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>🩺</span> {{ __("Visits") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="openDashboardModal('visit')" class="bg-green-600  px-4 py-2 rounded text-sm bg-amber-600 font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</button>
-                <a href="{{ route('visits.create') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
+                @can('visits.create')
+                    <a href="{{ route('visits.create') }}" class="bg-green-600  px-4 py-2 rounded text-sm font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</a>
+                @endcan
+                <a href="{{ route('visits.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-slate-600">
@@ -96,14 +108,18 @@
             </div>
             <a href="{{ route('visits.index') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
+        @endcan
 
-        {{-- Invoices Section --}}
+        {{-- Invoices Section (حسب صلاحية invoices.view) --}}
+        @can('invoices.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>💰</span> {{ __("Invoices") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="openDashboardModal('invoice')" class="bg-orange-500  px-4 py-2 rounded  bg-amber-600 text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</button>
+                @can('invoices.create')
+                    <a href="{{ route('invoices.create') }}" class="bg-orange-500  px-4 py-2 rounded text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</a>
+                @endcan
                 <a href="{{ route('invoices.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
             <div class="overflow-x-auto">
@@ -123,14 +139,16 @@
             </div>
             <a href="{{ route('invoices.index') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
+        @endcan
 
-        {{-- Claims Section --}}
+        {{-- Claims Section (حسب صلاحية claims.view) --}}
+        @can('claims.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>📑</span> {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                <a href="{{ route('insurance-claims.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'مطالبة جديدة' : 'New Claim' }}</a>
+                <a href="{{ route('charity-claims.index', ['tab' => 'insurance']) }}" class="bg-blue-600  px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">+ {{ app()->getLocale() === 'ar' ? 'مطالبة جديدة' : 'New Claim' }}</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-slate-600">
@@ -139,10 +157,10 @@
                         @forelse($recentClaims as $claim)
                             @php
                                 $type = $claim instanceof \App\Models\InsuranceClaim ? 'insurance' : 'charity';
-                                $url = $type === 'insurance' ? '#' : route('charity-claims.show', $claim);
+                                $url = $type === 'insurance' ? route('insurance-claims.show', $claim) : route('charity-claims.show', $claim);
                             @endphp
                             <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="window.location.href='{{ $url }}'">
-                                <td class="py-2 text-blue-600 font-medium">{{ $claim->patient?->name }}</td>
+                                <td class="py-2 text-blue-600 font-medium">{{ $claim->patient?->name ?? $claim->invoice?->patient?->name }}</td>
                                 <td class="py-2">
                                     <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $claim->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800' }}">
                                         {{ $claim->status }}
@@ -157,17 +175,20 @@
             </div>
             <a href="{{ route('charity-claims.index') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
+        @endcan
     </div>
 
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {{-- Patients Summary --}}
+        {{-- Patients Summary (حسب صلاحية patients.view) --}}
+        @can('patients.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>📋</span> {{ __("Patients") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                 @can('patients.create')
-                    <button onclick="openDashboardModal('patient_create')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">+ {{ __("Add Patient") }}</button>
+                @can('patients.create')
+                    <a href="{{ route('patients.create') }}"
+                    class="bg-blue-600  px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 text-white">{{ app()->getLocale() === 'ar' ? 'إضافة مريض جديد' : 'Add Patient' }}</a>
                 @endcan
             </div>
             <div class="overflow-x-auto">
@@ -175,8 +196,8 @@
                     <thead><tr class="border-b"><th class="text-start py-2">{{ __("Patients") }}</th><th class="text-start py-2">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment' }}</th></tr></thead>
                     <tbody>
                         @forelse($recentPatients as $p)
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="openDashboardModal('view', {type: 'patient', id: {{ $p->id }}})">
-                                <td class="py-2 text-blue-600 font-medium">{{ $p->name }}</td>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="window.location.href='{{ route('patients.show', $p) }}'">
+                                <td class="py-2 text-blue-600 font-medium">{{ $p->name_ar ?? $p->name }}</td>
                                 <td class="py-2">{{ $p->payment_type }}</td>
                             </tr>
                         @empty
@@ -185,10 +206,12 @@
                     </tbody>
                 </table>
             </div>
-            <a href="{{ route('patients.section.followup') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
+            <a href="{{ auth()->user()->hasRole('insurance_clerk') ? route('patients.section.insurance') : route('patients.section.followup') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
+        @endcan
 
-        {{-- Financial Summary --}}
+        {{-- Financial Summary (حسب صلاحية reports.view أو payments.view) --}}
+        @if(auth()->user()->can('reports.view') || auth()->user()->can('payments.view'))
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? 'ملخص مالي' : 'Financial summary' }}</h2>
             <div class="space-y-4">
@@ -213,8 +236,13 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('payments.index') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
+            @can('payments.view')
+                <a href="{{ route('payments.index') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
+            @elsecan('reports.view')
+                <a href="{{ route('revenue.control-room') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
+            @endcan
         </div>
+        @endif
     </div>
 
 

@@ -16,25 +16,30 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $isInsuranceClerk = $user && $user->hasRole('insurance_clerk');
 
         $recentPatients = Patient::with(['insuranceCompany', 'charityEntity'])
+            ->when($isInsuranceClerk, fn ($q) => $q->where('payment_type', 'insurance'))
             ->latest()
             ->take(10)
             ->get();
 
         $recentVisits = \App\Models\Visit::with(['patient', 'department', 'shift'])
+            ->when($isInsuranceClerk, fn ($q) => $q->whereHas('patient', fn ($pq) => $pq->where('payment_type', 'insurance')))
             ->latest()
             ->take(10)
             ->get();
 
         $recentInvoices = \App\Models\Invoice::with(['patient'])
+            ->when($isInsuranceClerk, fn ($q) => $q->whereHas('patient', fn ($pq) => $pq->where('payment_type', 'insurance')))
             ->latest()
             ->take(10)
             ->get();
 
-        // Combined Insurance and Charity Claims
-        $insuranceClaims = \App\Models\InsuranceClaim::with(['patient', 'invoice'])->latest()->take(5)->get();
-        $charityClaims = \App\Models\CharityClaim::with(['patient', 'invoice'])->latest()->take(5)->get();
+        // Combined Insurance and Charity Claims (موظف التأمين يرى مطالبات التأمين فقط)
+        $insuranceClaims = \App\Models\InsuranceClaim::with(['invoice.patient', 'insuranceCompany'])->latest()->take(5)->get();
+        $charityClaims = $isInsuranceClerk ? collect() : \App\Models\CharityClaim::with(['invoice.patient', 'charityEntity'])->latest()->take(5)->get();
 
         $recentClaims = $insuranceClaims->concat($charityClaims)->sortByDesc('created_at')->take(10);
 

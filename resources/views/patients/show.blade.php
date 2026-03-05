@@ -148,7 +148,7 @@
                         @endif
                     </div>
                     <p class="font-black text-slate-800">
-                        {{ $patient->payment_type === 'charity' ? ($patient->charityEntity->name_ar ?? $patient->charityEntity->name) : ($patient->insuranceCompany->name_ar ?? $patient->insuranceCompany->name) }}
+                        {{ $patient->payment_type === 'charity' ? ($patient->charityEntity?->name_ar ?? $patient->charityEntity?->name ?? '—') : ($patient->insuranceCompany?->name_ar ?? $patient->insuranceCompany?->name ?? '—') }}
                     </p>
                 </div>
             </div>

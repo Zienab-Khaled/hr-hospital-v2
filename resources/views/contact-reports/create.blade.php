@@ -36,7 +36,7 @@
                     @if($patient->payment_type === 'insurance' && $patient->insuranceCompany)
                         <div class="md:col-span-3">
                             <span class="text-blue-700 font-medium">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance:' }}</span>
-                            <span class="text-slate-900 font-semibold">{{ $patient->insuranceCompany->name }}</span>
+                            <span class="text-slate-900 font-semibold">{{ app()->getLocale() === 'ar' ? ($patient->insuranceCompany->name_ar ?? $patient->insuranceCompany->name) : $patient->insuranceCompany->name }}</span>
                         </div>
                     @endif
                     @if($patient->payment_type === 'charity' && $patient->charityEntity)

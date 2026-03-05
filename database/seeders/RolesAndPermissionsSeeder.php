@@ -136,10 +136,10 @@ class RolesAndPermissionsSeeder extends Seeder
             $nurse = Role::firstOrCreate(['name' => 'nurse', 'guard_name' => $guard]);
             $nurse->syncPermissions(['patients.view', 'visits.view']);
 
-            // محصل (الاستقبال - الطوارئ/العيادات): مرضى، فواتير، مدفوعات، إجراءات — بدون مديونيات أو مطالبات
+            // محصل (الاستقبال - الطوارئ/العيادات): مرضى (عرض + إنشاء + تعديل)، زيارات، فواتير، مدفوعات، إجراءات — بدون مديونيات أو مطالبات
             $collection = Role::firstOrCreate(['name' => 'collection', 'guard_name' => $guard]);
             $collection->syncPermissions([
-                'patients.view', 'patients.create',
+                'patients.view', 'patients.create', 'patients.edit',
                 'visits.view', 'visits.create', 'visits.edit',
                 'invoices.view', 'invoices.create',
                 'payments.view', 'payments.create',
