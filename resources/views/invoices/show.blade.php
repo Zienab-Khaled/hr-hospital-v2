@@ -742,8 +742,8 @@
     </div>
 
     {{-- Payment Recording Modal --}}
-    <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+    <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 my-4">
             <h3 class="text-xl font-bold text-slate-800 mb-4">
                 {{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة ومستندات التحصيل' : '💰 Record Payment & Collection Documents' }}
             </h3>

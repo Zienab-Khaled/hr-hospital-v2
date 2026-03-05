@@ -95,11 +95,12 @@ class ReportExportController extends Controller
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'default_font_size' => 12,
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
+            'default_font_size' => 11,
+            'default_font' => 'dejavusans',
+            'margin_left' => 18,
+            'margin_right' => 18,
+            'margin_top' => 18,
+            'margin_bottom' => 18,
         ]);
 
         $mpdf->SetDirectionality('rtl');
