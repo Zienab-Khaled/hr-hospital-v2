@@ -24,6 +24,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\UserCredentialsMail;
@@ -990,10 +991,23 @@ class PlaceholderController extends Controller
         $departmentManagerName = Setting::get('department_manager_name', '');
         $departmentManagerSignaturePath = Setting::get('department_manager_signature', '');
         // على الاستضافة بدون symlink (مثل Hostinger) الملفات تُقدّم عبر route؛ نتحقق من وجود الملف لتجنّب أيقونة صورة مكسورة
-        $logoExists = $logoPath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $logoPath));
-        $stampExists = $stampPath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $stampPath));
-        $managerSignatureExists = $managerSignaturePath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $managerSignaturePath));
-        $departmentManagerSignatureExists = $departmentManagerSignaturePath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $departmentManagerSignaturePath));
+        $logoExists = $logoPath && File::exists(storage_path('app/public/' . $logoPath));
+        $stampExists = $stampPath && File::exists(storage_path('app/public/' . $stampPath));
+        $managerSignatureExists = $managerSignaturePath && File::exists(storage_path('app/public/' . $managerSignaturePath));
+        $departmentManagerSignatureExists = $departmentManagerSignaturePath && File::exists(storage_path('app/public/' . $departmentManagerSignaturePath));
+        // مزامنة مرة واحدة: نسخ من storage إلى public/storage حتى يعمل الرابط بدون symlink/route
+        if ($logoPath && $logoExists) {
+            $this->copyStorageToPublic($logoPath);
+        }
+        if ($stampPath && $stampExists) {
+            $this->copyStorageToPublic($stampPath);
+        }
+        if ($managerSignaturePath && $managerSignatureExists) {
+            $this->copyStorageToPublic($managerSignaturePath);
+        }
+        if ($departmentManagerSignaturePath && $departmentManagerSignatureExists) {
+            $this->copyStorageToPublic($departmentManagerSignaturePath);
+        }
         return view('settings.index', compact(
             'hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn',
             'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress',
@@ -1041,18 +1055,22 @@ class PlaceholderController extends Controller
             $oldLogo = Setting::get('logo', '');
             if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
                 Storage::disk('public')->delete($oldLogo);
+                $this->deletePublicStorageFile($oldLogo);
             }
             $path = $request->file('logo')->store('settings', 'public');
             Setting::set('logo', $path, 'general');
+            $this->copyStorageToPublic($path);
         }
 
         if ($request->hasFile('stamp')) {
             $oldStamp = Setting::get('stamp', '');
             if ($oldStamp && Storage::disk('public')->exists($oldStamp)) {
                 Storage::disk('public')->delete($oldStamp);
+                $this->deletePublicStorageFile($oldStamp);
             }
             $path = $request->file('stamp')->store('settings', 'public');
             Setting::set('stamp', $path, 'general');
+            $this->copyStorageToPublic($path);
         }
 
         $managerSigPath = $this->saveSignatureFromBase64($request->input('manager_signature_data'), 'settings');
@@ -1060,8 +1078,10 @@ class PlaceholderController extends Controller
             $oldSig = Setting::get('manager_signature', '');
             if ($oldSig && Storage::disk('public')->exists($oldSig)) {
                 Storage::disk('public')->delete($oldSig);
+                $this->deletePublicStorageFile($oldSig);
             }
             Setting::set('manager_signature', $managerSigPath, 'general');
+            $this->copyStorageToPublic($managerSigPath);
         }
 
         $deptManagerSigPath = $this->saveSignatureFromBase64($request->input('department_manager_signature_data'), 'settings');
@@ -1069,14 +1089,44 @@ class PlaceholderController extends Controller
             $oldDeptSig = Setting::get('department_manager_signature', '');
             if ($oldDeptSig && Storage::disk('public')->exists($oldDeptSig)) {
                 Storage::disk('public')->delete($oldDeptSig);
+                $this->deletePublicStorageFile($oldDeptSig);
             }
             Setting::set('department_manager_signature', $deptManagerSigPath, 'general');
+            $this->copyStorageToPublic($deptManagerSigPath);
         }
 
 
         ActivityLogger::log('settings_updated', null, null, __('Settings updated'), null, ['hospital_name' => $request->input('hospital_name')]);
 
         return back()->with('success', __('Saved successfully.'));
+    }
+
+    /**
+     * نسخ ملف من storage/app/public إلى public/storage حتى يخدمه الويب مباشرة (بدون symlink/route).
+     */
+    private function copyStorageToPublic(string $relativePath): void
+    {
+        $src = storage_path('app/public/' . $relativePath);
+        $dst = public_path('storage/' . $relativePath);
+        if (! File::exists($src) || File::isDirectory($src)) {
+            return;
+        }
+        $dir = dirname($dst);
+        if (! File::isDirectory($dir)) {
+            File::makeDirectory($dir, 0755, true);
+        }
+        @copy($src, $dst);
+    }
+
+    /**
+     * حذف نسخة الملف من public/storage عند استبدال الشعار/الختم/التوقيع.
+     */
+    private function deletePublicStorageFile(string $relativePath): void
+    {
+        $path = public_path('storage/' . $relativePath);
+        if (File::exists($path) && File::isFile($path)) {
+            File::delete($path);
+        }
     }
 
     public function codesUpload()
