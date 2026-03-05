@@ -201,11 +201,11 @@
                                 <div class="bg-white border border-blue-200 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                                     <div class="text-sm">
                                         <span class="font-semibold text-slate-800">
-                                            {{ app()->getLocale() === 'ar' && $v->department->name_ar ? $v->department->name_ar : $v->department->name }}
+                                            {{ (app()->getLocale() === 'ar' ? ($v->department?->name_ar ?? $v->department?->name) : ($v->department?->name ?? $v->department?->name_ar)) ?? '—' }}
                                         </span>
                                         <span class="text-slate-500 mx-1">—</span>
                                         <span class="text-slate-600">
-                                            {{ app()->getLocale() === 'ar' && $v->shift->name_ar ? $v->shift->name_ar : $v->shift->name }}
+                                            {{ (app()->getLocale() === 'ar' ? ($v->shift?->name_ar ?? $v->shift?->name) : ($v->shift?->name ?? $v->shift?->name_ar)) ?? '—' }}
                                         </span>
                                         @if ($v->transferred_department_id)
                                             <span class="bg-amber-100 text-amber-800 text-xs font-bold px-1.5 py-0.5 rounded ms-2">
