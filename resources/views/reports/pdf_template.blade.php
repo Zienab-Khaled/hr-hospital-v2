@@ -2,24 +2,40 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>{{ app()->getLocale() === 'ar' ? 'تقرير الإيرادات' : 'Revenue Report' }}</title>
+    <title>{{ app()->getLocale() === 'ar' ? 'تقرير رسمي - الإيرادات والتحصيل' : 'Official Report - Revenue & Collection' }}</title>
     <style>
         * { box-sizing: border-box; }
         body {
-            font-family: 'DejaVu Sans', 'Traditional Arabic', 'Arial', sans-serif;
+            font-family: xbriyaz, dejavusans, 'Traditional Arabic', sans-serif;
             direction: rtl;
             text-align: right;
-            padding: 0 24px 24px;
-            font-size: 11px;
+            padding: 0 16px 20px;
+            font-size: 12px;
             color: #1e293b;
+            line-height: 1.6;
+        }
+        .official-header {
+            width: 100%;
+            margin-bottom: 20px;
+            padding: 14px 18px;
+            border: 2px solid #0f172a;
+            background: #f8fafc;
+        }
+        .official-header .official-lines {
+            text-align: center;
             line-height: 1.5;
         }
+        .official-header .line-country { font-size: 13px; font-weight: bold; color: #0f172a; margin: 0 0 2px 0; }
+        .official-header .line-ministry { font-size: 12px; font-weight: bold; color: #1e293b; margin: 0 0 2px 0; }
+        .official-header .line-cluster { font-size: 12px; color: #334155; margin: 0 0 4px 0; }
+        .official-header .line-hospital { font-size: 16px; font-weight: bold; color: #0f172a; margin: 0 0 2px 0; }
+        .official-header .line-hospital-en { font-size: 11px; color: #475569; margin: 0; }
         .report-header {
             display: table;
             width: 100%;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 3px solid #1e40af;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 3px solid #0f172a;
         }
         .report-header .logo-cell {
             width: 72px;
@@ -35,39 +51,39 @@
             text-align: center;
             width: 100%;
         }
-        .report-header .hospital-name {
-            font-size: 18px;
+        .report-header .hospital-name { font-size: 17px; font-weight: bold; color: #0f172a; margin: 0 0 4px 0; }
+        .report-header .cluster-name { font-size: 12px; color: #475569; margin: 0; }
+        .badge-official {
+            display: inline-block;
+            background: #0f172a;
+            color: #fff;
+            font-size: 11px;
             font-weight: bold;
-            color: #1e40af;
-            margin: 0 0 4px 0;
-        }
-        .report-header .cluster-name {
-            font-size: 12px;
-            color: #64748b;
-            margin: 0;
+            padding: 4px 12px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
         }
         .report-title-block {
             text-align: center;
-            margin: 28px 0 24px;
+            margin: 22px 0 20px;
         }
         .report-title-block h1 {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #0f172a;
             margin: 0 0 8px 0;
         }
         .report-title-block .date-range {
             font-size: 13px;
-            color: #475569;
+            color: #334155;
         }
         .section-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #fff;
-            background: #1e40af;
+            background: #0f172a;
             padding: 10px 14px;
-            margin: 24px 0 12px 0;
-            border-radius: 4px;
+            margin: 20px 0 10px 0;
             text-align: right;
         }
         .metrics-grid {
@@ -78,35 +94,26 @@
         }
         .metrics-grid td {
             width: 33.33%;
-            padding: 16px 14px;
-            border: 1px solid #e2e8f0;
+            padding: 14px 12px;
+            border: 1px solid #cbd5e1;
             text-align: center;
             vertical-align: middle;
             background: #f8fafc;
         }
-        .metrics-grid td:first-child { border-left: 1px solid #e2e8f0; }
-        .metrics-grid td:last-child { border-right: 1px solid #e2e8f0; }
-        .metric-label {
-            font-size: 11px;
-            color: #475569;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-        .metric-value {
-            font-size: 16px;
-            font-weight: bold;
-            color: #0f172a;
-        }
+        .metrics-grid td:first-child { border-left: 1px solid #cbd5e1; }
+        .metrics-grid td:last-child { border-right: 1px solid #cbd5e1; }
+        .metric-label { font-size: 11px; color: #475569; font-weight: bold; margin-bottom: 6px; }
+        .metric-value { font-size: 15px; font-weight: bold; color: #0f172a; }
         table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 11px;
+            margin-bottom: 18px;
+            font-size: 12px;
         }
         table.data-table th {
-            background: #1e40af;
+            background: #0f172a;
             color: #fff;
-            border: 1px solid #1e40af;
+            border: 1px solid #0f172a;
             padding: 10px 12px;
             text-align: right;
             font-weight: bold;
@@ -116,62 +123,49 @@
             padding: 10px 12px;
             text-align: right;
         }
-        table.data-table tbody tr:nth-child(even) {
-            background: #f8fafc;
-        }
-        table.data-table tbody tr:hover {
-            background: #f1f5f9;
-        }
-        table.data-table .num {
-            text-align: right;
-            font-family: 'DejaVu Sans', monospace;
-        }
+        table.data-table tbody tr:nth-child(even) { background: #f8fafc; }
+        table.data-table .num { text-align: right; font-family: xbriyaz, dejavusans, monospace; }
         .manager-signature {
-            margin-top: 36px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
+            margin-top: 32px;
+            padding-top: 14px;
+            border-top: 2px solid #e2e8f0;
             text-align: center;
         }
-        .manager-signature .title {
-            font-size: 11px;
-            color: #64748b;
-            margin-bottom: 4px;
-        }
-        .manager-signature .name {
-            font-size: 13px;
-            font-weight: bold;
-            color: #0f172a;
-        }
+        .manager-signature .title { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+        .manager-signature .name { font-size: 13px; font-weight: bold; color: #0f172a; }
         .footer {
-            margin-top: 32px;
+            margin-top: 28px;
             text-align: center;
             font-size: 10px;
-            color: #94a3b8;
+            color: #64748b;
             border-top: 1px solid #e2e8f0;
             padding-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="report-header">
+    <div class="official-header">
         <table style="width:100%; border:0;">
             <tr>
-                <td class="logo-cell" style="width:72px;">
+                <td style="width:72px; vertical-align:middle;">
                     @if(!empty($logoPath) && file_exists($logoPath))
-                        <img src="{{ $logoPath }}" alt="Logo" style="max-height:56px; max-width:72px; object-fit:contain;">
+                        <img src="{{ $logoPath }}" alt="Logo" style="max-height:52px; max-width:72px; object-fit:contain;">
                     @endif
                 </td>
-                <td class="title-cell">
-                    @if(!empty($hospitalName))
-                        <p class="hospital-name">{{ $hospitalName }}</p>
-                    @endif
-                    @if(!empty($healthClusterName))
-                        <p class="cluster-name">{{ $healthClusterName }}</p>
-                    @endif
+                <td style="vertical-align:middle; text-align:center; width:100%;">
+                    <div class="official-lines">
+                        @if(!empty($reportCountryAr))<div class="line-country">{{ $reportCountryAr }}</div>@endif
+                        @if(!empty($reportMinistryAr))<div class="line-ministry">{{ $reportMinistryAr }}</div>@endif
+                        @if(!empty($healthClusterName))<div class="line-cluster">{{ $healthClusterName }}</div>@endif
+                        @if(!empty($hospitalName))<div class="line-hospital">{{ $hospitalName }}</div>@endif
+                        @if(!empty($hospitalNameEn))<div class="line-hospital-en">{{ $hospitalNameEn }}</div>@endif
+                    </div>
                 </td>
             </tr>
         </table>
     </div>
+
+    <div class="badge-official">{{ app()->getLocale() === 'ar' ? 'تقرير رسمي' : 'Official Report' }}</div>
 
     <div class="report-title-block">
         <h1>{{ app()->getLocale() === 'ar' ? 'تقرير الإيرادات والتحصيل' : 'Revenue & Collection Report' }}</h1>
@@ -254,7 +248,12 @@
     </div>
 
     <div class="footer">
-        {{ app()->getLocale() === 'ar' ? 'تم إنشاء التقرير آلياً في' : 'Report generated on' }} {{ date('Y-m-d H:i') }}
+        {{ app()->getLocale() === 'ar' ? 'تاريخ الإصدار:' : 'Issue date:' }} {{ date('Y-m-d') }}
+        &nbsp;|&nbsp;
+        {{ app()->getLocale() === 'ar' ? 'وقت الإنشاء:' : 'Generated at' }} {{ date('H:i') }}
+        @if(!empty($healthClusterName))
+            &nbsp;|&nbsp;{{ $healthClusterName }}
+        @endif
     </div>
 </body>
 </html>
