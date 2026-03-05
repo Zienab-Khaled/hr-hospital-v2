@@ -26,11 +26,6 @@
             </span>
 
             <div class="h-[1px] w-12 bg-white/10 my-1"></div>
-            {{-- <span class="text-[11px] font-medium text-slate-400">
-                 {{ __('إشراف وتطوير :') }}
-                 {{ __('عبير سليمان الرويلي') }}
-            </span>
-            <span class="text-[12px] font-bold text-slate-200"> --}}
             </span>
         </div>
     </div>
@@ -253,8 +248,7 @@
         <a href="{{ route('delegations.index') }}"
             class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
            {{ request()->routeIs('delegations.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-            <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
+            <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>

@@ -34,7 +34,7 @@ class ProductionUsersSeeder extends Seeder
             [
                 'username' => 'abeer.alruwaili',
                 'password' => 'Ab33r!Ruw#2025$Revenue',
-                'name' => 'Abeer Al-Ruwaili',
+                'name' => 'Abber Suliman Alrwaily',
                 'name_ar' => 'عبير الرويلي',
                 'email' => 'abeer@hospital.sa',
                 'role' => 'admin',

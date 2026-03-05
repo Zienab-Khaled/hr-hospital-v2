@@ -202,7 +202,9 @@
             <footer class="mt-auto border-t border-slate-200 bg-slate-100">
                 <div class="px-6 py-4 text-center text-sm text-slate-600 space-y-1">
                     <p class="m-0">
-                        &copy; {{ date('Y') }} <span class="font-semibold text-slate-700">عبير سليمان الرويلي</span> {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+                        &copy; {{ date('Y') }} <span class="font-semibold text-slate-700">Abber Suliman
+                            Alrwaily</span>
+                        {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
                     </p>
                     <p class="m-0 text-slate-500">
                         إيراد: حوكمة | تحول رقمي | استدامة | إشراف وتطوير النظام
