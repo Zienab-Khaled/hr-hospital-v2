@@ -46,7 +46,7 @@
             @if($logoPath)
                 <div class="mb-2 flex items-center gap-3">
                     @if($logoExists ?? false)
-                        <img src="{{ route('storage.serve', ['path' => $logoPath]) }}" alt="Logo" class="h-16 object-contain border border-slate-200 rounded p-1 bg-white">
+                        <img src="{{ Route::has('storage.serve') ? route('storage.serve', ['path' => $logoPath]) : asset('storage/' . $logoPath) }}" alt="Logo" class="h-16 object-contain border border-slate-200 rounded p-1 bg-white">
                     @else
                         <span class="text-sm text-amber-600">{{ app()->getLocale() === 'ar' ? 'ملف الشعار غير موجود على السيرفر (أعد رفعه من الأسفل).' : 'Logo file not found on server (re-upload below).' }}</span>
                     @endif
@@ -91,7 +91,7 @@
             @if($stampPath)
                 <div class="mb-2 flex items-center gap-3">
                     @if($stampExists ?? false)
-                        <img src="{{ route('storage.serve', ['path' => $stampPath]) }}" alt="Stamp" class="h-20 object-contain border border-slate-200 rounded p-1 bg-white">
+                        <img src="{{ Route::has('storage.serve') ? route('storage.serve', ['path' => $stampPath]) : asset('storage/' . $stampPath) }}" alt="Stamp" class="h-20 object-contain border border-slate-200 rounded p-1 bg-white">
                     @else
                         <span class="text-sm text-amber-600">{{ app()->getLocale() === 'ar' ? 'ملف الختم غير موجود على السيرفر (أعد رفعه من الأسفل).' : 'Stamp file not found on server (re-upload below).' }}</span>
                     @endif

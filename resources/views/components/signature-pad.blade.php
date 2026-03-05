@@ -10,7 +10,7 @@
     @endif
     @if($currentImage)
         <div class="mb-2 flex items-center gap-3">
-            <img src="{{ route('storage.serve', ['path' => $currentImage]) }}" alt="Current signature" class="h-14 object-contain border border-slate-200 rounded p-1 bg-white">
+            <img src="{{ Route::has('storage.serve') ? route('storage.serve', ['path' => $currentImage]) : asset('storage/' . $currentImage) }}" alt="Current signature" class="h-14 object-contain border border-slate-200 rounded p-1 bg-white">
             <span class="text-sm text-slate-500">{{ app()->getLocale() === 'ar' ? 'التوقيع الحالي' : 'Current signature' }}</span>
         </div>
         <p class="text-xs text-slate-500 mb-2">{{ app()->getLocale() === 'ar' ? 'ارسم في المربع أدناه لاستبدال التوقيع، أو اتركه فارغًا للإبقاء على الحالي.' : 'Draw in the box below to replace signature, or leave empty to keep current.' }}</p>
