@@ -33,6 +33,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'invoices.create',
             'invoices.edit',
             'invoices.delete',
+            'invoices.execute_services',
             // المدفوعات
             'payments.view',
             'payments.create',
@@ -141,7 +142,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $collection->syncPermissions([
                 'patients.view', 'patients.create', 'patients.edit',
                 'visits.view', 'visits.create', 'visits.edit',
-                'invoices.view', 'invoices.create',
+                'invoices.view', 'invoices.create', 'invoices.execute_services',
                 'payments.view', 'payments.create',
                 'procedures.contact_report', 'procedures.written_commitment',
                 'procedures.non_commitment',
