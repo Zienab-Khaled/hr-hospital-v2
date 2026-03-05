@@ -47,7 +47,8 @@
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
-                @if ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity')
+                {{-- إرسال للجمعية يظهر فقط عندما توجد مطالبة جمعية شغالة لهذه الفاتورة (تم إنشاؤها من صفحة المطالبات) --}}
+                @if (($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') && $invoice->hasCharityClaim())
                     @if ($invoice->patient?->charityEntity?->email)
                         <form method="POST" action="{{ route('invoices.send-charity-price-offer', $invoice) }}"
                             class="inline"
@@ -79,8 +80,8 @@
                     @endif
                 @endif
 
-                {{-- Record Payment button for Cash/Partially Paid --}}
-                @if ($effectiveRemaining > 0)
+                {{-- Record Payment button for Cash/Partially Paid (المحصل/الاستقبال: payments.create) --}}
+                @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
                     <button type="button" onclick="openPaymentModal()"
                         class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
                         💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
@@ -295,7 +296,7 @@
                     @if ($invoice->patient->payment_type === 'insurance' && $invoice->patient->insuranceCompany)
                         <p><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance company:' }}</span>
-                            {{ $invoice->patient->insuranceCompany->name }}</p>
+                            {{ app()->getLocale() === 'ar' ? ($invoice->patient->insuranceCompany->name_ar ?? $invoice->patient->insuranceCompany->name) : $invoice->patient->insuranceCompany->name }}</p>
                     @endif
                     @if ($invoice->patient->payment_type === 'charity' && $invoice->patient->charityEntity)
                         <p><span
@@ -355,10 +356,10 @@
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
                             @endif
-                            @can('invoices.edit')
+                            @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'التنفيذ' : 'Execution' }}</th>
-                            @endcan
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -398,7 +399,7 @@
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">
                                         @currency($item->patient_amount)</td>
                                 @endif
-                                @can('invoices.edit')
+                                @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
                                         @if ($item->isCompleted())
                                             <span
@@ -421,7 +422,7 @@
                                             </button>
                                         @endif
                                     </td>
-                                @endcan
+                                @endif
                             </tr>
                         @empty
                             <tr>

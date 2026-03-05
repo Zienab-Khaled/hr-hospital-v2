@@ -13,7 +13,7 @@ class PaymentReceiptController extends Controller
 {
     public function store(Request $request)
     {
-        $this->authorize('invoices.edit');
+        $this->authorize('payments.create');
 
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',

@@ -82,7 +82,7 @@
                 @endif
             </div>
             @if ($visit->patient->insuranceCompany)
-                <div style="font-size: 12px;">{{ $visit->patient->insuranceCompany->name }}</div>
+                <div style="font-size: 12px;">{{ app()->getLocale() === 'ar' ? ($visit->patient->insuranceCompany->name_ar ?? $visit->patient->insuranceCompany->name) : $visit->patient->insuranceCompany->name }}</div>
             @endif
         </div>
         <div class="info-item">

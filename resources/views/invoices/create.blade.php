@@ -111,7 +111,7 @@
                                     @foreach ($insuranceCompanies ?? [] as $company)
                                         <option value="{{ $company->id }}"
                                             {{ old('patient_insurance_company_id', $patient->insurance_company_id) == $company->id ? 'selected' : '' }}>
-                                            {{ $company->name }}</option>
+                                            {{ app()->getLocale() === 'ar' ? ($company->name_ar ?? $company->name) : $company->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
