@@ -199,18 +199,14 @@
             </div>
 
             {{-- Footer --}}
-            <footer class="mt-auto px-8 py-6 border-t border-slate-200 bg-white/50">
-                <div
-                    class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
-                    <div>
-                        &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">عبير سليمان الرويلي</span>.
-                        {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
-                    </div>
-                    <div class="flex items-center gap-4 text-slate-400">
-                        <span class="hover:text-slate-600 transition-colors">إيراد: حوكمة | تحول رقمي | استدامة</span>
-                        <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                        <span class="hover:text-slate-600 transition-colors">إشراف وتطوير النظام</span>
-                    </div>
+            <footer class="mt-auto border-t border-slate-200 bg-slate-100">
+                <div class="px-6 py-4 text-center text-sm text-slate-600 space-y-1">
+                    <p class="m-0">
+                        &copy; {{ date('Y') }} <span class="font-semibold text-slate-700">عبير سليمان الرويلي</span> {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
+                    </p>
+                    <p class="m-0 text-slate-500">
+                        إيراد: حوكمة | تحول رقمي | استدامة | إشراف وتطوير النظام
+                    </p>
                 </div>
             </footer>
         </main>

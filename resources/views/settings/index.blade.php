@@ -45,7 +45,11 @@
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الشعار' : 'Logo' }}</label>
             @if($logoPath)
                 <div class="mb-2 flex items-center gap-3">
-                    <img src="{{ asset('storage/' . $logoPath) }}" alt="Logo" class="h-16 object-contain border border-slate-200 rounded p-1 bg-white">
+                    @if($logoExists ?? false)
+                        <img src="{{ route('storage.serve', ['path' => $logoPath]) }}" alt="Logo" class="h-16 object-contain border border-slate-200 rounded p-1 bg-white">
+                    @else
+                        <span class="text-sm text-amber-600">{{ app()->getLocale() === 'ar' ? 'ملف الشعار غير موجود على السيرفر (أعد رفعه من الأسفل).' : 'Logo file not found on server (re-upload below).' }}</span>
+                    @endif
                     <span class="text-sm text-slate-500">{{ app()->getLocale() === 'ar' ? 'الشعار الحالي' : 'Current logo' }}</span>
                 </div>
             @endif
@@ -86,7 +90,11 @@
             <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'صورة الختم' : 'Stamp image' }}</label>
             @if($stampPath)
                 <div class="mb-2 flex items-center gap-3">
-                    <img src="{{ asset('storage/' . $stampPath) }}" alt="Stamp" class="h-20 object-contain border border-slate-200 rounded p-1 bg-white">
+                    @if($stampExists ?? false)
+                        <img src="{{ route('storage.serve', ['path' => $stampPath]) }}" alt="Stamp" class="h-20 object-contain border border-slate-200 rounded p-1 bg-white">
+                    @else
+                        <span class="text-sm text-amber-600">{{ app()->getLocale() === 'ar' ? 'ملف الختم غير موجود على السيرفر (أعد رفعه من الأسفل).' : 'Stamp file not found on server (re-upload below).' }}</span>
+                    @endif
                     <span class="text-sm text-slate-500">{{ app()->getLocale() === 'ar' ? 'الختم الحالي' : 'Current stamp' }}</span>
                 </div>
             @endif
