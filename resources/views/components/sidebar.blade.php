@@ -249,23 +249,24 @@
             </a>
         @endif
 
+        {{-- Delegations (مفتوح لجميع الموظفين) --}}
+        <a href="{{ route('delegations.index') }}"
+            class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
+           {{ request()->routeIs('delegations.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+            <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            <span>{{ app()->getLocale() === 'ar' ? 'التفويضات' : 'Delegations' }}</span>
+        </a>
+
         {{-- System Admin Section --}}
         @if ($isManager)
             <div class="mt-3 mb-1">
                 <p class="px-4 py-2 text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em] mt-4 mb-1">
                     {{ app()->getLocale() === 'ar' ? 'إدارة النظام' : 'System Admin' }}
                 </p>
-
-                <a href="{{ route('delegations.index') }}"
-                    class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200
-                   {{ request()->routeIs('delegations.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    <span>{{ app()->getLocale() === 'ar' ? 'التفويضات' : 'Delegations' }}</span>
-                </a>
 
                 <a href="{{ route('departments.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg text-[13px] font-medium transition-all duration-200

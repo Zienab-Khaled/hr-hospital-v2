@@ -989,11 +989,17 @@ class PlaceholderController extends Controller
         $managerSignaturePath = Setting::get('manager_signature', '');
         $departmentManagerName = Setting::get('department_manager_name', '');
         $departmentManagerSignaturePath = Setting::get('department_manager_signature', '');
+        // على الاستضافة بدون symlink (مثل Hostinger) الملفات تُقدّم عبر route؛ نتحقق من وجود الملف لتجنّب أيقونة صورة مكسورة
+        $logoExists = $logoPath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $logoPath));
+        $stampExists = $stampPath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $stampPath));
+        $managerSignatureExists = $managerSignaturePath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $managerSignaturePath));
+        $departmentManagerSignatureExists = $departmentManagerSignaturePath && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $departmentManagerSignaturePath));
         return view('settings.index', compact(
             'hospitalName', 'hospitalNameEn', 'healthClusterName', 'healthClusterNameEn',
             'managerName', 'logoPath', 'companyPhone', 'companyEmail', 'companyAddress',
             'accountNumber', 'ibanNumber', 'bankName', 'stampPath', 'managerSignaturePath',
-            'departmentManagerName', 'departmentManagerSignaturePath'
+            'departmentManagerName', 'departmentManagerSignaturePath',
+            'logoExists', 'stampExists', 'managerSignatureExists', 'departmentManagerSignatureExists'
         ));
     }
 

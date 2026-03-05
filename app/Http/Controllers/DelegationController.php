@@ -11,43 +11,25 @@ class DelegationController extends Controller
 {
     public function index(Request $request)
     {
-        // من يستطيع إدارة التفويضات أو إنشاؤها: المدير أو الأدمن فقط
-        $canManage = auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager');
-
-        if (!$canManage) {
-            // الموظف العادي يرى فقط التفويضات المُفوّض إليّه فيها
-            $given = collect();
-            $received = Delegation::with('delegator')
-                ->where('delegate_to_id', auth()->id())
-                ->orderByDesc('from_date')
-                ->orderByDesc('to_date')
-                ->paginate(20, ['*'], 'received_page');
-        } else {
-            $given = Delegation::with('delegateTo')
-                ->where('delegator_id', auth()->id())
-                ->orderByDesc('from_date')
-                ->orderByDesc('to_date')
-                ->paginate(20, ['*'], 'given_page');
-            $received = Delegation::with('delegator')
-                ->where('delegate_to_id', auth()->id())
-                ->orderByDesc('from_date')
-                ->orderByDesc('to_date')
-                ->paginate(20, ['*'], 'received_page');
-        }
-
-        $users = $canManage
-            ? User::where('id', '!=', auth()->id())->orderBy('name')->get(['id', 'name', 'name_ar', 'job_title_ar'])
-            : collect();
+        // التفويضات مفتوحة لجميع الموظفين: الجميع يرى تفويضاته المُعطاة والمُستلمة ويمكنه إنشاء تفويض جديد
+        $given = Delegation::with('delegateTo')
+            ->where('delegator_id', auth()->id())
+            ->orderByDesc('from_date')
+            ->orderByDesc('to_date')
+            ->paginate(20, ['*'], 'given_page');
+        $received = Delegation::with('delegator')
+            ->where('delegate_to_id', auth()->id())
+            ->orderByDesc('from_date')
+            ->orderByDesc('to_date')
+            ->paginate(20, ['*'], 'received_page');
+        $users = User::where('id', '!=', auth()->id())->orderBy('name')->get(['id', 'name', 'name_ar', 'job_title_ar']);
+        $canManage = true;
 
         return view('delegations.index', compact('given', 'received', 'users', 'canManage'));
     }
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('manager')) {
-            abort(403, app()->getLocale() === 'ar' ? 'غير مصرح لك بإنشاء تفويض.' : 'You are not authorized to create a delegation.');
-        }
-
         $request->validate([
             'delegate_to_id' => 'required|exists:users,id',
             'from_date' => 'required|date',
