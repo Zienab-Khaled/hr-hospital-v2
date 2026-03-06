@@ -603,6 +603,37 @@ class InvoiceController extends Controller
     }
 
     /**
+     * صفحة تعديل الإيميل ثم الإرسال للجمعية (موضوع، نص، مدة العلاج، مرفقات).
+     */
+    public function composeCharityEmail(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.charityEntity', 'items.service']);
+
+        $patient = $invoice->patient;
+        if (! $patient || $patient->payment_type !== 'charity' || ! $patient->charityEntity) {
+            return redirect()->route('invoices.show', $invoice)->withErrors([
+                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بمريض جمعية.' : 'Invoice is not linked to a charity patient.',
+            ]);
+        }
+        if (! $patient->charityEntity->email) {
+            return redirect()->route('invoices.show', $invoice)->withErrors([
+                'error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية.' : 'No email registered for the charity.',
+            ]);
+        }
+
+        $bankName = Setting::get('bank_name', 'البنك');
+        $accountNumber = Setting::get('account_number', '');
+        $ibanNumber = Setting::get('iban_number', '');
+        $patientName = $patient->name_ar ?: $patient->name ?? '—';
+        $patientIdentity = $patient->identity_value ?: $patient->file_number ?? '—';
+        $defaultIntro = 'تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / ' . $patientName . ' رقم الجواز (' . $patientIdentity . ') ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في ' . $bankName . ' (' . $accountNumber . ') رقم الأيبان ' . $ibanNumber;
+        $defaultSubject = (app()->getLocale() === 'ar' ? 'عرض سعر / فاتورة ' : 'Price offer / Invoice ') . $invoice->invoice_number;
+
+        return view('invoices.charity-email-compose', compact('invoice', 'defaultSubject', 'defaultIntro'));
+    }
+
+    /**
      * معاينة محتوى الإيميل الذي سيُرسل للجمعية قبل الإرسال (نفس شكل الإيميل الفعلي).
      */
     public function previewCharityEmail(Invoice $invoice)
@@ -647,10 +678,9 @@ class InvoiceController extends Controller
     }
 
     /**
-     * إرسال عرض سعر / فاتورة طبية للجمعية مباشرة (نفس فلو أحقية العلاج).
-     * يرسل ميل "عرض سعر / فاتورة طبية" مع PDF مرفق وزرّي تأكيد/رفض إلى إيميل الجمعية المسجل.
+     * إرسال عرض سعر / فاتورة طبية للجمعية (يدعم التعديل والمرفقات من صفحة التحرير).
      */
-    public function sendCharityPriceOffer(Invoice $invoice)
+    public function sendCharityPriceOffer(Request $request, Invoice $invoice)
     {
         $this->authorize('invoices.view');
         $invoice->load(['patient.charityEntity', 'visit', 'items.service']);
@@ -664,6 +694,13 @@ class InvoiceController extends Controller
         if (! $charityEntity || ! $charityEntity->email) {
             return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية. استخدم "إرسال لطرف" لإدخال بريد يدوياً.' : 'No email registered for the charity. Use "Send to party" to enter an email manually.']);
         }
+
+        $request->validate([
+            'subject' => 'nullable|string|max:255',
+            'custom_intro' => 'nullable|string|max:4000',
+            'treatment_duration' => 'nullable|string|max:500',
+            'attachments.*' => 'nullable|file|max:20480',
+        ]);
 
         $recipientName = app()->getLocale() === 'ar' && ! empty($charityEntity->name_ar) ? $charityEntity->name_ar : $charityEntity->name;
         $token = InvoicePartySend::generateToken();
@@ -696,8 +733,22 @@ class InvoiceController extends Controller
         $pdfDir = 'invoice-party-pdfs';
         $pdfFilename = $token . '.pdf';
         $pdfRelativePath = $pdfDir . '/' . $pdfFilename;
+        $extraPaths = [];
+        $attachDir = 'invoice-party-attachments/' . $token;
 
         try {
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    if ($file->isValid()) {
+                        $name = $file->getClientOriginalName() ?: ('attachment-' . uniqid());
+                        $stored = $file->storeAs($attachDir, $name, 'local');
+                        if ($stored) {
+                            $extraPaths[] = $stored;
+                        }
+                    }
+                }
+            }
+
             $attachmentPaths = $invoice->getAttachmentPathsForPdf();
             $html = view('invoices.price-offer-pdf', [
                 'invoice' => $invoice,
@@ -719,7 +770,18 @@ class InvoiceController extends Controller
             $pdfContent = $mpdf->Output('', 'S');
             Storage::disk('local')->put($pdfRelativePath, $pdfContent);
 
-            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail($partySend, $pdfRelativePath));
+            $customSubject = $request->filled('subject') ? $request->input('subject') : null;
+            $customIntro = $request->filled('custom_intro') ? $request->input('custom_intro') : null;
+            $treatmentDuration = $request->filled('treatment_duration') ? $request->input('treatment_duration') : null;
+
+            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail(
+                $partySend,
+                $pdfRelativePath,
+                $customSubject,
+                $customIntro,
+                $treatmentDuration,
+                $extraPaths
+            ));
 
             $invoice->update(['status' => 'sent_to_charity']);
             \App\Models\CharityClaim::updateOrCreate(
@@ -733,11 +795,20 @@ class InvoiceController extends Controller
             );
 
             ActivityLogger::log('Invoice Sent', 'Invoice', $invoice->id, 'Charity price offer email sent to ' . $partySend->recipient_name, null, $partySend->toArray());
+
             Storage::disk('local')->delete($pdfRelativePath);
+            foreach ($extraPaths as $p) {
+                Storage::disk('local')->delete($p);
+            }
         } catch (\Throwable $e) {
             Log::error('Charity price offer email failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
             if (Storage::disk('local')->exists($pdfRelativePath)) {
                 Storage::disk('local')->delete($pdfRelativePath);
+            }
+            foreach ($extraPaths as $p) {
+                if (Storage::disk('local')->exists($p)) {
+                    Storage::disk('local')->delete($p);
+                }
             }
             return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إرسال الإيميل. حاول مرة أخرى.' : 'Failed to send email. Please try again.']);
         }

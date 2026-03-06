@@ -15,7 +15,6 @@
         .org-line-en { font-size: 12px; color: #333; margin: 2px 0; }
         .date-row { clear: both; margin: 14px 0; overflow: hidden; }
         .date-row .date { font-weight: bold; font-size: 14px; float: right; }
-        .date-row .without { font-size: 12px; color: #555; float: left; }
         .to-block { margin: 16px 0 12px; font-weight: bold; font-size: 14px; }
         .body-text { margin: 14px 0; font-size: 13px; line-height: 1.8; text-align: right; }
         .table-caption { font-weight: bold; font-size: 13px; margin: 16px 0 8px; text-decoration: underline; text-align: right; }
@@ -74,7 +73,6 @@
     </div>
 
     <div class="date-row">
-        <span class="without">بدون</span>
         <span class="date">{{ $invoice->invoice_date?->format('d/m/Y') }}</span>
     </div>
 
@@ -85,7 +83,14 @@
 
     <div class="body-text">
         السلام عليكم ورحمة الله وبركاته،<br>
-        تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / {{ $patientName }} رقم الجواز ({{ $patientIdentity }}) ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في {{ $bankName }} ({{ $accountNumber }}) رقم الأيبان {{ $ibanNumber }}
+        @if(!empty($customIntro))
+            {!! nl2br(e($customIntro)) !!}
+        @else
+            تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / {{ $patientName }} رقم الجواز ({{ $patientIdentity }}) ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في {{ $bankName }} ({{ $accountNumber }}) رقم الأيبان {{ $ibanNumber }}
+        @endif
+        @if(!empty($treatmentDuration))
+            <br><strong>مدة العلاج:</strong> {{ $treatmentDuration }}
+        @endif
     </div>
 
     <div class="table-caption">عرض السعر حسب تسعيرة وزارة الصحة</div>

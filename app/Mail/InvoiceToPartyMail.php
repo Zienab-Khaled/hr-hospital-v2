@@ -10,6 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class InvoiceToPartyMail extends Mailable
 {
@@ -17,7 +18,11 @@ class InvoiceToPartyMail extends Mailable
 
     public function __construct(
         public InvoicePartySend $partySend,
-        public ?string $pdfPath = null
+        public ?string $pdfPath = null,
+        public ?string $customSubject = null,
+        public ?string $customIntro = null,
+        public ?string $treatmentDuration = null,
+        public array $extraAttachmentPaths = []
     ) {
         $this->partySend->load(['invoice.patient', 'invoice.items.service']);
     }
@@ -25,7 +30,7 @@ class InvoiceToPartyMail extends Mailable
     public function envelope(): Envelope
     {
         $inv = $this->partySend->invoice;
-        $subject = (app()->getLocale() === 'ar' ? 'عرض سعر / فاتورة ' : 'Price offer / Invoice ') . $inv->invoice_number;
+        $subject = $this->customSubject ?? ((app()->getLocale() === 'ar' ? 'عرض سعر / فاتورة ' : 'Price offer / Invoice ') . $inv->invoice_number);
         return new Envelope(subject: $subject);
     }
 
@@ -53,19 +58,27 @@ class InvoiceToPartyMail extends Mailable
                 'settings' => $settings,
                 'confirmUrl' => route('invoice-party-response.show', ['token' => $this->partySend->token, 'action' => 'confirm']),
                 'rejectUrl' => route('invoice-party-response.show', ['token' => $this->partySend->token, 'action' => 'reject']),
+                'customIntro' => $this->customIntro,
+                'treatmentDuration' => $this->treatmentDuration,
             ]
         );
     }
 
     public function attachments(): array
     {
+        $attachments = [];
         if ($this->pdfPath && \Illuminate\Support\Facades\Storage::disk('local')->exists($this->pdfPath)) {
-            return [
-                Attachment::fromStorageDisk('local', $this->pdfPath)
-                    ->as('price-offer-' . $this->partySend->invoice->invoice_number . '.pdf')
-                    ->withMime('application/pdf'),
-            ];
+            $attachments[] = Attachment::fromStorageDisk('local', $this->pdfPath)
+                ->as('price-offer-' . $this->partySend->invoice->invoice_number . '.pdf')
+                ->withMime('application/pdf');
         }
-        return [];
+        foreach ($this->extraAttachmentPaths as $path) {
+            if (\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+                $attachments[] = Attachment::fromStorageDisk('local', $path)
+                    ->as(basename($path))
+                    ->withMime(Storage::disk('local')->mimeType($path) ?: 'application/octet-stream');
+            }
+        }
+        return $attachments;
     }
 }

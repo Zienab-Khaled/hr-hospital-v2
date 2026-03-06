@@ -188,7 +188,6 @@
     </div>
 
     <div class="date-ref-row">
-        <div class="ref-no">بدون</div>
         <div class="date-line">{{ $invoice->invoice_date?->format('d/m/Y') }}</div>
     </div>
 
