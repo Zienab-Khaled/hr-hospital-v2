@@ -36,43 +36,56 @@
     </style>
 </head>
 <body>
+@php
+    $settings = $settings ?? [];
+    $invoice = $partySend->invoice;
+    $patient = $invoice->patient ?? null;
+    $patientName = $patient ? ($patient->name_ar ?: $patient->name ?? '—') : '—';
+    $patientIdentity = $patient ? ($patient->identity_value ?: $patient->file_number ?? '—') : '—';
+    $bankName = $settings['bank_name'] ?? 'البنك';
+    $accountNumber = $settings['account_number'] ?? '';
+    $ibanNumber = $settings['iban_number'] ?? '';
+@endphp
 <div class="doc">
-    {{-- رأس رسمي كما في المستند: يسار = الجهة، يمين = الشعار --}}
+    {{-- رأس رسمي: يسار = الجهة، يمين = الشعار --}}
     <div class="header-wrap">
         <div class="header-right">
-            @php
-                $logo = \App\Models\Setting::get('logo');
-                $clusterEn = \App\Models\Setting::get('health_cluster_name_en', 'Aljouf Health Cluster');
-                $clusterAr = \App\Models\Setting::get('health_cluster_name', 'تجمع الجوف الصحي');
-            @endphp
-            @if($logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($logo))
-                <img src="{{ asset('storage/' . $logo) }}" alt="شعار">
+            @if(!empty($settings['logo']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($settings['logo']))
+                <img src="{{ asset('storage/' . $settings['logo']) }}" alt="شعار">
             @endif
-            <div class="org-line">{{ $clusterAr }}</div>
-            <div class="org-line-en">{{ $clusterEn }}</div>
+            @if(!empty($settings['health_cluster_name']))
+                <div class="org-line">{{ $settings['health_cluster_name'] }}</div>
+            @endif
+            @if(!empty($settings['health_cluster_name_en']))
+                <div class="org-line-en">{{ $settings['health_cluster_name_en'] }}</div>
+            @endif
         </div>
         <div class="header-left">
             <div class="org-line">المملكة العربية السعودية</div>
             <div class="org-line">وزارة الصحة</div>
-            <div class="org-line">تجمع الجوف الصحي</div>
-            <div class="org-line">مستشفى الملك عبد العزيز التخصصي</div>
-            <div class="org-line-en">King Abdul-Aziz Specialist</div>
+            @if(!empty($settings['health_cluster_name']))
+                <div class="org-line">{{ $settings['health_cluster_name'] }}</div>
+            @endif
+            <div class="org-line">{{ $settings['hospital_name'] ?? 'مستشفى' }}</div>
+            @if(!empty($settings['hospital_name_en']))
+                <div class="org-line-en">{{ $settings['hospital_name_en'] }}</div>
+            @endif
         </div>
     </div>
 
     <div class="date-row">
         <span class="without">بدون</span>
-        <span class="date">10/08/2025</span>
+        <span class="date">{{ $invoice->invoice_date?->format('d/m/Y') }}</span>
     </div>
 
     <div class="to-block">
-        سعادة / مدير جمعية حياة لسرطان الثدي بمنطقة الحدود الشمالية<br>
+        سعادة / مدير {{ $partySend->recipient_name }}<br>
         المحترمين
     </div>
 
     <div class="body-text">
         السلام عليكم ورحمة الله وبركاته،<br>
-        تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / نور عمران أبو حسين رقم الجواز (3946845801) ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في البنك الاهلي (20165627001703) رقم الأيبان SA2410000020165627001703
+        تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / {{ $patientName }} رقم الجواز ({{ $patientIdentity }}) ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في {{ $bankName }} ({{ $accountNumber }}) رقم الأيبان {{ $ibanNumber }}
     </div>
 
     <div class="table-caption">عرض السعر حسب تسعيرة وزارة الصحة</div>
@@ -88,26 +101,52 @@
             </tr>
         </thead>
         <tbody>
-            <tr><td>240149</td><td>CT - CHEST WITH CONTRAST</td><td>1</td><td>1500</td><td>1500</td></tr>
-            <tr><td>240134</td><td>CT - ABDOMEN WITH CONTRAST</td><td>1</td><td>1400</td><td>1400</td></tr>
-            <tr><td>240183</td><td>CT - PELVIS WITH CONTRAST</td><td>1</td><td>1400</td><td>1400</td></tr>
-            <tr><td>240066</td><td>BONE SPECT</td><td>1</td><td>880</td><td>880</td></tr>
-            <tr><td>18-475-14</td><td>Letrozole 2.5(Femara)</td><td>6</td><td>183.55</td><td>1101.3</td></tr>
-            <tr><td>42-7-93</td><td>Zoladex(goserelin)3.6mg</td><td>6</td><td>307.65</td><td>1845.9</td></tr>
-            <tr><td>1111211309</td><td>Palbociclib (ibrance)</td><td>6</td><td>8551</td><td>51306</td></tr>
-            <tr class="total-row">
-                <td colspan="2" style="text-align: right;">الاجمالي</td>
-                <td></td><td></td>
-                <td style="text-align: right;">59433.2 ريال</td>
-            </tr>
+            @foreach($invoice->items ?? [] as $item)
+                <tr>
+                    <td>{{ $item->service?->code ?? '—' }}</td>
+                    <td>{{ $item->service?->name_ar ?: $item->service?->name ?? '—' }}</td>
+                    <td>{{ $item->quantity }}</td>
+                    <td>{{ number_format((float) $item->unit_price, 2) }}</td>
+                    <td>{{ number_format((float) $item->total_price, 2) }}</td>
+                </tr>
+            @endforeach
+            @if((float) $invoice->paid_amount > 0)
+                <tr class="total-row">
+                    <td colspan="2" style="text-align: right;">الإجمالي</td>
+                    <td></td><td></td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+                </tr>
+                <tr class="total-row" style="font-weight: normal;">
+                    <td colspan="2">المسدد نقداً (مقدم/مساهمة)</td>
+                    <td></td><td></td>
+                    <td style="text-align: right;">- {{ number_format((float) $invoice->paid_amount, 2) }} ريال</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="2" style="text-align: right;">المبلغ المطلوب من الجمعية (الصافي)</td>
+                    <td></td><td></td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
+                </tr>
+            @else
+                <tr class="total-row">
+                    <td colspan="2" style="text-align: right;">الإجمالي</td>
+                    <td></td><td></td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 
     <div class="closing">وتقبلوا تحياتي</div>
     <div class="sig-block">
         <div class="title">مدير إدارة تنميه الإيرادات</div>
-        <div class="hospital">بمستشفى الملك عبد العزيز التخصصي بالجوف</div>
-        <div class="name">جسار محمد الضويحي</div>
+        @php
+            $hName = $settings['hospital_name'] ?? '';
+            $footerHospital = $hName && \Illuminate\Support\Str::startsWith($hName, 'مستشفى') ? 'بـ ' . $hName : ($hName ? 'بمستشفى ' . $hName : '');
+        @endphp
+        @if($footerHospital)
+            <div class="hospital">{{ $footerHospital }}</div>
+        @endif
+        <div class="name">{{ $settings['department_manager_name'] ?? $settings['manager_name'] ?? '' }}</div>
     </div>
 
     {{-- أزرار الرد (تأكيد/رفض) للعمل الفعلي للإيميل --}}
