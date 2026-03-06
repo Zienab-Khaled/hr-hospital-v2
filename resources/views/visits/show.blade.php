@@ -198,7 +198,11 @@
                                                 @foreach ($invoice->items as $item)
                                                     <tr>
                                                         <td class="py-3 font-bold text-slate-700">
-                                                            {{ app()->getLocale() === 'ar' ? $item->service->name_ar ?? $item->service->name : $item->service->name }}
+                                                            @if ($item->service_id)
+                                                                {{ app()->getLocale() === 'ar' ? ($item->service?->name_ar ?? $item->service?->name) : $item->service?->name }}
+                                                            @else
+                                                                {{ $item->description ?? (app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee') }}
+                                                            @endif
                                                         </td>
                                                         <td class="py-3 text-slate-500">{{ (int) $item->quantity }}</td>
                                                         <td class="py-3 font-bold text-slate-900">

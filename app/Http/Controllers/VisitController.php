@@ -226,9 +226,12 @@ class VisitController extends Controller
         $this->authorize('invoices.create');
         $visit->load(['patient', 'department']);
 
-        $request->validate([
-            'department_id' => 'required|exists:departments,id',
-        ]);
+        $rules = ['department_id' => 'required|exists:departments,id'];
+        if ($visit->patient && $visit->patient->payment_type === 'insurance') {
+            $rules['insurance_coverage_type'] = 'nullable|in:percentage,fixed';
+            $rules['insurance_coverage_value'] = 'nullable|numeric|min:0';
+        }
+        $request->validate($rules);
 
         $department = Department::find($request->input('department_id'));
         $entryFee = $department->entry_fee;
@@ -241,6 +244,13 @@ class VisitController extends Controller
         if (! $patient) {
             return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'الزيارة غير مرتبطة بمريض.' : 'Visit has no patient.']);
         }
+
+        $insuranceCoverageType = $patient->payment_type === 'insurance' && $request->filled('insurance_coverage_type')
+            ? $request->input('insurance_coverage_type')
+            : null;
+        $insuranceCoverageValue = $insuranceCoverageType && $request->filled('insurance_coverage_value')
+            ? (float) $request->input('insurance_coverage_value')
+            : null;
 
         $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
         $finalPaymentType = $patient->payment_type;
@@ -280,6 +290,8 @@ class VisitController extends Controller
                 'unit_price' => $entryFee,
                 'total_price' => $entryFee,
                 'description' => $description,
+                'insurance_coverage_type' => $insuranceCoverageType,
+                'insurance_coverage_value' => $insuranceCoverageValue,
             ]);
 
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {

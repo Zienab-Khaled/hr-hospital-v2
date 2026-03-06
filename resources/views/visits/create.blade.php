@@ -324,8 +324,8 @@
                                 @endif
 
                                 @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
-                                    <div class="inline-flex flex-wrap items-center gap-2 flex-1">
-                                        <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" class="inline-flex flex-wrap items-center gap-2" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
+                                    <div class="w-full flex-1">
+                                        <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" class="flex flex-wrap items-end gap-3" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
                                             @csrf
                                             <select name="department_id" required class="{{ $inputClass }} max-w-[220px]">
                                                 <option value="">{{ app()->getLocale() === 'ar' ? '— اختر قسم الدخول (كشفية) —' : '— Select department (entry fee) —' }}</option>
@@ -333,6 +333,18 @@
                                                     <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
                                                 @endforeach
                                             </select>
+                                            @if ($patientIsInsurance)
+                                                <div class="flex flex-wrap items-center gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                                                    <span class="text-sm font-bold text-blue-900">{{ app()->getLocale() === 'ar' ? 'تغطية التأمين (كشفية):' : 'Insurance coverage (entry fee):' }}</span>
+                                                    <select name="insurance_coverage_type" class="{{ $inputClass }} w-32 text-sm">
+                                                        <option value="">{{ app()->getLocale() === 'ar' ? '—' : '—' }}</option>
+                                                        <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : 'Percentage %' }}</option>
+                                                        <option value="fixed">{{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed amount' }}</option>
+                                                    </select>
+                                                    <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-24 text-sm">
+                                                    <span class="text-xs text-blue-700">{{ app()->getLocale() === 'ar' ? 'الشركة تشيل حسب التغطية، والباقي على المريض' : 'Company share per coverage, rest on patient' }}</span>
+                                                </div>
+                                            @endif
                                             <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-sm shadow-sm transition-colors">
                                                 {{ app()->getLocale() === 'ar' ? '💰 فاتورة دخول + طباعة الأحقية' : '💰 Entry invoice + Print eligibility' }}
                                             </button>

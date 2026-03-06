@@ -110,14 +110,14 @@
             @include('components.sidebar')
         @endauth
 
-        <main class="flex-1 overflow-x-hidden" style="background-color: #f2f4f6;">
+        <main class="flex-1 overflow-x-hidden min-w-0 bg-slate-100">
             {{-- Top Bar --}}
-            <div class="sticky top-0 z-10 bg-white border-b border-slate-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-semibold text-slate-800">@yield('title', 'Operations')</h1>
+            <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm px-6 md:px-8 py-4">
+                <div class="flex items-center justify-between gap-4">
+                    <h1 class="text-xl md:text-2xl font-semibold text-slate-800 truncate">@yield('title', 'Operations')</h1>
 
                     @auth
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-3 md:gap-6 flex-shrink-0">
                             {{-- Notifications Icon (hidden for collector / محصل) --}}
                             @if (!auth()->user()->hasRole('collection'))
                                 @php
@@ -139,14 +139,13 @@
                             @endif
 
                             {{-- User Info --}}
-                            <div class="flex items-center gap-3">
-                                <div class="flex flex-col text-right">
+                            <div class="flex items-center gap-3 {{ app()->getLocale() === 'ar' ? 'flex-row-reverse' : '' }}">
+                                <div class="flex flex-col {{ app()->getLocale() === 'ar' ? 'text-right' : 'text-left' }}">
                                     <span class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</span>
                                     <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
                                 </div>
-                                <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-slate-200/80">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
@@ -182,7 +181,7 @@
             </div>
 
             {{-- Content --}}
-            <div class="p-8 main-content-area">
+            <div class="p-6 md:p-8 main-content-area">
                 @if (session('success'))
                     <div class="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
                         {{ session('success') }}
