@@ -39,7 +39,7 @@
                 {{ app()->getLocale() === 'ar' ? 'بحث' : 'Search' }}
             </button>
             
-            @if(request()->hasAny(['search', 'per_page', 'identity_type', 'charity_entity_id', 'gender', 'age_from', 'age_to', 'insurance_company_id', 'payment_type', 'date_from', 'date_to', 'country_of_origin', 'status', 'date', 'shift_id', 'department_id']) || count(request()->except(['page'])) > 0)
+            @if(request()->hasAny(['search', 'per_page', 'identity_type', 'charity_entity_id', 'gender', 'age_from', 'age_to', 'insurance_company_id', 'payment_type', 'date_from', 'date_to', 'country_of_origin', 'status', 'date', 'shift_id', 'department_id', 'category']) || count(request()->except(['page'])) > 0)
                 <a href="{{ $action ?? url()->current() }}" class="bg-slate-100 text-slate-700 px-3 py-1 rounded text-sm font-medium hover:bg-slate-200 shadow-sm inline-flex items-center gap-1 transition-colors border border-slate-300 whitespace-nowrap">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

@@ -589,7 +589,7 @@ class PlaceholderController extends Controller
             $query,
             $request,
             ['name', 'name_ar', 'code'],
-            []
+            ['category' => 'category']
         );
 
         $departments = $query->orderBy('name')
@@ -616,14 +616,17 @@ class PlaceholderController extends Controller
             'is_active' => 'nullable|boolean',
             'category' => 'required|in:medical,administrative',
             'manager_id' => 'nullable|exists:users,id',
+            'entry_fee' => 'nullable|numeric|min:0',
         ]);
+        $category = $request->input('category');
         $dept = Department::create([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
-            'category' => $request->input('category'),
+            'category' => $category,
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
             'manager_id' => $request->input('manager_id'),
+            'entry_fee' => $category === 'medical' && $request->filled('entry_fee') ? (float) $request->input('entry_fee') : null,
         ]);
         ActivityLogger::log('department_created', Department::class, $dept->id, __('Department created') . ': ' . $dept->name, null, $dept->toArray());
         return redirect()->route('departments.index')->with('success', __('Department created successfully.'));
@@ -652,14 +655,18 @@ class PlaceholderController extends Controller
             'is_active' => 'nullable|boolean',
             'category' => 'required|in:medical,administrative',
             'manager_id' => 'nullable|exists:users,id',
+            'entry_fee' => 'nullable|numeric|min:0',
         ]);
+        $category = $request->input('category');
+        $entryFee = ($category === 'medical' && $request->filled('entry_fee')) ? (float) $request->input('entry_fee') : null;
         $department->update([
             'name' => $request->input('name'),
             'name_ar' => $request->input('name_ar') ?: null,
-            'category' => $request->input('category'),
+            'category' => $category,
             'code' => $request->filled('code') ? strtoupper($request->input('code')) : null,
             'is_active' => $request->boolean('is_active', true),
             'manager_id' => $request->input('manager_id'),
+            'entry_fee' => $entryFee,
         ]);
         return redirect()->route('departments.index')->with('success', __('Department updated successfully.'));
     }

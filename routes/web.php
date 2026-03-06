@@ -108,6 +108,7 @@ Route::middleware('auth:web,api')->group(function () {
 
     Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
     Route::post('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintSubmit'])->name('visits.treatment-eligibility-print.submit');
+    Route::post('visits/{visit}/entry-fee-invoice', [VisitController::class, 'storeEntryFeeInvoice'])->name('visits.entry-fee-invoice');
 
     // Price Inquiry Print (for quotation/estimation only - does NOT record revenue)
     Route::get('visits/{visit}/price-inquiry-print', [VisitController::class, 'priceInquiryPrint'])->name('visits.price-inquiry-print');
@@ -175,6 +176,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
     Route::get('invoices/{invoice}/charity-email-preview', [InvoiceController::class, 'previewCharityEmail'])->name('invoices.charity-email-preview');
+    Route::get('invoices/{invoice}/charity-email-compose', [InvoiceController::class, 'composeCharityEmail'])->name('invoices.charity-email-compose');
     Route::post('invoices/{invoice}/send-charity-price-offer', [InvoiceController::class, 'sendCharityPriceOffer'])->name('invoices.send-charity-price-offer');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');
     Route::post('invoices/{invoice}/send-charity-payment-reminder', [InvoiceController::class, 'sendCharityPaymentReminder'])->name('invoices.send-charity-payment-reminder');

@@ -188,7 +188,6 @@
     </div>
 
     <div class="date-ref-row">
-        <div class="ref-no">بدون</div>
         <div class="date-line">{{ $invoice->invoice_date?->format('d/m/Y') }}</div>
     </div>
 
@@ -219,8 +218,8 @@
         <tbody>
             @foreach ($invoice->items as $item)
                 <tr>
-                    <td>{{ $item->service?->code ?? '—' }}</td>
-                    <td>{{ $item->service?->name_ar ?: $item->service?->name ?? '—' }}</td>
+                    <td>{{ $item->service_id ? ($item->service?->code ?? '—') : '—' }}</td>
+                    <td>{{ $item->service_id ? ($item->service?->name_ar ?: $item->service?->name ?? '—') : ($item->description ?? '—') }}</td>
                     <td>{{ $item->quantity }}</td>
                     <td>{{ number_format((float) $item->unit_price, 2) }}</td>
                     <td>{{ number_format((float) $item->total_price, 2) }}</td>

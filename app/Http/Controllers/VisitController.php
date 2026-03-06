@@ -94,8 +94,15 @@ class VisitController extends Controller
             ->orderBy('name')
             ->get();
 
+        $entryFeeDepartments = Department::where('is_active', true)
+            ->where('category', 'medical')
+            ->whereNotNull('entry_fee')
+            ->where('entry_fee', '>', 0)
+            ->orderBy('name')
+            ->get();
+
         return view('visits.create', compact(
-            'currentShift', 'departments', 'eligibilityDepartments', 'myDepartment', 'patient', 'visit', 'activeVisits', 'registered'
+            'currentShift', 'departments', 'eligibilityDepartments', 'entryFeeDepartments', 'myDepartment', 'patient', 'visit', 'activeVisits', 'registered'
         ));
     }
 
@@ -212,7 +219,96 @@ class VisitController extends Controller
     }
 
     /**
-     * طباعة إحقية علاج — GET بدون خدمات، POST مع قائمة الخدمات المختارة
+     * إنشاء فاتورة دخول (كشفية قسم) وطباعة الأحقية — للمريض الجديد عند دخول عيادة/طوارئ/مختبر إلخ
+     */
+    public function storeEntryFeeInvoice(Request $request, Visit $visit)
+    {
+        $this->authorize('invoices.create');
+        $visit->load(['patient', 'department']);
+
+        $request->validate([
+            'department_id' => 'required|exists:departments,id',
+        ]);
+
+        $department = Department::find($request->input('department_id'));
+        $entryFee = $department->entry_fee;
+        if ($entryFee === null || (float) $entryFee < 0) {
+            return back()->withErrors(['department_id' => app()->getLocale() === 'ar' ? 'هذا القسم لا يملك كشفية دخول معرّفة. حدّث أسعار الأقسام من إعدادات الأقسام.' : 'This department has no entry fee defined.']);
+        }
+        $entryFee = (float) $entryFee;
+
+        $patient = $visit->patient;
+        if (! $patient) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'الزيارة غير مرتبطة بمريض.' : 'Visit has no patient.']);
+        }
+
+        $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+        $finalPaymentType = $patient->payment_type;
+        if ($patient->payment_type === 'charity') {
+            $hasApprovalOnVisit = $visit->hasMedia('charity_approval');
+            $hasApprovalOnPatient = $patient->hasMedia('charity-approvals');
+            if (! $hasApprovalOnVisit && ! $hasApprovalOnPatient) {
+                $finalPaymentType = 'cash';
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $invoice = Invoice::create([
+                'patient_id' => $patient->id,
+                'visit_id' => $visit->id,
+                'invoice_number' => $invoiceNumber,
+                'invoice_date' => now(),
+                'total_amount' => $entryFee,
+                'paid_amount' => 0,
+                'remaining_amount' => $entryFee,
+                'deposit_amount' => 0,
+                'status' => 'pending',
+                'notes' => app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee',
+                'payment_type' => $finalPaymentType,
+                'invoice_type' => 'eligibility',
+                'audit_status' => 'under_review',
+            ]);
+
+            $deptName = $department->name_ar ?? $department->name;
+            $description = (app()->getLocale() === 'ar' ? 'كشفية ' : 'Entry fee ') . $deptName;
+
+            $invoice->items()->create([
+                'service_id' => null,
+                'department_id' => $department->id,
+                'quantity' => 1,
+                'unit_price' => $entryFee,
+                'total_price' => $entryFee,
+                'description' => $description,
+            ]);
+
+            if (in_array($patient->payment_type, ['insurance', 'charity'])) {
+                Approval::create([
+                    'invoice_id' => $invoice->id,
+                    'patient_id' => $patient->id,
+                    'approval_type' => $patient->payment_type,
+                    'insurance_company_id' => $patient->insurance_company_id,
+                    'charity_entity_id' => $patient->charity_entity_id,
+                    'requested_amount' => $entryFee,
+                    'status' => 'pending',
+                    'requested_by' => auth()->user()?->getKey(),
+                ]);
+            }
+
+            DB::commit();
+            ActivityLogger::log('Entry Fee Invoice', 'Invoice', $invoice->id, 'Department entry fee invoice created for visit: ' . $visit->id, null, $invoice->toArray());
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Entry fee invoice failed: ' . $e->getMessage());
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إنشاء فاتورة الدخول.' : 'Failed to create entry fee invoice.']);
+        }
+
+        $printUrl = route('visits.treatment-eligibility-print', ['visit' => $visit]) . '?entry_invoice_id=' . $invoice->id;
+        return redirect($printUrl)->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء فاتورة الدخول. يمكنك طباعة الأحقية ثم تسجيل الدفع من صفحة الفاتورة (الدفع اختياري).' : 'Entry fee invoice created. You can print eligibility then record payment from invoice page (payment is optional).');
+    }
+
+    /**
+     * طباعة إحقية علاج — GET بدون خدمات، POST مع قائمة الخدمات المختارة، أو entry_invoice_id لفاتورة دخول
      */
     public function treatmentEligibilityPrint(Request $request, Visit $visit)
     {
@@ -220,7 +316,24 @@ class VisitController extends Controller
         $visit->load(['patient', 'department', 'shift']);
 
         $services = [];
-        if ($request->isMethod('post') && $request->has('services')) {
+        $entryInvoiceId = $request->query('entry_invoice_id');
+
+        if ($entryInvoiceId) {
+            $entryInvoice = Invoice::where('visit_id', $visit->id)->find($entryInvoiceId);
+            if ($entryInvoice) {
+                foreach ($entryInvoice->items as $item) {
+                    $services[] = [
+                        'name' => $item->description ?: (app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee'),
+                        'name_ar' => $item->description ?: 'كشفية دخول',
+                        'total' => (float) $item->total_price,
+                        'service_id' => $item->service_id,
+                        'department_id' => $item->department_id,
+                    ];
+                }
+            }
+        }
+
+        if (empty($services) && $request->isMethod('post') && $request->has('services')) {
             $services = is_array($request->input('services')) ? $request->input('services') : [];
         }
 
@@ -230,7 +343,13 @@ class VisitController extends Controller
         // إذا مُختار قسم الأحقية نستخدمه، وإلا نعتمد على "حالة الزيارة (نوع الحالة)" أو قسم المريض
         $targetDepartment = null;
         $targetDepartmentName = null;
-        if ($request->filled('department_id')) {
+        if (!empty($services) && !empty($services[0]['department_id'])) {
+            $targetDepartment = Department::with('manager')->find($services[0]['department_id']);
+            if ($targetDepartment) {
+                $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+            }
+        }
+        if (!$targetDepartmentName && $request->filled('department_id')) {
             $targetDepartment = Department::with('manager')->find($request->input('department_id'));
             if ($targetDepartment) {
                 $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
@@ -274,14 +393,14 @@ class VisitController extends Controller
             }
         }
 
-        // Update tracking flag and save services
+        // Update tracking flag and save services (skip auto-invoice when we already have entry_invoice_id)
         $visit->update([
             'printed_eligibility_at' => now(),
-            'last_eligibility_services' => $services
+            'last_eligibility_services' => $services,
         ]);
 
-        // Auto-create Invoice if services are provided
-        if (!empty($services)) {
+        // Auto-create Invoice if services are provided (not when entry fee invoice already created)
+        if (!empty($services) && !$entryInvoiceId) {
             DB::beginTransaction();
             try {
                 $patient = $visit->patient;

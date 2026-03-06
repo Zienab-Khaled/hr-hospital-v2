@@ -12,6 +12,16 @@
 
     {{-- Search and Filter --}}
     <x-index-filters :action="route('departments.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم القسم، الكود...' : 'Department name, code...'">
+        <div class="w-44">
+            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                {{ app()->getLocale() === 'ar' ? 'نوع القسم' : 'Department type' }}
+            </label>
+            <select name="category" class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                <option value="medical" {{ request('category') === 'medical' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'طبي' : 'Medical' }}</option>
+                <option value="administrative" {{ request('category') === 'administrative' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'إداري' : 'Administrative' }}</option>
+            </select>
+        </div>
     </x-index-filters>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">

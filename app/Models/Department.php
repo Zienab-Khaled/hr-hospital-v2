@@ -9,17 +9,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Department extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['name', 'name_ar', 'category', 'code', 'is_active', 'manager_id'];
+    protected $fillable = ['name', 'name_ar', 'category', 'code', 'is_active', 'manager_id', 'entry_fee'];
+
+    protected function casts(): array
+    {
+        return ['is_active' => 'boolean', 'entry_fee' => 'decimal:2'];
+    }
 
     public function manager()
     {
         return $this->belongsTo(User::class, 'manager_id');
     }
 
-    protected function casts(): array
-    {
-        return ['is_active' => 'boolean'];
-    }
 
     public function users(): HasMany
     {

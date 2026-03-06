@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Department;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,10 +11,15 @@ class InvoiceItem extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-        'invoice_id', 'service_id', 'quantity', 'unit_price', 'total_price', 'description',
+        'invoice_id', 'service_id', 'department_id', 'quantity', 'unit_price', 'total_price', 'description',
         'insurance_coverage_type', 'insurance_coverage_value',
         'status', 'completed_at', 'completed_by', 'execution_date',
     ];
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
 
     protected function casts(): array
     {

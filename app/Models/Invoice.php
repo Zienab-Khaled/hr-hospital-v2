@@ -198,6 +198,16 @@ class Invoice extends Model implements HasMedia
         return $this->charityClaims()->exists();
     }
 
+    /** فاتورة كشفية فقط (كل البنود كشفية دخول بدون خدمات طبية) */
+    public function isEntryFeeOnly(): bool
+    {
+        $items = $this->items;
+        if ($items->isEmpty()) {
+            return false;
+        }
+        return $items->every(fn ($item) => $item->department_id && ! $item->service_id);
+    }
+
     public function canCreateCharityClaim(): bool
     {
         return $this->patient && $this->patient->payment_type === 'charity' && !$this->hasCharityClaim();

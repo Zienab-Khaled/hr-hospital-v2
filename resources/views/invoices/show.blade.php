@@ -14,6 +14,7 @@
             : (float) $invoice->remaining_amount;
         // المتبقي الإجمالي (يدخل فيه جزء التأمين حتى تُدفع المطالبة)
         $totalRemaining = (float) $invoice->remaining_amount;
+        $isEntryFeeOnly = $invoice->isEntryFeeOnly();
     @endphp
     <div class="max-w-5xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -25,15 +26,31 @@
                     class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300">
                     {{ app()->getLocale() === 'ar' ? '← قائمة الفواتير' : '← Invoices List' }}
                 </a>
-                @can('invoices.edit')
-                    <a href="{{ route('invoices.edit', $invoice) }}"
-                        class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                        {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
-                    </a>
-                @endcan
+                @if (!$isEntryFeeOnly)
+                    @can('invoices.edit')
+                        <a href="{{ route('invoices.edit', $invoice) }}"
+                            class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                            {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
+                        </a>
+                    @endcan
+                @endif
             </div>
         </div>
 
+        @if ($isEntryFeeOnly)
+            {{-- فاتورة كشفية فقط: نعرض تسجيل الدفعة فقط --}}
+            <div class="mb-6 p-4 rounded-lg border-2 border-emerald-200 bg-emerald-50/70">
+                <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'فاتورة كشفية دخول' : 'Entry fee invoice' }}</h3>
+                <div class="flex flex-wrap gap-2">
+                    @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
+                        <button type="button" onclick="openPaymentModal()"
+                            class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
+                            💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+        @else
         {{-- الخطوات التالية بعد إنشاء الفاتورة --}}
         <div class="mb-6 p-4 rounded-lg border-2 border-blue-200 bg-blue-50/70">
             <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخطوات التالية' : 'Next steps' }}
@@ -56,15 +73,10 @@
                             class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200">
                             👁️ {{ app()->getLocale() === 'ar' ? 'معاينة الميل قبل الإرسال' : 'Preview email' }}
                         </a>
-                        <form method="POST" action="{{ route('invoices.send-charity-price-offer', $invoice) }}"
-                            class="inline"
-                            onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال ميل «عرض سعر / فاتورة طبية» للجمعية مع مرفق PDF وزرّي تأكيد/رفض؟' : 'Send «Price offer / Medical invoice» email to charity with PDF attachment and confirm/reject links?' }}');">
-                            @csrf
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                                {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة الطبية للجمعية' : '✉️ Send price offer / medical invoice to charity' }}
-                            </button>
-                        </form>
+                        <a href="{{ route('invoices.charity-email-compose', $invoice) }}"
+                            class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                            {{ app()->getLocale() === 'ar' ? '✉️ تعديل ثم إرسال عرض السعر للجمعية' : '✉️ Edit then send price offer to charity' }}
+                        </a>
                         <form method="POST" action="{{ route('invoices.send-charity-payment-reminder', $invoice) }}"
                             class="inline"
                             onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال تذكير بالسداد للجمعية؟' : 'Send payment reminder to charity?' }}');">
@@ -213,6 +225,7 @@
                 </div>
             @endif
         </div>
+        @endif
     </div>
 
 
@@ -368,11 +381,15 @@
                         @forelse($invoice->items as $item)
                             <tr class="border-b border-slate-300 {{ $item->isCompleted() ? 'bg-emerald-50/40' : '' }}">
                                 <td class="border border-slate-300 px-2 py-2 text-center text-sm">
-                                    {{ $item->service?->code ?? '—' }}</td>
+                                    {{ $item->service_id ? ($item->service?->code ?? '—') : '—' }}</td>
                                 <td class="border border-slate-300 px-2 py-2 text-sm">
-                                    {{ app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '—' }}
-                                    @if ($item->description)
-                                        <br><span class="text-slate-500 text-xs">{{ $item->description }}</span>
+                                    @if ($item->service_id)
+                                        {{ app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '—' }}
+                                        @if ($item->description)
+                                            <br><span class="text-slate-500 text-xs">{{ $item->description }}</span>
+                                        @endif
+                                    @else
+                                        {{ $item->description ?? (app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee') }}
                                     @endif
                                 </td>
                                 <td class="border border-slate-300 px-2 py-2 text-center text-sm">{{ $item->quantity }}
@@ -417,14 +434,16 @@
                                                     <span
                                                         class="block text-xs text-slate-400">{{ $item->completedByUser->name ?? $item->completedByUser->username }}</span>
                                                 @endif
-                                            @else
+                                            @elseif ($item->service_id)
                                                 <button type="button"
                                                     onclick="openExecuteModal({{ $item->id }}, '{{ route('invoices.execute-service', [$invoice, $item]) }}', '{{ addslashes(app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '') }}')"
                                                     class="inline-flex items-center gap-1 bg-blue-600  text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 shadow-sm">
                                                     ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
                                                 </button>
+                                            @else
+                                                <span class="text-slate-500 text-xs">{{ app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee' }}</span>
                                             @endif
-                                            @if($invoice->visit_id && (auth()->user()->can('invoices.create')))
+                                            @if($item->service_id && $invoice->visit_id && (auth()->user()->can('invoices.create')))
                                                 <a href="{{ route('invoices.items.treatment-eligibility-print', [$invoice, $item]) }}"
                                                     target="_blank"
                                                     title="{{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج لهذه الخدمة فقط (بدون إنشاء فاتورة)' : 'Print treatment eligibility for this service only (no invoice created)' }}"
