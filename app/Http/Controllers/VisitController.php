@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\InvoiceItem;
 use App\Models\Patient;
 use App\Models\Service;
 use App\Models\Shift;
@@ -381,6 +382,42 @@ class VisitController extends Controller
     public function treatmentEligibilityPrintSubmit(Request $request, Visit $visit)
     {
         return $this->treatmentEligibilityPrint($request, $visit);
+    }
+
+    /**
+     * طباعة إحقاق علاج لخدمة واحدة (بند فاتورة) — بدون إنشاء فاتورة، مرتبط بالخدمة المنفذة
+     */
+    public function treatmentEligibilityPrintForItem(Invoice $invoice, InvoiceItem $item)
+    {
+        $this->authorize('invoices.create');
+
+        if ((int) $item->invoice_id !== (int) $invoice->id) {
+            abort(404);
+        }
+
+        $item->load(['service.department']);
+        $visit = $invoice->visit;
+        if (! $visit) {
+            return redirect()->route('invoices.show', $invoice)->withErrors([
+                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بزيارة. لا يمكن طباعة إحقاق علاج.' : 'Invoice has no linked visit. Cannot print treatment eligibility.',
+            ]);
+        }
+
+        $visit->load(['patient', 'department', 'shift']);
+        $service = $item->service;
+        $services = [
+            [
+                'service_id' => $item->service_id,
+                'name' => $service->name ?? '-',
+                'name_ar' => $service->name_ar ?? $service->name ?? '-',
+            ],
+        ];
+
+        $manager = User::getManagerForSignature();
+        $targetDepartment = $service->department;
+        $targetDepartmentName = $targetDepartment ? ($targetDepartment->name_ar ?? $targetDepartment->name) : ($visit->department->name_ar ?? $visit->department->name ?? '—');
+
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName'));
     }
 
     /**

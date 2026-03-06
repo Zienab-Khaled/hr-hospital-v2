@@ -154,6 +154,23 @@
             </div>
             @endif
 
+            {{-- أين توجه المريض: أقسام تم تنفيذ خدمات فيها (عيادات، أشعة، مختبر، مركز أورام، ...) --}}
+            @if(isset($completedDepartments) && $completedDepartments->isNotEmpty())
+            <div class="glass-card rounded-3xl p-6 ring-1 ring-slate-100 border-t-4 border-emerald-500">
+                <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="text-emerald-600">📍</span>
+                    {{ app()->getLocale() === 'ar' ? 'توجه المريض (أقسام تم تنفيذ خدمات فيها)' : 'Where patient received services' }}
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($completedDepartments as $dept)
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-bold">
+                            {{ app()->getLocale() === 'ar' ? ($dept->name_ar ?? $dept->name) : $dept->name }}
+                        </span>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- Notes --}}
             @if($patient->notes)
             <div class="glass-card rounded-3xl p-6 ring-1 ring-slate-100">

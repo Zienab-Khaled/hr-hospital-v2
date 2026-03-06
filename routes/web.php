@@ -147,6 +147,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
     Route::get('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'showExecuteService'])->name('invoices.execute-service.show');
     Route::post('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'executeService'])->name('invoices.execute-service');
+    Route::get('invoices/{invoice}/items/{item}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintForItem'])->name('invoices.items.treatment-eligibility-print');
     Route::post('invoices/{invoice}/upload-signed-document', [InvoiceController::class, 'uploadSignedDocument'])->name('invoices.upload-signed-document');
     Route::delete('invoices/{invoice}/delete-signed-document/{media}', [InvoiceController::class, 'deleteSignedDocument'])->name('invoices.delete-signed-document');
     Route::post('payment-receipts', [App\Http\Controllers\PaymentReceiptController::class, 'store'])->name('payment-receipts.store');

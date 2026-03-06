@@ -397,26 +397,36 @@
                                 @endif
                                 @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
-                                        @if ($item->isCompleted())
-                                            <span
-                                                class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-1 rounded-full border border-emerald-300">
-                                                ✅ {{ app()->getLocale() === 'ar' ? 'منفذ' : 'Done' }}
-                                            </span>
-                                            @if ($item->execution_date)
+                                        <div class="flex flex-col items-center gap-1">
+                                            @if ($item->isCompleted())
                                                 <span
-                                                    class="block text-xs text-slate-500 mt-0.5">{{ $item->execution_date->format('Y-m-d') }}</span>
+                                                    class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-1 rounded-full border border-emerald-300">
+                                                    ✅ {{ app()->getLocale() === 'ar' ? 'منفذ' : 'Done' }}
+                                                </span>
+                                                @if ($item->execution_date)
+                                                    <span
+                                                        class="block text-xs text-slate-500">{{ $item->execution_date->format('Y-m-d') }}</span>
+                                                @endif
+                                                @if ($item->completedByUser)
+                                                    <span
+                                                        class="block text-xs text-slate-400">{{ $item->completedByUser->name ?? $item->completedByUser->username }}</span>
+                                                @endif
+                                            @else
+                                                <button type="button"
+                                                    onclick="openExecuteModal({{ $item->id }}, '{{ route('invoices.execute-service', [$invoice, $item]) }}', '{{ addslashes(app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '') }}')"
+                                                    class="inline-flex items-center gap-1 bg-blue-600  text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 shadow-sm">
+                                                    ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
+                                                </button>
                                             @endif
-                                            @if ($item->completedByUser)
-                                                <span
-                                                    class="block text-xs text-slate-400">{{ $item->completedByUser->name ?? $item->completedByUser->username }}</span>
+                                            @if($invoice->visit_id && (auth()->user()->can('invoices.create')))
+                                                <a href="{{ route('invoices.items.treatment-eligibility-print', [$invoice, $item]) }}"
+                                                    target="_blank"
+                                                    title="{{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج لهذه الخدمة فقط (بدون إنشاء فاتورة)' : 'Print treatment eligibility for this service only (no invoice created)' }}"
+                                                    class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">
+                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إحقاق علاج' : 'Eligibility' }}
+                                                </a>
                                             @endif
-                                        @else
-                                            <button type="button"
-                                                onclick="openExecuteModal({{ $item->id }}, '{{ route('invoices.execute-service', [$invoice, $item]) }}', '{{ addslashes(app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '') }}')"
-                                                class="inline-flex items-center gap-1 bg-blue-600  text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 shadow-sm">
-                                                ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
-                                            </button>
-                                        @endif
+                                        </div>
                                     </td>
                                 @endif
                             </tr>
