@@ -236,7 +236,7 @@ class PatientController extends Controller
             'contactReports' => fn($q) => $q->latest()->limit(5),
         ]);
 
-        $visits = $patient->visits()->latest()->paginate(5, ['*'], 'visits_page');
+        $visits = $patient->visits()->with('department')->latest()->paginate(5, ['*'], 'visits_page');
         $invoices = $patient->invoices()->latest()->paginate(5, ['*'], 'invoices_page');
 
         $departments = Department::where('is_active', true)->orderBy('name')->get();

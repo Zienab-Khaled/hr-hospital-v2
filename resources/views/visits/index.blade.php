@@ -82,7 +82,7 @@
                 <tr>
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</th>
-                    <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}</th>
+                    <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Dept' }}</th>
                     @if ($isAdmin)
                         <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</th>
                     @endif

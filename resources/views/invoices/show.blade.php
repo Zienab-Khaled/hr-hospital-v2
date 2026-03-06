@@ -47,8 +47,8 @@
                     class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                     {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
                 </a>
-                {{-- إرسال للجمعية يظهر فقط عندما توجد مطالبة جمعية شغالة لهذه الفاتورة (تم إنشاؤها من صفحة المطالبات) --}}
-                @if (($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') && $invoice->hasCharityClaim())
+                {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
+                @if (($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') && $invoice->patient?->charityEntity)
                     @if ($invoice->patient?->charityEntity?->email)
                         <form method="POST" action="{{ route('invoices.send-charity-price-offer', $invoice) }}"
                             class="inline"
@@ -68,14 +68,10 @@
                                 {{ app()->getLocale() === 'ar' ? '💰 إرسال تذكير بالسداد للجمعية' : '💰 Send payment reminder to charity' }}
                             </button>
                         </form>
-                        {{-- <a href="{{ route('invoices.send-to-party', $invoice) }}"
-                            class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200 border border-slate-300">
-                            {{ app()->getLocale() === 'ar' ? 'إرسال لطرف (تعديل البريد)' : 'Send to party (change email)' }}
-                        </a> --}}
                     @else
                         <a href="{{ route('invoices.send-to-party', $invoice) }}"
                             class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                            {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة للجمعية' : '✉️ Send price offer / invoice to charity' }}
+                            {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة للجمعية (إدخال البريد)' : '✉️ Send price offer / invoice to charity (enter email)' }}
                         </a>
                     @endif
                 @endif
