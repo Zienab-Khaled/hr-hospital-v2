@@ -5,10 +5,7 @@
         <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'التفويضات' : 'Delegations' }}</h2>
     </div>
 
-    @if (session('success'))
-        <div class="mb-4 p-3 rounded bg-green-100 text-green-800 text-sm">{{ session('success') }}</div>
-    @endif
-
+    
     @if ($canManage)
         {{-- Form: إنشاء تفويض جديد --}}
         <div class="bg-white rounded-lg shadow p-6 mb-6">

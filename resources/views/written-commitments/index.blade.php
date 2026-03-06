@@ -1,9 +1,6 @@
 @extends('layouts.app')
 @section('title', app()->getLocale() === 'ar' ? 'التمهيد الخطي' : 'Written Commitments')
 @section('content')
-    @if (session('success'))
-        <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
-    @endif
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold text-slate-800">
             {{ app()->getLocale() === 'ar' ? 'التمهيد الخطي' : 'Written Commitments' }}</h2>

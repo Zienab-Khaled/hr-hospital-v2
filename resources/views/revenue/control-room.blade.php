@@ -83,11 +83,6 @@
     </div>
 
     {{-- Alert Messages --}}
-    @if(session('success'))
-        <div class="mb-8 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 shadow-sm font-bold">
-            <span class="text-xl">✨</span> {{ session('success') }}
-        </div>
-    @endif
     @if(session('warning'))
         <div class="mb-8 p-4 bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl flex items-center gap-3 shadow-sm font-bold">
             <span class="text-xl">⚠️</span> {{ session('warning') }}

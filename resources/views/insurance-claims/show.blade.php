@@ -42,9 +42,6 @@
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-medium">✅ {{ session('success') }}</div>
-        @endif
         @if($errors->any())
             <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-300 text-red-800 text-sm">
                 @foreach($errors->all() as $e) <p>⚠️ {{ $e }}</p> @endforeach

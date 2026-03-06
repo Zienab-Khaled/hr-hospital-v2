@@ -186,6 +186,20 @@
         .sig-block .sig-img img { max-width: 150px; max-height: 60px; display: block; margin: 0 auto 6px; }
         .sig-block .sig-name { border-top: 1px solid #555; padding-top: 6px; font-size: 13px; min-width: 150px; color: #333; }
 
+        /* ====== SEAL ====== */
+        .seal-block {
+            text-align: center;
+            margin-top: 24px;
+            display: inline-block;
+        }
+        .seal-block .seal-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+        .seal-box {
+            width: 90px; height: 90px;
+            border: 2px solid #333;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .seal-box img { max-width: 86px; max-height: 86px; }
+
         /* ====== DECORATIVE WAVES ====== */
         .bg-waves {
             position: fixed;
@@ -285,7 +299,7 @@
 
     <div class="file-ref">ص/ ملف المريض بالقسم .</div>
 
-    <!-- ====== EMPLOYEE SECTION ====== -->
+    <!-- ====== EMPLOYEE SECTION (توقيع الموظف فقط + أسماء) ====== -->
     <div class="employee-section">
         <div class="employee-label">الموظف المختص :-</div>
         <div class="sig-row">
@@ -299,16 +313,20 @@
                 <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}</div>
             </div>
             @if(isset($manager) && $manager)
-            <div class="sig-block">
-                <div class="sig-title">توقيع المدير</div>
-                <div class="sig-img">
-                    @if($manager->signature)
-                        <img src="{{ asset('storage/' . $manager->signature) }}" alt="توقيع المدير">
-                    @endif
-                </div>
-                <div class="sig-name">{{ $manager->name }}</div>
+            <div class="sig-block names-only">
+                <div class="sig-title">اسم المدير</div>
+                <div class="sig-name" style="border: none; padding-top: 0;">{{ $manager->name }}</div>
             </div>
             @endif
+        </div>
+        <div class="seal-block">
+            <div class="seal-title">الختم</div>
+            <div class="seal-box">
+                @php $seal = \App\Models\Setting::get('seal'); @endphp
+                @if($seal && \Illuminate\Support\Facades\Storage::disk('public')->exists($seal))
+                    <img src="{{ asset('storage/' . $seal) }}" alt="الختم">
+                @endif
+            </div>
         </div>
     </div>
 

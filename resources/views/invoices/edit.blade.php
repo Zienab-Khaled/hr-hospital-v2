@@ -229,11 +229,6 @@
                     </span>
                 </div>
 
-                @if(session('success'))
-                    <div class="mb-3 p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-medium">
-                        ✅ {{ session('success') }}
-                    </div>
-                @endif
                 @if($errors->has('error'))
                     <div class="mb-3 p-3 rounded-lg bg-red-50 border border-red-300 text-red-800 text-sm font-medium">
                         ⚠️ {{ $errors->first('error') }}

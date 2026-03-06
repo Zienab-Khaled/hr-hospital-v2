@@ -61,12 +61,6 @@
             </form>
         </div>
 
-        @if (session('success'))
-            <div
-                class="mb-8 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 shadow-sm font-bold">
-                <span class="text-xl">✨</span> {{ session('success') }}
-            </div>
-        @endif
         @if ($errors->any())
             <div class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl shadow-sm font-bold">
                 @foreach ($errors->all() as $err)

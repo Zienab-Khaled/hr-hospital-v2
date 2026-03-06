@@ -14,11 +14,6 @@
         </p>
     </div>
 
-    @if(session('success'))
-        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-medium flex items-center gap-3">
-            <span class="text-2xl">✅</span> {{ session('success') }}
-        </div>
-    @endif
     @if(session('warning'))
         <div class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl font-medium flex items-center gap-3">
             <span class="text-2xl">⚠️</span> {{ session('warning') }}

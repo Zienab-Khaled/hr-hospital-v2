@@ -1,7 +1,6 @@
 @extends('layouts.app')
 @section('title', __('Payments'))
 @section('content')
-    @if(session('success'))<div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>@endif
     <h2 class="text-xl font-semibold text-slate-800 mb-6">{{ __('Payments') }}</h2>
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">

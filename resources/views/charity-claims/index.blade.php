@@ -37,10 +37,7 @@
         </a>
     </div>
 
-    @if(session('success'))
-        <div class="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm font-medium">✅ {{ session('success') }}</div>
-    @endif
-
+    
     {{-- ===== CHARITY TAB ===== --}}
     @if($activeTab === 'charity')
         {{-- Filters --}}

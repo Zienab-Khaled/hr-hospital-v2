@@ -61,11 +61,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="mb-8 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 shadow-sm font-bold animate-in fade-in slide-in-from-top-4">
-            <span class="text-xl">✨</span> {{ session('success') }}
-        </div>
-    @endif
     @if(session('error'))
         <div class="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-3 shadow-sm font-bold animate-in fade-in slide-in-from-top-4">
             <span class="text-xl">❌</span> {{ session('error') }}

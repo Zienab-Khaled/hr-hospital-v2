@@ -174,6 +174,20 @@
         .sig-block .sig-img img { max-width: 150px; max-height: 60px; display: block; margin: 0 auto 6px; }
         .sig-block .sig-name { border-top: 1px solid #555; padding-top: 6px; font-size: 13px; min-width: 150px; color: #333; }
 
+        /* ====== SEAL ====== */
+        .seal-block {
+            text-align: center;
+            margin-top: 24px;
+            display: inline-block;
+        }
+        .seal-block .seal-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+        .seal-box {
+            width: 90px; height: 90px;
+            border: 2px solid #333;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .seal-box img { max-width: 86px; max-height: 86px; }
+
         /* ====== WITNESS SECTION ====== */
         .witness-section {
             margin-top: 40px;
@@ -343,6 +357,17 @@
                 <div class="sig-name">{{ $manager->name }}</div>
             </div>
             @endif
+
+            {{-- Seal --}}
+            <div class="seal-block">
+                <div class="seal-title">الختم</div>
+                <div class="seal-box">
+                    @php $seal = \App\Models\Setting::get('seal'); @endphp
+                    @if($seal && \Illuminate\Support\Facades\Storage::disk('public')->exists($seal))
+                        <img src="{{ asset('storage/' . $seal) }}" alt="الختم">
+                    @endif
+                </div>
+            </div>
 
             {{-- Witness --}}
             <!-- <div class="sig-block">

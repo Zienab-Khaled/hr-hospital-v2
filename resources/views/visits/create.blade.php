@@ -29,9 +29,6 @@
                     </ul>
                 </div>
             @endif
-            @if (session('success'))
-                <div class="mb-6 p-4 rounded-lg border-2 border-emerald-400 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
-            @endif
 
             @if (!$patient)
                 {{-- اختيار مريض — نفس شكل بلوك المريض في إنشاء فاتورة --}}
@@ -302,62 +299,68 @@
                         </div>
 
                         <div id="visit_actions_container" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-slate-50">
-                            <h3 class="text-lg font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
-                            <div class="flex flex-wrap gap-3">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
+
+                            {{-- صف الأزرار الأساسية: ملف المريض، تحويل، تقديم خدمات --}}
+                            <div class="flex flex-wrap gap-3 mb-4">
                                 <a href="{{ route('patients.show', $patient) }}" target="_blank"
-                                    class="inline-flex items-center text-white gap-2 px-4 py-2 rounded-lg bg-slate-600  font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
+                                    class="inline-flex items-center text-white gap-2 px-4 py-2.5 rounded-lg bg-slate-600 font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '👤 ملف المريض' : '👤 Patient Profile' }}
                                 </a>
-
                                 @if (!$isTransferred)
                                 <button type="button" id="btn_show_transfer"
-                                    class="inline-flex items-center text-white gap-2 px-4 py-2 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
+                                    class="inline-flex items-center text-white gap-2 px-4 py-2.5 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '🔄 تحويل إلى قسم آخر' : '🔄 Transfer to another department' }}
                                 </button>
-                                @endif
-
-                                @if ($visitForPrint)
-                                    {{-- <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
-                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 text-sm shadow-sm transition-colors">
-                                        {{ app()->getLocale() === 'ar' ? '📄 طباعة إحقية علاج (بدون خدمات)' : '📄 Print eligibility (no services)' }}
-                                    </a> --}}
-                                @endif
-
-                                @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
-                                    <div class="w-full flex-1">
-                                        <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" class="flex flex-wrap items-end gap-3" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
-                                            @csrf
-                                            <select name="department_id" required class="{{ $inputClass }} max-w-[220px]">
-                                                <option value="">{{ app()->getLocale() === 'ar' ? '— اختر قسم الدخول (كشفية) —' : '— Select department (entry fee) —' }}</option>
-                                                @foreach ($entryFeeDepartments as $d)
-                                                    <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
-                                                @endforeach
-                                            </select>
-                                            @if ($patientIsInsurance)
-                                                <div class="flex flex-wrap items-center gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
-                                                    <span class="text-sm font-bold text-blue-900">{{ app()->getLocale() === 'ar' ? 'تغطية التأمين (كشفية):' : 'Insurance coverage (entry fee):' }}</span>
-                                                    <select name="insurance_coverage_type" class="{{ $inputClass }} w-32 text-sm">
-                                                        <option value="">{{ app()->getLocale() === 'ar' ? '—' : '—' }}</option>
-                                                        <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : 'Percentage %' }}</option>
-                                                        <option value="fixed">{{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed amount' }}</option>
-                                                    </select>
-                                                    <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-24 text-sm">
-                                                    <span class="text-xs text-blue-700">{{ app()->getLocale() === 'ar' ? 'الشركة تشيل حسب التغطية، والباقي على المريض' : 'Company share per coverage, rest on patient' }}</span>
-                                                </div>
-                                            @endif
-                                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-sm shadow-sm transition-colors">
-                                                {{ app()->getLocale() === 'ar' ? '💰 فاتورة دخول + طباعة الأحقية' : '💰 Entry invoice + Print eligibility' }}
-                                            </button>
-                                        </form>
-                                    </div>
-                                @endif
-
-                                @if (!$isTransferred)
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm shadow-sm transition-colors">
+                                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '💰 تقديم خدمات و إنشاء فاتورة' : '💰 Add services & create invoice' }}
                                 </a>
                                 @endif
+                            </div>
+
+                            {{-- بلوك فاتورة الدخول (كشفية) + طباعة الأحقية — تصميم مخصص لمريض التأمين --}}
+                            @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
+                                <div class="rounded-xl border-2 {{ $patientIsInsurance ? 'border-emerald-300 bg-emerald-50/80' : 'border-slate-200 bg-white' }} p-4 shadow-sm">
+                                    <h4 class="text-base font-bold {{ $patientIsInsurance ? 'text-emerald-800' : 'text-slate-700' }} mb-3 flex items-center gap-2">
+                                        <span>📋</span>
+                                        {{ app()->getLocale() === 'ar' ? 'فاتورة دخول (كشفية) + طباعة الأحقية' : 'Entry fee invoice + Print eligibility' }}
+                                    </h4>
+                                    <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
+                                        @csrf
+                                        <div class="flex flex-wrap items-end gap-4">
+                                            <div class="min-w-[200px]">
+                                                <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'قسم الدخول (كشفية)' : 'Entry department' }}</label>
+                                                <select name="department_id" required class="{{ $inputClass }} w-full max-w-[280px]">
+                                                    <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
+                                                    @foreach ($entryFeeDepartments as $d)
+                                                        <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            @if ($patientIsInsurance)
+                                                <div class="rounded-lg bg-white/90 border border-emerald-200 px-4 py-3 shadow-inner">
+                                                    <label class="block text-sm font-bold text-emerald-900 mb-2">{{ app()->getLocale() === 'ar' ? 'تغطية التأمين (كشفية)' : 'Insurance coverage (entry fee)' }}</label>
+                                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                                        <select name="insurance_coverage_type" class="{{ $inputClass }} w-36 text-sm">
+                                                            <option value="">{{ app()->getLocale() === 'ar' ? '— نوع التغطية —' : '— Type —' }}</option>
+                                                            <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : 'Percentage %' }}</option>
+                                                            <option value="fixed">{{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed amount' }}</option>
+                                                        </select>
+                                                        <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-28 text-sm">
+                                                    </div>
+                                                    <p class="text-xs text-emerald-700 font-medium">
+                                                        {{ app()->getLocale() === 'ar' ? 'الشركة تشيل حسب التغطية، والباقي على المريض' : 'Company covers per coverage; remainder on patient.' }}
+                                                    </p>
+                                                </div>
+                                            @endif
+                                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-sm shadow-md transition-colors shrink-0">
+                                                {{ app()->getLocale() === 'ar' ? '💰 فاتورة دخول + طباعة الأحقية' : '💰 Entry invoice + Print eligibility' }}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
                         </div>
 
                         {{-- ليستينج الفواتير الخاصة بالزيارة — يظهر دائماً عند وجود زيارة --}}
@@ -404,22 +407,19 @@
                                                             </span>
                                                         </td>
                                                         <td class="p-3">
-                                                            <div class="flex justify-center gap-2">
+                                                            <div class="flex justify-center gap-2 flex-wrap">
                                                                 <a href="{{ route('invoices.show', $inv) }}" target="_blank"
                                                                    class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}">
                                                                     👁️ {{ app()->getLocale() === 'ar' ? 'عرض التفاصيل' : 'View Details' }}
                                                                 </a>
-                                                                @if($inv->payment_type === 'charity')
-                                                                    <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
-                                                                       class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر تعهد' : 'Print Commitment' }}">
-                                                                        🖨️ {{ app()->getLocale() === 'ar' ? 'تعهد' : 'Commitment' }}
-                                                                    </a>
-                                                                @else
-                                                                    <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
-                                                                       class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
-                                                                        🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
-                                                                    </a>
-                                                                @endif
+                                                                <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
+                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
+                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
+                                                                </a>
+                                                                <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
+                                                                   class="text-indigo-600 hover:text-indigo-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة التعهد الخطي' : 'Print Written Pledge' }}">
+                                                                    📄 {{ app()->getLocale() === 'ar' ? 'التعهد الخطي' : 'Written Pledge' }}
+                                                                </a>
                                                             </div>
                                                         </td>
                                                     </tr>

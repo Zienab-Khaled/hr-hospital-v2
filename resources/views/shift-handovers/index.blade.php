@@ -11,10 +11,7 @@
             </a>
         </div>
 
-        @if (session('success'))
-            <div class="mb-4 p-3 rounded-lg bg-emerald-100 text-emerald-800 text-sm">{{ session('success') }}</div>
-        @endif
-
+        
         <p class="text-slate-600 text-sm mb-4">
             {{ app()->getLocale() === 'ar' ? 'آخر التسليمات — للاطلاع على ما سلّمه الشيفت السابق (زيارات، فواتير، ملاحظات).' : 'Latest handovers — see what the previous shift handed over (visits, invoices, notes).' }}
         </p>
