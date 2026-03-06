@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\InvoicePartySend;
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -30,10 +31,26 @@ class InvoiceToPartyMail extends Mailable
 
     public function content(): Content
     {
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'hospital_name_en' => Setting::get('hospital_name_en', ''),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'health_cluster_name_en' => Setting::get('health_cluster_name_en', ''),
+            'manager_name' => Setting::get('manager_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'bank_name' => Setting::get('bank_name', ''),
+            'account_number' => Setting::get('account_number', ''),
+            'iban_number' => Setting::get('iban_number', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'department_manager_name' => Setting::get('department_manager_name', ''),
+            'department_manager_signature' => Setting::get('department_manager_signature', ''),
+        ];
+
         return new Content(
             view: 'emails.invoice-to-party',
             with: [
                 'partySend' => $this->partySend,
+                'settings' => $settings,
                 'confirmUrl' => route('invoice-party-response.show', ['token' => $this->partySend->token, 'action' => 'confirm']),
                 'rejectUrl' => route('invoice-party-response.show', ['token' => $this->partySend->token, 'action' => 'reject']),
             ]

@@ -624,10 +624,25 @@ class InvoiceController extends Controller
             : $patient->charityEntity->name;
         $partySend->setRelation('invoice', $invoice);
 
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'hospital_name_en' => Setting::get('hospital_name_en', ''),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'health_cluster_name_en' => Setting::get('health_cluster_name_en', ''),
+            'manager_name' => Setting::get('manager_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'bank_name' => Setting::get('bank_name', ''),
+            'account_number' => Setting::get('account_number', ''),
+            'iban_number' => Setting::get('iban_number', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'department_manager_name' => Setting::get('department_manager_name', ''),
+            'department_manager_signature' => Setting::get('department_manager_signature', ''),
+        ];
+
         $confirmUrl = '#';
         $rejectUrl = '#';
 
-        return response()->view('emails.invoice-to-party', compact('partySend', 'confirmUrl', 'rejectUrl'))
+        return response()->view('emails.invoice-to-party', compact('partySend', 'settings', 'confirmUrl', 'rejectUrl'))
             ->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
