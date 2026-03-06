@@ -13,6 +13,12 @@
 | Abber Suliman Alrwaily | مسؤولة الجمعيات                    | `abeer.alruwaili` | `Ab33r!Ruw#2025$Revenue` |
 | د. رضي الكبيدان        | رئيس قسم التأمين                   | `radi.alkubaidan` | `R@di#Ins2025!Kubaidan`  |
 
+### طبيب التأمين (UsersSeeder)
+
+| الاسم (عربي)   | الوظيفة       | Username            | Password                    |
+| -------------- | ------------- | ------------------- | --------------------------- |
+| محمد أبو عوض   | طبيب التأمين  | `insurance_doctor`  | `M@hmd#AbuAwad!InsDr2025`   |
+
 ---
 
 ## 2. موظفو الإيرادات (RevenueStaffSeeder) — باسورد خاص بكل موظف
@@ -73,6 +79,10 @@
 - `jasar.alduwayhi` \| `J@sar#Rev2025!Duwayhi`
 - `abeer.alruwaili` \| `Ab33r!Ruw#2025$Revenue`
 - `radi.alkubaidan` \| `R@di#Ins2025!Kubaidan`
+
+**طبيب التأمين**
+
+- `insurance_doctor` \| `M@hmd#AbuAwad!InsDr2025`
 
 **موظفو الإيرادات**
 
