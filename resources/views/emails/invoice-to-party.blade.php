@@ -108,8 +108,8 @@
         <tbody>
             @foreach($invoice->items ?? [] as $item)
                 <tr>
-                    <td>{{ $item->service?->code ?? '—' }}</td>
-                    <td>{{ $item->service?->name_ar ?: $item->service?->name ?? '—' }}</td>
+                    <td>{{ $item->service_id ? ($item->service?->code ?? '—') : '—' }}</td>
+                    <td>{{ $item->service_id ? ($item->service?->name_ar ?: $item->service?->name ?? '—') : ($item->description ?? '—') }}</td>
                     <td>{{ $item->quantity }}</td>
                     <td>{{ number_format((float) $item->unit_price, 2) }}</td>
                     <td>{{ number_format((float) $item->total_price, 2) }}</td>

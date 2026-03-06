@@ -108,6 +108,7 @@ Route::middleware('auth:web,api')->group(function () {
 
     Route::get('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrint'])->name('visits.treatment-eligibility-print');
     Route::post('visits/{visit}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintSubmit'])->name('visits.treatment-eligibility-print.submit');
+    Route::post('visits/{visit}/entry-fee-invoice', [VisitController::class, 'storeEntryFeeInvoice'])->name('visits.entry-fee-invoice');
 
     // Price Inquiry Print (for quotation/estimation only - does NOT record revenue)
     Route::get('visits/{visit}/price-inquiry-print', [VisitController::class, 'priceInquiryPrint'])->name('visits.price-inquiry-print');

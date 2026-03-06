@@ -40,6 +40,14 @@
                     @error('category')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
+                <!-- Entry fee (كشفية الدخول) — للأقسام الطبية فقط -->
+                <div id="entry_fee_wrap" class="hidden">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'كشفية الدخول (ريال) — اختياري' : 'Entry fee (SAR) — optional' }}</label>
+                    <input type="number" name="entry_fee" id="entry_fee_input" value="{{ old('entry_fee') }}" min="0" step="0.01" placeholder="0" class="w-full rounded border border-slate-300 px-3 py-2 @error('entry_fee') border-red-500 @enderror">
+                    <p class="text-xs text-slate-500 mt-1">{{ app()->getLocale() === 'ar' ? 'إذا حددت مبلغاً، سيظهر هذا القسم في «دخول قسم» عند إنشاء زيارة ويُطبَع معه فاتورة كشفية.' : 'If set, this department will appear in "Department entry" when creating a visit and an entry fee invoice will be created.' }}</p>
+                    @error('entry_fee')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 <!-- Manager -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'مدير القسم' : 'Department Manager' }}</label>
@@ -66,4 +74,22 @@
             </div>
         </form>
     </div>
+    <script>
+        (function() {
+            var cat = document.querySelector('select[name="category"]');
+            var wrap = document.getElementById('entry_fee_wrap');
+            var input = document.getElementById('entry_fee_input');
+            function toggle() {
+                if (!wrap) return;
+                if (cat && cat.value === 'medical') {
+                    wrap.classList.remove('hidden');
+                    if (input) input.removeAttribute('disabled');
+                } else {
+                    wrap.classList.add('hidden');
+                    if (input) { input.setAttribute('disabled', 'disabled'); input.value = ''; }
+                }
+            }
+            if (cat) { cat.addEventListener('change', toggle); toggle(); }
+        })();
+    </script>
 @endsection

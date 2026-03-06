@@ -317,10 +317,27 @@
                                 @endif
 
                                 @if ($visitForPrint)
-                                    <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
+                                    {{-- <a href="{{ route('visits.treatment-eligibility-print', $visitForPrint) }}"
                                         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 text-sm shadow-sm transition-colors">
                                         {{ app()->getLocale() === 'ar' ? '📄 طباعة إحقية علاج (بدون خدمات)' : '📄 Print eligibility (no services)' }}
-                                    </a>
+                                    </a> --}}
+                                @endif
+
+                                @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
+                                    <div class="inline-flex flex-wrap items-center gap-2 flex-1">
+                                        <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" class="inline-flex flex-wrap items-center gap-2" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
+                                            @csrf
+                                            <select name="department_id" required class="{{ $inputClass }} max-w-[220px]">
+                                                <option value="">{{ app()->getLocale() === 'ar' ? '— اختر قسم الدخول (كشفية) —' : '— Select department (entry fee) —' }}</option>
+                                                @foreach ($entryFeeDepartments as $d)
+                                                    <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-sm shadow-sm transition-colors">
+                                                {{ app()->getLocale() === 'ar' ? '💰 فاتورة دخول + طباعة الأحقية' : '💰 Entry invoice + Print eligibility' }}
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
 
                                 @if (!$isTransferred)
@@ -469,7 +486,7 @@
                             <div class="flex flex-wrap gap-2">
                                 <input type="text" id="eligibility_service_search" placeholder="{{ app()->getLocale() === 'ar' ? 'اكتب اسم الخدمة أو الكود ثم اضغط بحث' : 'Type service name or code then Search' }}"
                                     class="flex-1 min-w-[200px] {{ $inputClass }}">
-                                <button type="button" id="eligibility_service_btn" class="bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
+                                <button type="button" id="eligibility_service_btn" class="bg-blue-600 px-5 text-white text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
                                     {{ app()->getLocale() === 'ar' ? 'بحث' : 'Search' }}
                                 </button>
                                 @if ($visitForPrint && $visitForPrint->last_eligibility_services)
@@ -526,7 +543,7 @@
                         <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                             @csrf
                             <div class="inline-flex flex-col items-start gap-1">
-                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-slate-50 px-4 py-2 rounded-lg font-bold hover:bg-amber-700 shadow-md">
+                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-white text-slate-50 px-4 py-2 rounded-lg font-bold hover:bg-amber-700 shadow-md">
                                     {{ app()->getLocale() === 'ar' ? '✅ اعتماد الخدمات وطباعة الأحقية' : '✅ Submit Services & Print Eligibility' }}
                                 </button>
                                 @if($visitForPrint->printed_eligibility_at)
