@@ -96,13 +96,15 @@ class UsersSeeder extends Seeder
         );
         $insuranceHead->assignRole('manager');
 
-        // Insurance Doctor — طبيب التأمين
+        // Insurance Doctor — طبيب التأمين محمد أبو عوض (باسورد قوي)
+        $insuranceDoctorPassword = 'M@hmd#AbuAwad!InsDr2025';
         $insuranceDoctor = User::updateOrCreate(
             ['username' => 'insurance_doctor'],
             [
                 'email' => 'insurance.doctor@hospital.sa',
-                'name' => 'محمد عوض',
-                'password' => Hash::make('password123'),
+                'name' => 'محمد أبو عوض',
+                'name_ar' => 'محمد أبو عوض',
+                'password' => Hash::make($insuranceDoctorPassword),
                 'department_id' => $getDeptId('Insurance'),
                 'job_title' => 'Insurance Doctor',
                 'job_title_ar' => 'طبيب التأمين',
@@ -175,7 +177,7 @@ class UsersSeeder extends Seeder
         echo "Reception:   username: reception2  | password: password123\n";
         echo "Insurance:     username: insurance        | password: password123\n";
         echo "Insur. Head:   username: insurance_head  | password: password123  (رئيس قسم التأمين)\n";
-        echo "Insur. Dr:     username: insurance_doctor| password: password123  (طبيب التأمين)\n";
+        echo "Insur. Dr:     username: insurance_doctor| password: (strong - see STAFF-CREDENTIALS.md)  (طبيب التأمين - محمد أبو عوض)\n";
         echo "Charity:       username: charity         | password: password123\n";
         echo "Accountant:    username: accountant      | password: password123\n";
         echo "Doctor:        username: doctor          | password: password123\n";

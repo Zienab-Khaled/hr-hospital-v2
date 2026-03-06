@@ -164,6 +164,18 @@ class CharityClaimController extends Controller
     }
 
     /**
+     * Preview claim as it will appear when sent to the charity (same layout as official document).
+     */
+    public function preview(CharityClaim $charityClaim)
+    {
+        $this->authorize('claims.view');
+
+        $charityClaim->load(['invoice.patient', 'invoice.items.service', 'charityEntity']);
+
+        return view('charity-claims.preview', compact('charityClaim'));
+    }
+
+    /**
      * Send claim to charity entity
      */
     public function send(CharityClaim $charityClaim)

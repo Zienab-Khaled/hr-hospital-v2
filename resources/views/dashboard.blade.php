@@ -87,7 +87,7 @@
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
                 @can('visits.create')
-                    <a href="{{ route('visits.create') }}" class="bg-green-600  px-4 py-2 rounded text-sm font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</a>
+                    <a href="{{ route('visits.create') }}" class="bg-green-600  px-4 py-2 rounded text-white text-sm font-bold hover:bg-green-700">+ {{ __("Add Visit") }}</a>
                 @endcan
                 <a href="{{ route('visits.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
@@ -118,7 +118,7 @@
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
                 @can('invoices.create')
-                    <a href="{{ route('invoices.create') }}" class="bg-orange-500  px-4 py-2 rounded text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</a>
+                    <a href="{{ route('invoices.create') }}" class="bg-orange-500  px-4 py-2 rounded text-white text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</a>
                 @endcan
                 <a href="{{ route('invoices.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
@@ -144,7 +144,7 @@
         {{-- Claims Section (حسب صلاحية claims.view) --}}
         @can('claims.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-white text-slate-800 mb-4 flex items-center gap-2">
                 <span>📑</span> {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">

@@ -30,11 +30,24 @@
                 📋 {{ app()->getLocale() === 'ar' ? 'مطالبة جمعية' : 'Charity Claim' }}
                 <span class="text-slate-500 text-lg font-normal ms-2">{{ $charityClaim->invoice?->invoice_number }}</span>
             </h2>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <a href="{{ route('charity-claims.index') }}"
                     class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-slate-300">
                     ← {{ app()->getLocale() === 'ar' ? 'قائمة المطالبات' : 'Claims List' }}
                 </a>
+                @if($charityClaim->status === 'draft')
+                    <a href="{{ route('charity-claims.preview', $charityClaim) }}" target="_blank"
+                        class="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-amber-600">
+                        👁️ {{ app()->getLocale() === 'ar' ? 'معاينة قبل الإرسال' : 'Preview before send' }}
+                    </a>
+                    <form method="POST" action="{{ route('charity-claims.send', $charityClaim) }}" class="inline"
+                        onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال المطالبة للجمعية؟ لا يمكن التراجع عن الإرسال.' : 'Send this claim to the charity? This cannot be undone.' }}');">
+                        @csrf
+                        <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-emerald-700">
+                            📤 {{ app()->getLocale() === 'ar' ? 'إرسال للجمعية' : 'Send to charity' }}
+                        </button>
+                    </form>
+                @endif
                 <a href="{{ route('invoices.show', $charityClaim->invoice) }}"
                     class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700">
                     {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}

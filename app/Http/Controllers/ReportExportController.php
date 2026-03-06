@@ -75,7 +75,11 @@ class ReportExportController extends Controller
             'deptPerformance' => $deptPerformance,
             'logoPath' => $logoPath,
             'hospitalName' => Setting::get('hospital_name', ''),
+            'hospitalNameEn' => Setting::get('hospital_name_en', ''),
             'healthClusterName' => Setting::get('health_cluster_name', ''),
+            'healthClusterNameEn' => Setting::get('health_cluster_name_en', ''),
+            'reportCountryAr' => Setting::get('report_header_country_ar', 'المملكة العربية السعودية'),
+            'reportMinistryAr' => Setting::get('report_header_ministry_ar', 'وزارة الصحة'),
             'managerTitle' => Setting::get('manager_title', app()->getLocale() === 'ar' ? 'مدير إدارة تنمية الإيرادات' : 'Revenue Development Manager'),
             'managerName' => Setting::get('manager_name', 'جسار محمد الضويحي'),
         ];
@@ -92,18 +96,32 @@ class ReportExportController extends Controller
 
         $html = view('reports.pdf_template', $data)->render();
 
-        $mpdf = new \Mpdf\Mpdf([
+        // Use XB Riyaz for proper Arabic typography (built-in in Mpdf); fallback to dejavusans
+        $defaultFont = 'xbriyaz';
+        $mpdfConfig = [
             'mode' => 'utf-8',
             'format' => 'A4',
-            'default_font_size' => 11,
-            'default_font' => 'dejavusans',
-            'margin_left' => 18,
-            'margin_right' => 18,
-            'margin_top' => 18,
-            'margin_bottom' => 18,
-        ]);
+            'default_font_size' => 12,
+            'default_font' => $defaultFont,
+            'margin_left' => 15,
+            'margin_right' => 15,
+            'margin_top' => 22,
+            'margin_bottom' => 22,
+            'autoArabic' => true,
+            'useSubstitutions' => true,
+        ];
+        try {
+            $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+        } catch (\Throwable $e) {
+            $mpdfConfig['default_font'] = 'dejavusans';
+            $mpdfConfig['default_font_size'] = 11;
+            unset($mpdfConfig['autoArabic'], $mpdfConfig['useSubstitutions']);
+            $mpdf = new \Mpdf\Mpdf($mpdfConfig);
+        }
 
         $mpdf->SetDirectionality('rtl');
+        $hospitalLabel = $data['hospitalName'] ?: (app()->getLocale() === 'ar' ? 'المستشفى' : 'Hospital');
+        $mpdf->SetFooter('|' . (app()->getLocale() === 'ar' ? 'تقرير رسمي - صادر من ' . $hospitalLabel . ' | صفحة {PAGENO} من {nb}' : 'Official Report - ' . $hospitalLabel . ' | Page {PAGENO} of {nb}') . '|');
         $mpdf->WriteHTML($html);
 
         $filename = 'Report_' . $data['start']->format('Y-m-d') . '_to_' . $data['end']->format('Y-m-d') . '.pdf';
