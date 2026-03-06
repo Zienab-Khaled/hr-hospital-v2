@@ -341,7 +341,7 @@
                 <div class="info-label">الخدمة :</div>
                 <div class="info-value">
                     @forelse($services as $s)
-                        {{ $s['name'] ?? '-' }}{{ !$loop->last ? ' ، ' : '' }}
+                        {{ $s['name_ar'] ?? $s['name'] ?? '—' }}{{ !$loop->last ? ' ، ' : '' }}
                     @empty
                         {{ isset($targetDepartment) ? $targetDepartment->name_ar ?? $targetDepartment->name : $visit->department->name_ar ?? $visit->department->name }}
                     @endforelse
