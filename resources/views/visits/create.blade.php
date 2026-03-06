@@ -305,13 +305,13 @@
                             <h3 class="text-lg font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
                             <div class="flex flex-wrap gap-3">
                                 <a href="{{ route('patients.show', $patient) }}" target="_blank"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-600  font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
+                                    class="inline-flex items-center text-white gap-2 px-4 py-2 rounded-lg bg-slate-600  font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '👤 ملف المريض' : '👤 Patient Profile' }}
                                 </a>
 
                                 @if (!$isTransferred)
                                 <button type="button" id="btn_show_transfer"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
+                                    class="inline-flex items-center text-white gap-2 px-4 py-2 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '🔄 تحويل إلى قسم آخر' : '🔄 Transfer to another department' }}
                                 </button>
                                 @endif
