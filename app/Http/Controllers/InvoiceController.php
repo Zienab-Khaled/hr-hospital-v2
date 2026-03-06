@@ -603,6 +603,35 @@ class InvoiceController extends Controller
     }
 
     /**
+     * معاينة محتوى الإيميل الذي سيُرسل للجمعية قبل الإرسال (نفس شكل الإيميل الفعلي).
+     */
+    public function previewCharityEmail(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.charityEntity', 'items.service']);
+
+        $patient = $invoice->patient;
+        if (! $patient || $patient->payment_type !== 'charity' || ! $patient->charityEntity) {
+            return redirect()->route('invoices.show', $invoice)->withErrors([
+                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بمريض جمعية.' : 'Invoice is not linked to a charity patient.',
+            ]);
+        }
+
+        $partySend = new InvoicePartySend;
+        $partySend->invoice_id = $invoice->id;
+        $partySend->recipient_name = app()->getLocale() === 'ar' && ! empty($patient->charityEntity->name_ar)
+            ? $patient->charityEntity->name_ar
+            : $patient->charityEntity->name;
+        $partySend->setRelation('invoice', $invoice);
+
+        $confirmUrl = '#';
+        $rejectUrl = '#';
+
+        return response()->view('emails.invoice-to-party', compact('partySend', 'confirmUrl', 'rejectUrl'))
+            ->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /**
      * إرسال عرض سعر / فاتورة طبية للجمعية مباشرة (نفس فلو أحقية العلاج).
      * يرسل ميل "عرض سعر / فاتورة طبية" مع PDF مرفق وزرّي تأكيد/رفض إلى إيميل الجمعية المسجل.
      */

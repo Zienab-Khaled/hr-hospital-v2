@@ -174,6 +174,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::post('insurance-claims/{insuranceClaim}/update-status', [App\Http\Controllers\InsuranceClaimController::class, 'updateStatus'])->name('insurance-claims.update-status');
     Route::get('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToParty'])->name('invoices.send-to-party');
     Route::post('invoices/{invoice}/send-to-party', [InvoiceController::class, 'sendToPartySubmit'])->name('invoices.send-to-party.submit');
+    Route::get('invoices/{invoice}/charity-email-preview', [InvoiceController::class, 'previewCharityEmail'])->name('invoices.charity-email-preview');
     Route::post('invoices/{invoice}/send-charity-price-offer', [InvoiceController::class, 'sendCharityPriceOffer'])->name('invoices.send-charity-price-offer');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');
     Route::post('invoices/{invoice}/send-charity-payment-reminder', [InvoiceController::class, 'sendCharityPaymentReminder'])->name('invoices.send-charity-payment-reminder');

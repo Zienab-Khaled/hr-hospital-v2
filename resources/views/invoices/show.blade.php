@@ -50,6 +50,12 @@
                 {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
                 @if (($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') && $invoice->patient?->charityEntity)
                     @if ($invoice->patient?->charityEntity?->email)
+                        <a href="{{ route('invoices.charity-email-preview', $invoice) }}"
+                            target="_blank"
+                            title="{{ app()->getLocale() === 'ar' ? 'معاينة شكل الإيميل قبل الإرسال' : 'Preview email before sending' }}"
+                            class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200">
+                            👁️ {{ app()->getLocale() === 'ar' ? 'معاينة الميل قبل الإرسال' : 'Preview email' }}
+                        </a>
                         <form method="POST" action="{{ route('invoices.send-charity-price-offer', $invoice) }}"
                             class="inline"
                             onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال ميل «عرض سعر / فاتورة طبية» للجمعية مع مرفق PDF وزرّي تأكيد/رفض؟' : 'Send «Price offer / Medical invoice» email to charity with PDF attachment and confirm/reject links?' }}');">
