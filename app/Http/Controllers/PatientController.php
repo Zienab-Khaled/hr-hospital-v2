@@ -236,11 +236,21 @@ class PatientController extends Controller
             'contactReports' => fn($q) => $q->latest()->limit(5),
         ]);
 
-        $visits = $patient->visits()->latest()->paginate(5, ['*'], 'visits_page');
+        $visits = $patient->visits()->with('department')->latest()->paginate(5, ['*'], 'visits_page');
         $invoices = $patient->invoices()->latest()->paginate(5, ['*'], 'invoices_page');
 
+        // أقسام تم تنفيذ خدمات فيها لهذا المريض (عيادات، أشعة، مختبر، مركز أورام، ...)
+        $completedDepartments = \App\Models\InvoiceItem::whereHas('invoice', fn ($q) => $q->where('patient_id', $patient->id))
+            ->where('status', 'completed')
+            ->with('service.department')
+            ->get()
+            ->pluck('service.department')
+            ->filter()
+            ->unique('id')
+            ->values();
+
         $departments = Department::where('is_active', true)->orderBy('name')->get();
-        return view('patients.show', compact('patient', 'departments', 'visits', 'invoices'));
+        return view('patients.show', compact('patient', 'departments', 'visits', 'invoices', 'completedDepartments'));
     }
 
     public function transfer(Request $request, Patient $patient)

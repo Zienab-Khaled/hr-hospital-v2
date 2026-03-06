@@ -84,7 +84,7 @@
                         <div class="space-y-4">
                             <div class="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">
-                                    {{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}
+                                    {{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Department' }}
                                 </span>
                                 <p class="text-lg font-bold text-slate-700">
                                     {{ $visit->department ? (app()->getLocale() === 'ar' ? $visit->department->name_ar ?? $visit->department->name : $visit->department->name) : '—' }}
