@@ -336,7 +336,7 @@
                     <div class="grid grid-cols-2 gap-10">
                         <div>
                             <p class="text-[10px] text-white font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المحصلات' : 'Gross Collected' }}</p>
-                            <p class="text-4xl font-black  tracking-tighter">{{ number_format($totalCollectedToday, 2) }}</p>
+                            <p class="text-4xl font-black  tracking-tighter text-white">{{ number_format($totalCollectedToday, 2) }}</p>
                         </div>
                         <div class="text-right">
                              <p class="text-[10px] text-white font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Trans Count' }}</p>
