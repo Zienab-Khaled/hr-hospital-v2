@@ -285,7 +285,7 @@
                 <div class="col-title">المحصل</div>
                 <div class="col-content">
                     @if($receipt->collectedBy && $receipt->collectedBy->signature)
-                        <div class="sig-img"><img src="{{ asset('storage/' . $receipt->collectedBy->signature) }}" alt="توقيع المحصل"></div>
+                        <div class="sig-img"><img src="{{ asset('storage/' . ltrim($receipt->collectedBy->signature ?? '', '/')) }}" alt="توقيع المحصل"></div>
                     @else
                         <div style="min-height:36px;"></div>
                     @endif

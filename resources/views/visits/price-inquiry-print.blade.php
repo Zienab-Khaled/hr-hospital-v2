@@ -197,7 +197,7 @@
                 {{ app()->getLocale() === 'ar' ? 'توقيع الموظف' : 'Employee Signature' }}
             </div>
             @if (auth()->check() && auth()->user()->signature)
-                <img src="{{ asset('storage/' . auth()->user()->signature) }}"
+                <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
                      alt="Employee Signature"
                      style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
             @else
@@ -214,7 +214,7 @@
                 {{ app()->getLocale() === 'ar' ? 'توقيع المدير' : 'Manager Signature' }}
             </div>
             @if (isset($manager) && $manager && $manager->signature)
-                <img src="{{ asset('storage/' . $manager->signature) }}"
+                <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}"
                      alt="Manager Signature"
                      style="max-width: 150px; max-height: 60px; margin: 10px auto; display: block;">
             @else

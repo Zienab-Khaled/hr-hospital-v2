@@ -821,7 +821,7 @@ class PlaceholderController extends Controller
     public function usersCreate()
     {
         Gate::authorize('users.manage');
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'administrative')->orderBy('name')->get();
         $roles = Role::where('guard_name', 'web')->orderBy('name')->get();
         return view('users.create', compact('departments', 'roles'));
     }
@@ -884,6 +884,31 @@ class PlaceholderController extends Controller
         return redirect()->route('users.index')->with('success', __('User created successfully.'));
     }
 
+    /** صفحة حسابي — أي موظف مسجل يستطيع رؤية بياناته وتعديل التوقيع الإلكتروني بدون صلاحية users.manage */
+    public function accountEdit()
+    {
+        $user = auth()->user();
+        $user->load('department', 'roles');
+        return view('account.edit', compact('user'));
+    }
+
+    public function accountUpdate(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'signature_data' => 'nullable|string',
+        ]);
+        $signaturePath = $this->saveSignatureFromBase64($request->input('signature_data'));
+        if ($signaturePath) {
+            $oldSignature = $user->signature;
+            if ($oldSignature && Storage::disk('public')->exists($oldSignature)) {
+                Storage::disk('public')->delete($oldSignature);
+            }
+            $user->update(['signature' => $signaturePath]);
+        }
+        return redirect()->route('account.edit')->with('success', app()->getLocale() === 'ar' ? 'تم تحديث التوقيع الإلكتروني.' : 'Electronic signature updated.');
+    }
+
     public function usersShow(User $user)
     {
         Gate::authorize('users.manage');
@@ -895,7 +920,7 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('users.manage');
         $user->load('department', 'roles');
-        $departments = Department::where('is_active', true)->orderBy('name')->get();
+        $departments = Department::where('is_active', true)->where('category', 'administrative')->orderBy('name')->get();
         $roles = Role::where('guard_name', 'web')->orderBy('name')->get();
         return view('users.edit', compact('user', 'departments', 'roles'));
     }

@@ -375,7 +375,7 @@
                     <div class="sig-label">الموظف :</div>
                     <div class="sig-name">{{ auth()->user()->name ?? '—' }}</div>
                     @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . auth()->user()->signature) }}" class="sig-img" alt="Signature">
+                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" class="sig-img" alt="Signature">
                     @endif
                 </div>
 
@@ -383,7 +383,7 @@
                     <div class="sig-label">مدير الايرادات :</div>
                     <div class="sig-name">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</div>
                     @if ($manager && $manager->signature)
-                        <img src="{{ asset('storage/' . $manager->signature) }}" class="sig-img"
+                        <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" class="sig-img"
                             alt="Manager Signature">
                     @endif
                 </div>

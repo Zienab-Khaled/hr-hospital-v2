@@ -545,7 +545,7 @@
                 <div class="sig-title">توقيع الموظف</div>
                 <div class="sig-img">
                     @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . auth()->user()->signature) }}" alt="توقيع الموظف">
+                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" alt="توقيع الموظف">
                     @endif
                 </div>
                 <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}
