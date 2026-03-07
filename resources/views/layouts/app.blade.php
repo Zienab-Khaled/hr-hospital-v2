@@ -141,7 +141,7 @@
                             {{-- User Info --}}
                             <div class="flex items-center gap-3 {{ app()->getLocale() === 'ar' ? 'flex-row-reverse' : '' }}">
                                 <div class="flex flex-col {{ app()->getLocale() === 'ar' ? 'text-right' : 'text-left' }}">
-                                    <span class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</span>
+                                    <a href="{{ route('account.edit') }}" class="text-sm font-semibold text-slate-800 hover:text-emerald-600 transition-colors">{{ auth()->user()->name }}</a>
                                     <span class="text-xs text-slate-500">{{ auth()->user()->username }}</span>
                                 </div>
                                 <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-slate-200/80">

@@ -96,7 +96,7 @@
                 <div>
                     <label class="text-sm font-medium text-slate-500">{{ app()->getLocale() === 'ar' ? 'التوقيع الإلكتروني' : 'Electronic signature' }}</label>
                     @if($user->signature)
-                        <p class="mt-1"><img src="{{ asset('storage/' . $user->signature) }}" alt="Signature" class="h-14 object-contain border border-slate-200 rounded p-1 bg-white"></p>
+                        <p class="mt-1"><img src="{{ asset('storage/' . ltrim($user->signature, '/')) }}" alt="Signature" class="h-14 object-contain border border-slate-200 rounded p-1 bg-white"></p>
                     @else
                         <p class="text-slate-500">{{ app()->getLocale() === 'ar' ? 'غير مرفوع' : 'Not uploaded' }}</p>
                     @endif

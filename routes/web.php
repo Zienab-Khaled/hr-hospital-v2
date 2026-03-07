@@ -227,6 +227,8 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('services/{service}/edit', [PlaceholderController::class, 'servicesEdit'])->name('services.edit');
     Route::put('services/{service}', [PlaceholderController::class, 'servicesUpdate'])->name('services.update');
     Route::delete('services/{service}', [PlaceholderController::class, 'servicesDestroy'])->name('services.destroy');
+    Route::get('account', [PlaceholderController::class, 'accountEdit'])->name('account.edit');
+    Route::put('account', [PlaceholderController::class, 'accountUpdate'])->name('account.update');
     Route::get('users', [PlaceholderController::class, 'usersIndex'])->name('users.index');
     Route::get('users/create', [PlaceholderController::class, 'usersCreate'])->name('users.create');
     Route::post('users', [PlaceholderController::class, 'usersStore'])->name('users.store');
