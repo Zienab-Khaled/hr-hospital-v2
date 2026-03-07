@@ -74,7 +74,7 @@
             </div>
 
             <div class="flex items-end self-end mb-0.5">
-                <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-slate-900  text-sm font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-200 group">
+                <button type="submit" class="inline-flex items-center px-6 text-white py-2.5 bg-slate-900  text-sm font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-200 group">
                     {{ app()->getLocale() === 'ar' ? 'تحديث البيانات' : 'Sync Data' }}
                     <span class="ml-2 group-hover:rotate-180 transition-transform duration-500">🔄</span>
                 </button>
@@ -123,7 +123,7 @@
                 <h2 class="text-xl font-black text-slate-800 flex items-center gap-3">
                     <span class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">💻</span>
                     {{ app()->getLocale() === 'ar' ? 'عمليات المحصل' : 'Collector Operations' }}
-                    <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-600  shadow-md">
+                    <span class="px-3 py-1 rounded-full text-xs font-black text-white bg-indigo-600  shadow-md">
                         {{ $invoices->count() }}
                     </span>
                 </h2>
@@ -204,7 +204,7 @@
                                 <div class="flex justify-between items-center text-sm py-1 border-b border-emerald-100/50 last:border-0">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $payment->payment_type === 'charity' ? 'bg-purple-600 ' : ($payment->payment_type === 'insurance' ? 'bg-amber-600 ' : 'bg-emerald-600 ') }}">{{ $payment->payment_type_label }}</span>
+                                            <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-full {{ $payment->payment_type === 'charity' ? 'bg-purple-600' : ($payment->payment_type === 'insurance' ? 'bg-amber-600' : 'bg-emerald-600') }}">{{ $payment->payment_type_label }}</span>
                                             <span class="text-slate-600 text-xs">{{ $payment?->receipt?->receipt_number }}</span>
                                         </div>
                                         @if($payment->receipt && !empty($payment->receipt->selected_items))
@@ -329,17 +329,17 @@
                     <div class="absolute -left-8 -bottom-8 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
 
                     <h3 class="font-black text-[10px] tracking-widest uppercase text-indigo-400 mb-6 flex items-center gap-2">
-                         <span class="w-2 h-0.5 bg-indigo-500"></span>
+                         <span class="w-2 h-0.5 text-white bg-indigo-500"></span>
                          {{ app()->getLocale() === 'ar' ? 'الملخص المالي للفترة' : 'Financial Period Summary' }}
                     </h3>
 
                     <div class="grid grid-cols-2 gap-10">
                         <div>
-                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المحصلات' : 'Gross Collected' }}</p>
+                            <p class="text-[10px] text-white font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المحصلات' : 'Gross Collected' }}</p>
                             <p class="text-4xl font-black  tracking-tighter">{{ number_format($totalCollectedToday, 2) }}</p>
                         </div>
                         <div class="text-right">
-                             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Trans Count' }}</p>
+                             <p class="text-[10px] text-white font-black uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات' : 'Trans Count' }}</p>
                              <p class="text-4xl font-black text-emerald-400 tracking-tighter">{{ $invoices->count() }}</p>
                         </div>
                     </div>
@@ -352,19 +352,19 @@
                                 <span class="text-xl">📊</span>
                             </div>
                             <div>
-                                <h4 class="text-sm font-black text-slate-800">{{ app()->getLocale() === 'ar' ? 'دقة مطابقة السندات' : 'Voucher Accuracy' }}</h4>
+                                <h4 class="text-sm font-black text-white">{{ app()->getLocale() === 'ar' ? 'دقة مطابقة السندات' : 'Voucher Accuracy' }}</h4>
                                 <p class="text-[10px] text-slate-500 font-bold">{{ app()->getLocale() === 'ar' ? 'نسبة التحقق من المطالبات اليدوية' : 'Manual vs System verified ratio' }}</p>
                             </div>
                         </div>
                         <div class="text-center">
-                            <span class="text-xs font-black text-indigo-600">{{ $invoices->where('audit_status', 'matched')->count() }}/{{ $invoices->count() }}</span>
+                            <span class="text-xs font-black text-white">{{ $invoices->where('audit_status', 'matched')->count() }}/{{ $invoices->count() }}</span>
                             <div class="text-[8px] font-black text-slate-300 uppercase tracking-tighter">verified</div>
                         </div>
                     </div>
 
                     <div class="space-y-4">
                         <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ app()->getLocale() === 'ar' ? 'حالة الإيداع البنكي' : 'Bank Deposit Progress' }}</h4>
+                            <h4 class="text-[10px] font-black text-white uppercase tracking-widest">{{ app()->getLocale() === 'ar' ? 'حالة الإيداع البنكي' : 'Bank Deposit Progress' }}</h4>
                             <span class="text-[10px] font-black text-emerald-500">{{ round($invoices->count() > 0 ? ($invoices->where('audit_status', 'ready_for_deposit')->count() / $invoices->count() * 100) : 0) }}%</span>
                         </div>
                         <div class="w-full bg-slate-100 rounded-full h-3 p-0.5 border border-slate-200">
