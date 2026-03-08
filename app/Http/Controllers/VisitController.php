@@ -292,6 +292,9 @@ class VisitController extends Controller
                 'description' => $description,
                 'insurance_coverage_type' => $insuranceCoverageType,
                 'insurance_coverage_value' => $insuranceCoverageValue,
+                'status' => 'completed',
+                'completed_at' => now(),
+                'completed_by' => auth()->id(),
             ]);
 
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
@@ -708,17 +711,20 @@ class VisitController extends Controller
     }
 
     /**
-     * تحويل المريض من الزيارة الحالية لزيارة قسم آخر
+     * تحويل الزيارة إلى قسم آخر (التحويل للزيارة وليس للمريض)
      */
     public function transfer(Request $request, Visit $visit)
     {
-        // 1. Validate
+        $visitDepartmentId = $visit->department_id;
+
         $request->validate([
             'to_department_id' => [
                 'required',
                 'exists:departments,id',
-                'different:department_id',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, $fail) use ($visitDepartmentId) {
+                    if ((int) $value === (int) $visitDepartmentId) {
+                        $fail(app()->getLocale() === 'ar' ? 'يجب اختيار قسم مختلف عن قسم الزيارة الحالي.' : 'Target department must be different from current visit department.');
+                    }
                     $dept = Department::find($value);
                     if ($dept && $dept->category !== 'medical') {
                         $fail(app()->getLocale() === 'ar' ? 'يمكن التحويل للأقسام الطبية فقط.' : 'Transfers are only allowed to medical departments.');
@@ -728,9 +734,7 @@ class VisitController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        // 2. Create PatientTransfer record (logging)
-        // assuming PatientTransfer model exists and has these fields
-        // If not, we might need to use existing logic in PatientController or replicate it
+        // سجل التحويل (من → إلى) للتدقيق
         \App\Models\PatientTransfer::create([
             'patient_id' => $visit->patient_id,
             'from_department_id' => $visit->department_id,
@@ -740,21 +744,17 @@ class VisitController extends Controller
             'notes' => $request->input('notes'),
         ]);
 
-        // 3. Update Patient current department
-        $visit->patient->update(['department_id' => $request->input('to_department_id')]);
-
-        // 4. Update Visit to flag as transferred
+        // تحديث الزيارة فقط: تعيين القسم المُحوّل إليه (التحويل للزيارة وليس للمريض)
         $oldValues = $visit->getOriginal();
         $visit->update(['transferred_department_id' => $request->input('to_department_id')]);
 
-        ActivityLogger::log('Patient Transferred', 'Visit', $visit->id, 'Patient transferred to another department', $oldValues, $visit->toArray());
+        ActivityLogger::log('Visit Transferred', 'Visit', $visit->id, 'Visit transferred to department', $oldValues, $visit->toArray());
 
-        // 5. Redirect back with success
         return redirect()->route('visits.create', [
             'patient_id' => $visit->patient_id,
             'visit_id' => $visit->id,
             'registered' => 1
-        ])->with('success', app()->getLocale() === 'ar' ? 'تم تحويل المريض بنجاح.' : 'Patient transferred successfully.');
+        ])->with('success', app()->getLocale() === 'ar' ? 'تم تحويل الزيارة إلى القسم الجديد بنجاح.' : 'Visit transferred successfully.');
     }
     public function destroy(Visit $visit)
     {

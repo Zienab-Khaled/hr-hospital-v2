@@ -144,7 +144,7 @@
         {{-- Claims Section (حسب صلاحية claims.view) --}}
         @can('claims.view')
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
-            <h2 class="text-lg font-semibold text-white text-slate-800 mb-4 flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>📑</span> {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">

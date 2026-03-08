@@ -13,7 +13,7 @@
         </h2>
         @if($activeTab === 'insurance')
             <a href="{{ route('insurance-claims.create') }}"
-               class="bg-red-600 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 shadow-md transition-all flex items-center gap-2">
+               class="bg-red-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 shadow-md transition-all flex items-center gap-2">
                 ➕ {{ app()->getLocale() === 'ar' ? 'إنشاء مطالبة تأمين' : 'Create Insurance Claim' }}
             </a>
         @endif

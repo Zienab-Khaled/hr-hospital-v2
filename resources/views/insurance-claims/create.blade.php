@@ -76,7 +76,7 @@
 
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">
-                            📂 {{ app()->getLocale() === 'ar' ? 'ملف Arqos Saudi' : 'Arqos Saudi File' }}
+                            📂 {{ app()->getLocale() === 'ar' ? 'الملف من أركوس (Arqos Saudi)' : 'File from Arcos (Arqos Saudi)' }}
                         </label>
                         <input type="file" name="arqos_file" class="w-full border-2 border-slate-200 border-dashed rounded-lg px-3 py-2 text-sm">
                         <p class="text-slate-400 text-[10px] mt-1">{{ app()->getLocale() === 'ar' ? 'PDF, JPG, PNG (بحد أقصى 2 ميجا)' : 'PDF, JPG, PNG (Max 2MB)' }}</p>
@@ -102,7 +102,7 @@
                 </div>
 
                 <div class="border-t border-slate-100 pt-6 flex justify-end">
-                    <button type="submit" class="bg-red-600 px-8 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg shadow-red-100 transition-all">
+                    <button type="submit" class="bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg shadow-red-100 transition-all">
                         💾 {{ app()->getLocale() === 'ar' ? 'حفظ المطالبة' : 'Save Claim' }}
                     </button>
                 </div>

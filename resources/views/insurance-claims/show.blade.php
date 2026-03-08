@@ -21,6 +21,10 @@
         ];
         $color = $statusColors[$insuranceClaim->status] ?? 'bg-slate-100 text-slate-700 border-slate-300';
         $label = $statusLabels[$insuranceClaim->status] ?? $insuranceClaim->status;
+        $inv = $insuranceClaim->invoice;
+        $claimTotal = $inv ? (float) $inv->total_amount : 0;
+        $claimCompany = $inv && $inv->items ? $inv->items->sum(fn($i) => (float) $i->insurance_covered_amount) : 0;
+        $claimPatient = $inv && $inv->items ? $inv->items->sum(fn($i) => (float) $i->patient_amount) : 0;
     @endphp
 
     <div class="max-w-4xl mx-auto">
@@ -36,7 +40,7 @@
                     ← {{ app()->getLocale() === 'ar' ? 'قائمة المطالبات' : 'Claims List' }}
                 </a>
                 <a href="{{ route('invoices.show', $insuranceClaim->invoice) }}"
-                   class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700">
+                   class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700">
                     {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}
                 </a>
             </div>
@@ -80,7 +84,15 @@
                         </div>
                         <div>
                             <span class="text-slate-500 font-semibold block mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي الفاتورة' : 'Invoice Total' }}</span>
-                            <span class="font-bold text-slate-800 text-lg">{{ number_format((float)$insuranceClaim->invoice?->total_amount, 2) }}</span>
+                            <span class="font-bold text-slate-800 text-lg">{{ number_format($claimTotal, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 font-semibold block mb-1">{{ app()->getLocale() === 'ar' ? 'يتحمله الشركة' : 'Company Share' }}</span>
+                            <span class="font-bold text-blue-700 text-lg">{{ number_format($claimCompany, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 font-semibold block mb-1">{{ app()->getLocale() === 'ar' ? 'يتحمله المريض' : 'Patient Share' }}</span>
+                            <span class="font-bold text-amber-700 text-lg">{{ number_format($claimPatient, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
                         </div>
                     </div>
                     @if($insuranceClaim->notes)
@@ -110,6 +122,15 @@
                             <span class="font-medium text-slate-800 ms-1">{{ $insuranceClaim->invoice?->patient?->file_number ?? '—' }}</span>
                         </div>
                     </div>
+                    @if($insuranceClaim->hasMedia('arqos_file'))
+                        <div class="mt-4 pt-3 border-t border-slate-200">
+                            <span class="text-slate-500 font-semibold block mb-1">{{ app()->getLocale() === 'ar' ? 'الملف المرفوع من أركوس' : 'File from Arcos' }}</span>
+                            <a href="{{ $insuranceClaim->getFirstMediaUrl('arqos_file') }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                {{ app()->getLocale() === 'ar' ? 'تحميل الملف' : 'Download file' }}
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Services --}}
@@ -127,12 +148,12 @@
                             </thead>
                             <tbody>
                                 @foreach($insuranceClaim->invoice?->items ?? [] as $item)
-                                    <tr class="border-b border-slate-200 {{ $item->isCompleted() ? 'bg-emerald-50/40' : '' }}">
-                                        <td class="border border-slate-200 px-3 py-2">{{ $item->service?->name_ar ?? $item->service?->name ?? '—' }}</td>
+                                    <tr class="border-b border-slate-200 {{ $item->isCompleted() || !$item->service_id ? 'bg-emerald-50/40' : '' }}">
+                                        <td class="border border-slate-200 px-3 py-2">{{ $item->service_id ? ($item->service?->name_ar ?? $item->service?->name) : ($item->description ?: (app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee')) }}</td>
                                         <td class="border border-slate-200 px-3 py-2 text-center">{{ $item->quantity }}</td>
                                         <td class="border border-slate-200 px-3 py-2 text-center font-medium">@currency($item->total_price)</td>
                                         <td class="border border-slate-200 px-3 py-2 text-center">
-                                            @if($item->isCompleted())
+                                            @if($item->isCompleted() || !$item->service_id)
                                                 <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">✅ {{ app()->getLocale() === 'ar' ? 'منفذ' : 'Done' }}</span>
                                             @else
                                                 <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">⏳ {{ app()->getLocale() === 'ar' ? 'معلق' : 'Pending' }}</span>
@@ -181,7 +202,7 @@
                         </div>
 
                         <button type="submit"
-                                class="w-full bg-blue-600 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow">
+                                class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow">
                             ✅ {{ app()->getLocale() === 'ar' ? 'حفظ التحديث' : 'Save Update' }}
                         </button>
                     </form>

@@ -250,10 +250,10 @@
                         <div class="border-2 border-amber-300 bg-amber-50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4">
                             <div>
                                 <h3 class="text-lg font-bold text-amber-800 mb-1">
-                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل المريض' : 'Patient Transferred' }}
+                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل الزيارة' : 'Visit Transferred' }}
                                 </h3>
                                 <p class="text-amber-700 text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل هذا المريض إلى قسم:' : 'This patient has been transferred to:' }}
+                                    {{ app()->getLocale() === 'ar' ? 'تم تحويل هذه الزيارة إلى قسم:' : 'This visit has been transferred to:' }}
                                     <span class="font-bold">{{ app()->getLocale() === 'ar' && $transferredDept->name_ar ? $transferredDept->name_ar : $transferredDept->name }}</span>
                                 </p>
                             </div>
@@ -444,7 +444,7 @@
                         {{-- Transfer Form (Hidden by default) --}}
                         @if (!$isTransferred)
                         <div id="visit_transfer_form" class="hidden border-2 border-purple-300 rounded-lg p-5 mb-6 bg-purple-50">
-                            <h3 class="text-lg font-bold text-purple-900 mb-3">{{ app()->getLocale() === 'ar' ? 'تحويل المريض' : 'Transfer Patient' }}</h3>
+                            <h3 class="text-lg font-bold text-purple-900 mb-3">{{ app()->getLocale() === 'ar' ? 'تحويل الزيارة إلى قسم آخر' : 'Transfer Visit to Another Department' }}</h3>
                             <form action="{{ route('visits.transfer', $visitForPrint ?? $visit) }}" method="POST">
                                 @csrf
                                 <div class="mb-4">
