@@ -23,8 +23,15 @@
         $label = $statusLabels[$insuranceClaim->status] ?? $insuranceClaim->status;
         $inv = $insuranceClaim->invoice;
         $claimTotal = $inv ? (float) $inv->total_amount : 0;
-        $claimCompany = $inv && $inv->items ? $inv->items->sum(fn($i) => (float) $i->insurance_covered_amount) : 0;
-        $claimPatient = $inv && $inv->items ? $inv->items->sum(fn($i) => (float) $i->patient_amount) : 0;
+        // المبلغ المعتمد = ما تتحمله شركة التأمين؛ يتحمله المريض = الإجمالي − المعتمد
+        $claimCompany = ($insuranceClaim->approved_amount !== null && (float)$insuranceClaim->approved_amount >= 0)
+            ? (float) $insuranceClaim->approved_amount
+            : ($inv && $inv->items ? $inv->items->sum(fn($i) => (float) $i->insurance_covered_amount) : 0);
+        $claimPatient = $claimTotal - $claimCompany;
+        $patientDisplayName = $insuranceClaim->invoice?->patient?->name_ar ?: $insuranceClaim->invoice?->patient?->name;
+        if ($patientDisplayName === '' || strtolower(trim($patientDisplayName ?? '')) === 'xxx') {
+            $patientDisplayName = $insuranceClaim->invoice?->patient?->file_number ? ('— ' . ($insuranceClaim->invoice?->patient?->file_number)) : '—';
+        }
     @endphp
 
     <div class="max-w-4xl mx-auto">
@@ -115,7 +122,7 @@
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div>
                             <span class="text-slate-500 font-semibold">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span>
-                            <span class="font-medium text-slate-800 ms-1">{{ $insuranceClaim->invoice?->patient?->name_ar ?? $insuranceClaim->invoice?->patient?->name ?? '—' }}</span>
+                            <span class="font-medium text-slate-800 ms-1">{{ $patientDisplayName ?? '—' }}</span>
                         </div>
                         <div>
                             <span class="text-slate-500 font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الملف:' : 'File No:' }}</span>
