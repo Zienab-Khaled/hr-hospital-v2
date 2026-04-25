@@ -128,7 +128,7 @@
     <footer class="mt-auto px-8 py-6 border-t border-slate-200 bg-white/50">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 font-medium">
             <div>
-                &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">عبير سليمان الرويلي</span>.
+                &copy; {{ date('Y') }} <span class="text-slate-700 font-bold"> </span>.
                 {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
             </div>
             <div class="flex items-center gap-4 text-slate-400">
