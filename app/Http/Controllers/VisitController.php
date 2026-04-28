@@ -519,7 +519,7 @@ class VisitController extends Controller
     }
 
     /**
-     * طباعة إحقاق علاج لخدمة واحدة (بند فاتورة) — بدون إنشاء فاتورة، مرتبط بالخدمة المنفذة
+     * طباعة أحقية علاج لخدمة واحدة (بند فاتورة) — بدون إنشاء فاتورة، مرتبط بالخدمة المنفذة
      */
     public function treatmentEligibilityPrintForItem(Invoice $invoice, InvoiceItem $item)
     {
@@ -533,7 +533,7 @@ class VisitController extends Controller
         $visit = $invoice->visit;
         if (! $visit) {
             return redirect()->route('invoices.show', $invoice)->withErrors([
-                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بزيارة. لا يمكن طباعة إحقاق علاج.' : 'Invoice has no linked visit. Cannot print treatment eligibility.',
+                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بزيارة. لا يمكن طباعة أحقية علاج.' : 'Invoice has no linked visit. Cannot print treatment eligibility.',
             ]);
         }
 

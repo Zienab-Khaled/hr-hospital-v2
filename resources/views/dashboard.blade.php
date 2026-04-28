@@ -298,7 +298,7 @@
                             } else if (data.type === 'visit') {
                                 html += `<p><strong>${isAr ? 'المريض' : 'Patient'}:</strong> ${d.patient?.name || '—'}</p>`;
                                 html += `<p><strong>${isAr ? 'القسم' : 'Department'}:</strong> ${isAr ? (d.department?.name_ar || d.department?.name) : d.department?.name}</p>`;
-                                html += `<p><strong>${isAr ? 'الشيفت' : 'Shift'}:</strong> ${isAr ? (d.shift?.name_ar || d.shift?.name) : d.shift?.name}</p>`;
+                                html += `<p><strong>${isAr ? 'المناوبة' : 'Shift'}:</strong> ${isAr ? (d.shift?.name_ar || d.shift?.name) : d.shift?.name}</p>`;
                                 html += `<p><strong>${isAr ? 'نوع الحالة' : 'Case Type'}:</strong> ${d.case_type}</p>`;
                                 html += `<p><strong>${isAr ? 'التاريخ' : 'Date'}:</strong> ${new Date(d.visit_date).toLocaleDateString()}</p>`;
                             } else {

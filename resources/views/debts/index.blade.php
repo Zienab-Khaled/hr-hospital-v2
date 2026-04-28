@@ -10,7 +10,7 @@
             {{ app()->getLocale() === 'ar' ? 'المديونيات' : 'Debts' }}
         </h1>
         <p class="text-slate-600 font-medium">
-            {{ app()->getLocale() === 'ar' ? 'حصر الفواتير التي لم تُسدّد (أو سُدّد جزء منها) — تبليغ المريض بالمبلغ المستحق ومتابعة السداد' : 'Inventory of unpaid or partially paid invoices — notify patient of amount due and follow up payment' }}
+            {{ app()->getLocale() === 'ar' ? 'حصر الفواتير التي لم تُسدّد (أو سُدّد جزء منها) — تبليغ المريض بالمبلغ المستحق ومتابعة التحصيل' : 'Inventory of unpaid or partially paid invoices — notify patient of amount due and follow up collection' }}
         </p>
     </div>
 
@@ -106,17 +106,18 @@
                             </td>
                             <td class="py-3 px-4">
                                 @if($invoice->debt_status !== 'notified')
-                                    <form action="{{ route('debts.notify', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تسجيل تبليغ المريض بأن عليه مبلغ ' : 'Record notification to patient for amount ' }}@currency($invoice->remaining_amount){{ app()->getLocale() === 'ar' ? '؟' : '?' }}');">
+                                    <form action="{{ route('debts.notify', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تود تسجيل واقعة تبليغ المريض بالمبلغ المستحق ' : 'Do you want to record notification to patient for amount ' }}@currency($invoice->remaining_amount){{ app()->getLocale() === 'ar' ? '؟' : '?' }}');">
                                         @csrf
                                         <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors">
                                             {{ app()->getLocale() === 'ar' ? 'إرسال تبليغ للمريض' : 'Notify Patient' }}
                                         </button>
                                     </form>
                                 @else
-                                    <form action="{{ route('debts.mark-paid', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تسجيل سداد المبلغ ' : 'Record payment of ' }}@currency($invoice->remaining_amount){{ app()->getLocale() === 'ar' ? ' في إيرادات اليوم؟' : ' in today\'s revenue?' }}');">
+                                    <form action="{{ route('debts.mark-paid', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل تحصيل المبلغ ' : 'Confirm recording payment of ' }}@currency($invoice->remaining_amount){{ app()->getLocale() === 'ar' ? ' وإضافته للإيرادات؟' : ' into today\'s revenue?' }}');">
                                         @csrf
-                                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-colors">
-                                            {{ app()->getLocale() === 'ar' ? 'تم السداد' : 'Mark Paid' }}
+                                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-2">
+                                            <span>💰</span>
+                                            {{ app()->getLocale() === 'ar' ? 'تسجيل السداد' : 'Record Payment' }}
                                         </button>
                                     </form>
                                 @endif
@@ -140,7 +141,7 @@
     </div>
 
     <p class="mt-6 text-xs text-slate-500">
-        {{ app()->getLocale() === 'ar' ? 'عند الضغط على «إرسال تبليغ للمريض» يتم تسجيل أن المريض تم تبليغه بالمبلغ المستحق والخدمات. عند سداد المريض للفاتورة تتحول الحالة تلقائياً إلى «تم السداد» وتنزل في الإيرادات.' : 'Clicking «Notify Patient» records that the patient was notified of the amount due and services. When the patient pays the invoice, status automatically becomes «Paid» and is reflected in revenue.' }}
+        {{ app()->getLocale() === 'ar' ? 'عند النقر على «إرسال تبليغ للمريض» يتم تسجيل واقعة التبليغ بالمبلغ المستحق والخدمات المقدمة. وعند تحصيل المبلغ فعلياً، يتم النقر على «تسجيل السداد» لإثبات العملية في الإيرادات اليومية.' : 'Clicking «Notify Patient» records that the patient was notified of the amount due and services. When the payment is actually collected, click «Record Payment» to reflect it in daily revenue.' }}
     </p>
 </div>
 @endsection

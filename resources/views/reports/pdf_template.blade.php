@@ -25,11 +25,11 @@
             text-align: center;
             line-height: 1.5;
         }
-        .official-header .line-country { font-size: 13px; font-weight: bold; color: #0f172a; margin: 0 0 2px 0; }
-        .official-header .line-ministry { font-size: 12px; font-weight: bold; color: #1e293b; margin: 0 0 2px 0; }
-        .official-header .line-cluster { font-size: 12px; color: #334155; margin: 0 0 4px 0; }
-        .official-header .line-hospital { font-size: 16px; font-weight: bold; color: #0f172a; margin: 0 0 2px 0; }
-        .official-header .line-hospital-en { font-size: 11px; color: #475569; margin: 0; }
+        .official-header .line-country { font-size: 16px; font-weight: bold; color: #0f172a; margin: 0 0 4px 0; }
+        .official-header .line-ministry { font-size: 14px; font-weight: bold; color: #1e293b; margin: 0 0 4px 0; }
+        .official-header .line-cluster { font-size: 14px; color: #334155; margin: 0 0 6px 0; }
+        .official-header .line-hospital { font-size: 20px; font-weight: bold; color: #0f172a; margin: 0 0 4px 0; }
+        .official-header .line-hospital-en { font-size: 13px; color: #475569; margin: 0; }
         .report-header {
             display: table;
             width: 100%;
@@ -51,8 +51,8 @@
             text-align: center;
             width: 100%;
         }
-        .report-header .hospital-name { font-size: 17px; font-weight: bold; color: #0f172a; margin: 0 0 4px 0; }
-        .report-header .cluster-name { font-size: 12px; color: #475569; margin: 0; }
+        .report-header .hospital-name { font-size: 20px; font-weight: bold; color: #0f172a; margin: 0 0 4px 0; }
+        .report-header .cluster-name { font-size: 14px; color: #475569; margin: 0; }
         .badge-official {
             display: inline-block;
             background: #0f172a;
@@ -68,17 +68,17 @@
             margin: 22px 0 20px;
         }
         .report-title-block h1 {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             color: #0f172a;
             margin: 0 0 8px 0;
         }
         .report-title-block .date-range {
-            font-size: 13px;
+            font-size: 14px;
             color: #334155;
         }
         .section-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
             color: #fff;
             background: #0f172a;
@@ -134,13 +134,16 @@
         .manager-signature .title { font-size: 11px; color: #64748b; margin-bottom: 4px; }
         .manager-signature .name { font-size: 13px; font-weight: bold; color: #0f172a; }
         .footer {
-            margin-top: 28px;
+            margin-top: 40px;
             text-align: center;
-            font-size: 10px;
-            color: #64748b;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 10px;
+            font-size: 11px;
+            color: #1e3a8a; /* Blue */
+            border-top: 2px solid #1e3a8a;
+            padding-top: 15px;
         }
+        .footer .dept-line { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+        .footer .hospital-line { font-size: 10px; color: #64748b; }
+
     </style>
 </head>
 <body>
@@ -248,12 +251,13 @@
     </div>
 
     <div class="footer">
-        {{ app()->getLocale() === 'ar' ? 'تاريخ الإصدار:' : 'Issue date:' }} {{ date('Y-m-d') }}
-        &nbsp;|&nbsp;
-        {{ app()->getLocale() === 'ar' ? 'وقت الإنشاء:' : 'Generated at' }} {{ date('H:i') }}
-        @if(!empty($healthClusterName))
-            &nbsp;|&nbsp;{{ $healthClusterName }}
-        @endif
+        <div class="dept-line">{{ app()->getLocale() === 'ar' ? 'إدارة تنمية الإيرادات' : 'Revenue Development Department' }}</div>
+        <div class="hospital-line">
+            {{ $hospitalName ?? 'مستشفى الملك عبدالعزيز التخصصي للجوف' }}
+            &nbsp;|&nbsp;
+            {{ app()->getLocale() === 'ar' ? 'تاريخ الإصدار:' : 'Issue date:' }} {{ date('Y-m-d') }}
+        </div>
     </div>
+
 </body>
 </html>

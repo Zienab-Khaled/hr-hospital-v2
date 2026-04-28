@@ -250,9 +250,6 @@
                                     </a>
                                 @endcan
                             </div>
-                            <p class="text-slate-600 text-sm mb-2">
-                                {{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو رقم الهوية أو رقم الفيزا أو رقم الملف أو الهاتف، ثم اختر المريض. أو أنشئ مريضاً جديداً ثم ستُحوّل لإنشاء فاتورة له.' : 'Search by name, ID number, visa, file number or phone, then select the patient. Or create a new patient and you will be redirected to create an invoice for them.' }}
-                            </p>
                             <div class="flex flex-wrap gap-2">
                                 <input type="text" id="patient-search-input"
                                     placeholder="{{ app()->getLocale() === 'ar' ? 'اسم، رقم هوية، فيزا، رقم ملف، هاتف...' : 'Name, ID, visa, file no, phone...' }}"
@@ -383,9 +380,6 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-2">
                         {{ app()->getLocale() === 'ar' ? '📋 التقرير الطبي (اختياري)' : '📋 Medical report (optional)' }}
                     </label>
-                    <p class="text-slate-600 text-sm mb-3">
-                        {{ app()->getLocale() === 'ar' ? 'ارفع ملفاً (PDF أو صورة) أو مسح بالكاميرا ثم إنشاء PDF.' : 'Upload a file (PDF or image) or scan with camera then generate PDF.' }}
-                    </p>
                     <div class="flex flex-wrap gap-2 mb-3">
                         <button type="button" id="btn_inv_mode_upload"
                             class="px-4 py-2 rounded-lg text-sm font-semibold border-2 border-blue-600 bg-blue-600 text-white hover:bg-blue-700">
@@ -514,7 +508,7 @@
                             </div>
                             <div class="p-3 bg-white rounded-xl border border-emerald-100">
                                 <label
-                                    class="block text-[10px] font-black text-slate-600 mb-1 uppercase tracking-tight">{{ app()->getLocale() === 'ar' ? '📸 سكرينة المحصل' : '📸 Collector Screenshot' }}</label>
+                                    class="block text-[10px] font-black text-slate-600 mb-1 uppercase tracking-tight">{{ app()->getLocale() === 'ar' ? '📸 شاشة المحصل' : '📸 Collector Screenshot' }}</label>
                                 <input type="file" name="collector_screenshot" accept="image/*"
                                     class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-slate-600 file:text-white hover:file:bg-slate-700">
                             </div>

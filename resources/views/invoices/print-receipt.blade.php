@@ -80,8 +80,8 @@
             flex: 1;
             min-width: 0;
         }
-        .moh-header-right .moh-main-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; font-family: 'Tajawal', sans-serif; }
-        .moh-header-right .moh-sub { font-size: 12px; color: #222; margin-bottom: 2px; }
+        .moh-header-right .moh-main-title { font-size: 24px; font-weight: 900; margin-bottom: 6px; font-family: 'Tajawal', sans-serif; }
+        .moh-header-right .moh-sub { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .moh-header-right .moh-line { font-size: 12px; margin-bottom: 2px; }
         .moh-header-right .moh-line label { font-weight: 700; }
         .moh-header-right .moh-line .underline { display: inline-block; min-width: 120px; border-bottom: 1px solid #000; margin-right: 4px; }
@@ -315,5 +315,8 @@
     <div style="position: fixed; bottom: 8px; left: 0; width: 100%; text-align: center; font-size: 9px; color: #888;" class="print-only">
         تم استخراج هذا الإيصال إلكترونياً — {{ now()->format('Y/m/d H:i') }}
     </div>
+
+    @include('components.report-footer')
 </body>
+
 </html>

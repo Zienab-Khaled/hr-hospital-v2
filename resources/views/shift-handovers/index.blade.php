@@ -1,20 +1,17 @@
 @extends('layouts.app')
-@section('title', app()->getLocale() === 'ar' ? 'تسليمات الشيفتات' : 'Shift Handovers')
+@section('title', app()->getLocale() === 'ar' ? 'تسليمات المناوبات' : 'Shift Handovers')
 @section('content')
     <div class="max-w-4xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 class="text-2xl font-bold text-slate-800">
-                {{ app()->getLocale() === 'ar' ? 'تسليمات الشيفتات' : 'Shift Handovers' }}
+                {{ app()->getLocale() === 'ar' ? 'تسليمات المناوبات' : 'Shift Handovers' }}
             </h2>
             <a href="{{ route('shift-handovers.create') }}" class="px-4 py-2 bg-red-600 text-slate-50 rounded-lg font-semibold hover:bg-red-700">
-                {{ app()->getLocale() === 'ar' ? 'تسليم الشيفت' : 'Hand Over Shift' }}
+                {{ app()->getLocale() === 'ar' ? 'تسليم المناوبة' : 'Hand Over Shift' }}
             </a>
         </div>
 
         
-        <p class="text-slate-600 text-sm mb-4">
-            {{ app()->getLocale() === 'ar' ? 'آخر التسليمات — للاطلاع على ما سلّمه الشيفت السابق (زيارات، فواتير، ملاحظات).' : 'Latest handovers — see what the previous shift handed over (visits, invoices, notes).' }}
-        </p>
 
         <div class="bg-white rounded-lg shadow overflow-hidden">
             @forelse ($handovers as $h)

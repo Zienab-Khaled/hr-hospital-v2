@@ -46,30 +46,31 @@
         }
 
         .org-line {
-            margin: 3px 0;
-            font-size: 13px;
+            margin: 4px 0;
+            font-size: 16px;
             font-weight: bold;
+            color: #0f172a;
         }
 
         .org-line-en {
-            font-size: 11px;
+            font-size: 13px;
             color: #475569;
             margin: 2px 0;
         }
 
         .date-ref-row { clear: both; overflow: hidden; margin: 12px 0 14px 0; }
-        .date-ref-row .date-line { margin: 0; font-weight: bold; font-size: 12px; float: left; }
+        .date-ref-row .date-line { margin: 0; font-weight: bold; font-size: 13px; float: left; }
         .date-ref-row .ref-no { font-size: 11px; color: #64748b; float: right; margin: 0; }
 
         .recipient {
             margin: 14px 0 8px 0;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .intro {
             margin: 12px 0 16px 0;
-            font-size: 11px;
+            font-size: 12px;
             line-height: 1.8;
             text-align: right;
         }
@@ -77,7 +78,7 @@
         .table-title {
             font-weight: bold;
             margin: 14px 0 8px 0;
-            font-size: 12px;
+            font-size: 14px;
             text-align: center;
         }
 
@@ -93,7 +94,7 @@
             border: 1px solid #334155;
             padding: 8px 10px;
             text-align: right;
-            font-size: 11px;
+            font-size: 12px;
         }
 
         table.services th {
@@ -103,7 +104,7 @@
 
         .total-row {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 13px;
             background: #f1f5f9;
         }
 
@@ -113,16 +114,25 @@
         }
 
         .footer {
-            margin-top: 24px;
-            padding-top: 14px;
-            border-top: 1px solid #cbd5e1;
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 2px solid #1e40af; /* Blue */
             text-align: center;
+            color: #1e40af; /* Blue */
         }
 
         .footer p {
             margin: 4px 0;
-            font-size: 11px;
+            font-size: 16px;
+            font-weight: bold;
         }
+
+        .footer .hospital-line {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: normal;
+        }
+
 
         .signatures {
             margin-top: 18px;
@@ -277,15 +287,12 @@
     @endif
 
     <div class="footer">
-        <p>وتقبلوا تحياتي</p>
-        <p>مدير إدارة تنميه الإيرادات</p>
+        <p>إدارة تنمية الإيرادات</p>
         @php
-            $hName = $settings['hospital_name'] ?? '';
-            $footerHospital = $hName && \Illuminate\Support\Str::startsWith($hName, 'مستشفى') ? 'بـ ' . $hName : ($hName ? 'بمستشفى ' . $hName : '');
+            $hName = $settings['hospital_name'] ?? 'مستشفى الملك عبدالعزيز التخصصي بالجوف';
         @endphp
-        @if($footerHospital)
-            <p>{{ $footerHospital }}</p>
-        @endif
+        <div class="hospital-line">{{ $hName }}</div>
+
         <div class="signatures">
             <div class="sig-block">
                 @if (!empty($settings['manager_signature']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($settings['manager_signature']))

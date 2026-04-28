@@ -694,6 +694,6 @@
         }
     </script>
 
+    @include('components.report-footer')
 </body>
-
 </html>

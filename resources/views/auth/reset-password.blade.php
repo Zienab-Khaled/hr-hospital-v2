@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('Login') }} - {{ __('Hospital Revenue Management') }}</title>
+    <title>{{ __('Reset Password') }} - {{ __('Hospital Revenue Management') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,40 +58,30 @@
 
                 {{-- Heading --}}
                 <h1 class="text-3xl md:text-4xl font-extrabold text-[#1F2937] leading-tight mb-4">
-                    {{ app()->getLocale() === 'ar' ? 'IRD – Internal Revenue & Development' : 'IRD – Internal Revenue & Development' }}
+                    {{ app()->getLocale() === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password' }}
                 </h1>
 
-                {{-- Welcome Text --}}
-                {{-- <p class="text-slate-400 text-sm mb-10">
-                    {{ app()->getLocale() === 'ar' ? 'IRD – Internal Revenue & Development' : 'IRD – Internal Revenue & Development' }}
-                </p> --}}
-
-                @if (session('error'))
-                    <div class="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                        {{ session('error') }}
-                    </div>
-                @endif
-                @if (session('success'))
-                    <div class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('login') }}">
+                <form method="POST" action="{{ route('password.update') }}">
                     @csrf
+                    <input type="hidden" name="token" value="{{ $token }}">
+
                     <div class="bg-[#EEF2F6] p-6 mb-8">
                         <div class="mb-6">
-                            <label for="username"
+                            <label for="email"
                                 class="block text-[10px]
                             font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">
                                 {{ app()->getLocale() === 'ar' ? 'البريد الإلكتروني' : 'Email Address' }}</label>
                             <div class="bg-white ">
-                                <input id="username" type="text" name="username" value="{{ old('username') }}"
+                                <input id="email" type="email" name="email" value="{{ old('email', $email) }}"
                                     required autofocus placeholder="hakeem@digital.com"
                                     class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">
                             </div>
+                            @error('email')
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        <div class="mb-4">
+
+                        <div class="mb-6">
                             <label for="password"
                                 class="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">{{ __('Password') }}</label>
                             <div class="bg-white ">
@@ -99,24 +89,25 @@
                                     placeholder="********************"
                                     class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">
                             </div>
+                            @error('password')
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        <div class="text-right">
-                            <a href="{{ route('password.request') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition">
-                                {{ app()->getLocale() === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?' }}
-                            </a>
+
+                        <div>
+                            <label for="password_confirmation"
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">{{ __('Confirm Password') }}</label>
+                            <div class="bg-white ">
+                                <input id="password_confirmation" type="password" name="password_confirmation" required
+                                    placeholder="********************"
+                                    class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">
+                            </div>
                         </div>
                     </div>
 
-                    @error('username')
-                        <p class="mb-4 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                    @error('password')
-                        <p class="mb-4 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-
                     <button type="submit"
                         class="w-full bg-[#1A56DB] text-white py-4 px-6 rounded-xl font-bold bg-blue-700 transition shadow-2xl shadow-blue-200 text-sm tracking-wide">
-                        {{ __('Login') }}
+                        {{ app()->getLocale() === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password' }}
                     </button>
                 </form>
             </div>
@@ -124,20 +115,8 @@
 
         {{-- Right Side: Illustration --}}
         <div class="bg-white flex flex-col">
-            <div class="flex-1 flex flex-col items-center justify-center p-12">
-                <img src="{{ asset('images/login-illustration.png') }}" alt="Illustration" class="max-w-full h-auto mb-8">
-                
-                <div class="text-center">
-                    <h2 class="text-xl font-bold text-slate-800 mb-1">
-                        مستشفى الملك عبدالعزيز التخصصي بالجوف
-                    </h2>
-                    <h3 class="text-lg font-semibold text-slate-600 mb-4">
-                        King Abdulaziz Specialist Hospital - Al Jouf
-                    </h3>
-                    <div class="inline-block px-6 py-2 bg-blue-50 text-blue-700 rounded-full font-bold text-sm border border-blue-100">
-                        إدارة تنمية الإيرادات | Revenue Development Department
-                    </div>
-                </div>
+            <div class="flex-1 flex items-center justify-center p-12">
+                <img src="{{ asset('images/login-illustration.png') }}" alt="Illustration" class="max-w-full h-auto">
             </div>
         </div>
     </div>
@@ -147,11 +126,6 @@
             <div>
                 &copy; {{ date('Y') }} <span class="text-slate-700 font-bold"> Asalrwaily@moh.gov.sa</span>.
                 {{ app()->getLocale() === 'ar' ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.' }}
-            </div>
-            <div class="flex items-center gap-4 text-slate-400">
-                <span class="hover:text-slate-600 transition-colors">إيراد: حوكمة | تحول رقمي | استدامة</span>
-                <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <span class="hover:text-slate-600 transition-colors">إشراف وتطوير النظام</span>
             </div>
         </div>
     </footer>

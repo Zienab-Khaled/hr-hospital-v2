@@ -19,9 +19,6 @@
                     <h3 class="text-lg font-semibold text-slate-700 mb-2">
                         {{ app()->getLocale() === 'ar' ? '📷 مسح أو رفع وثيقة الهوية' : '📷 Scan or upload identity document' }}
                     </h3>
-                    <p class="text-sm text-slate-600 mb-3">
-                        {{ app()->getLocale() === 'ar' ? 'اختر: مسح بالكاميرا (وجه + ظهر) أو رفع صورة من الجهاز. نستخرج الاسم ورقم الهوية و نرفع الملفات مع الطلب.' : 'Choose: scan with camera (front + back) or upload an image. We extract name and ID number and attach files.' }}
-                    </p>
 
                     {{-- Toggle: Scan with camera | Upload file --}}
                     <div class="flex gap-2 mb-4">
@@ -173,9 +170,9 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }}
+                                {{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }} *
                             </label>
-                            <input type="text" name="name_ar" value="{{ old('name_ar') }}" dir="rtl"
+                            <input type="text" name="name_ar" value="{{ old('name_ar') }}" dir="rtl" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div>
@@ -191,16 +188,16 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }}
+                                {{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }} *
                             </label>
-                            <input type="number" name="age" value="{{ old('age') }}" min="0"
+                            <input type="number" name="age" value="{{ old('age') }}" min="0" required
                                 max="150" class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }}
+                                {{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }} *
                             </label>
-                            <select name="gender" class="w-full rounded border border-slate-300 px-3 py-2">
+                            <select name="gender" required class="w-full rounded border border-slate-300 px-3 py-2">
                                 <option value="">{{ app()->getLocale() === 'ar' ? '-- اختر --' : '-- Select --' }}
                                 </option>
                                 <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>
@@ -213,23 +210,23 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الهاتف' : 'Phone' }}
+                                {{ app()->getLocale() === 'ar' ? 'الهاتف' : 'Phone' }} *
                             </label>
-                            <input type="text" name="phone" value="{{ old('phone') }}"
+                            <input type="text" name="phone" value="{{ old('phone') }}" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'البلد الأصلي' : 'Country of Origin' }}
+                                {{ app()->getLocale() === 'ar' ? 'الجنسية' : 'Nationality' }} *
                             </label>
-                            <input type="text" name="country_of_origin" value="{{ old('country_of_origin') }}"
+                            <input type="text" name="country_of_origin" value="{{ old('country_of_origin') }}" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الموقع الحالي' : 'Current Location' }}
+                                {{ app()->getLocale() === 'ar' ? 'الموقع الحالي' : 'Current Location' }} *
                             </label>
-                            <input type="text" name="current_location" value="{{ old('current_location') }}"
+                            <input type="text" name="current_location" value="{{ old('current_location') }}" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
                         <div id="sponsor_name_field" style="display: none;">
@@ -300,9 +297,6 @@
                             {{-- Dynamic check: search our records by identity to suggest insurance (CHI official verification link below) --}}
                             <div id="insurance_check_box"
                                 class="mt-2 p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm">
-                                <p class="text-slate-600 mb-2">
-                                    {{ app()->getLocale() === 'ar' ? 'أدخل نوع الهوية ورقم الهوية أعلاه ثم اضغط للتحقق من سجلاتنا أو من موقع مجلس الضمان الصحي.' : 'Enter identity type and number above, then click to check our records or the official CHI portal.' }}
-                                </p>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button type="button" id="btn_check_insurance"
                                         class="border-2 border-emerald-600 bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 hover:border-emerald-700 shadow-sm transition-colors">
@@ -356,9 +350,6 @@
                         <h4 class="text-sm font-semibold text-slate-700 mb-1">
                             {{ app()->getLocale() === 'ar' ? '📱 مسح من الجوال ومرفق كـ PDF' : '📱 Scan with phone & attach as PDF' }}
                         </h4>
-                        <p class="text-xs text-slate-600 mb-3">
-                            {{ app()->getLocale() === 'ar' ? 'أضف صفحات بالكاميرا ثم انشئ PDF واحد يُرفق مع الطلب.' : 'Add pages with the camera, then generate one PDF to attach.' }}
-                        </p>
                         <div id="scan_pdf_pages" class="flex flex-wrap gap-2 mb-3 min-h-[60px]"></div>
                         <div class="flex flex-wrap gap-2 items-center">
                             <button type="button" id="btn_add_scan_page"

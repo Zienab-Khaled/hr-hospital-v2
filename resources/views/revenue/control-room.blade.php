@@ -62,9 +62,9 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{{ app()->getLocale() === 'ar' ? 'الوردية' : 'Shift' }}</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</label>
                 <select name="shift_id" class="block w-44 rounded-2xl border-slate-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-bold py-2.5">
-                    <option value="">{{ app()->getLocale() === 'ar' ? 'كل الشيفتات' : 'All Shifts' }}</option>
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'كل المناوبات' : 'All Shifts' }}</option>
                     @foreach($shifts as $shift)
                         <option value="{{ $shift->id }}" {{ $shiftId == $shift->id ? 'selected' : '' }}>
                             {{ app()->getLocale() === 'ar' ? ($shift->name_ar ?? $shift->name) : $shift->name }}
@@ -377,13 +377,6 @@
                         </div>
                     </div>
 
-                    <div class="pt-8 border-t border-slate-100">
-                        <div class="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                            <p class="text-[10px] text-indigo-900 font-bold leading-relaxed italic">
-                                {{ app()->getLocale() === 'ar' ? 'ملاحظة: عند الضغط على "مطابقة"، تنتقل الفاتورة إلى عهدة المحاسب المركزية قبل تحويلها للإيداع البنكي النهائي.' : 'Note: matching validates the operation, moving it to central audit before final bank deposit clearance.' }}
-                            </p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

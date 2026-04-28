@@ -45,7 +45,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</label>
                         <select name="shift_id" class="w-full border border-slate-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
                             @foreach ($shifts as $shift)
                                 <option value="{{ $shift->id }}" {{ old('shift_id', $visit->shift_id) == $shift->id ? 'selected' : '' }}>

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', app()->getLocale() === 'ar' ? 'تفاصيل تسليم الشيفت' : 'Shift Handover Details')
+@section('title', app()->getLocale() === 'ar' ? 'تفاصيل تسليم المناوبة' : 'Shift Handover Details')
 @section('content')
     <div class="max-w-4xl mx-auto">
         <div class="bg-white rounded-lg shadow-lg p-6">
@@ -36,7 +36,7 @@
                     @endforeach
                 </ul>
             @else
-                <p class="text-slate-500 text-sm mb-6">{{ app()->getLocale() === 'ar' ? 'لا توجد زيارات في هذا الشيفت.' : 'No visits in this shift.' }}</p>
+                <p class="text-slate-500 text-sm mb-6">{{ app()->getLocale() === 'ar' ? 'لا توجد زيارات في هذه المناوبة.' : 'No visits in this shift.' }}</p>
             @endif
 
             <h3 class="text-lg font-semibold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'الفواتير' : 'Invoices' }} ({{ $invoices->count() }})</h3>
@@ -52,7 +52,7 @@
                     @endforeach
                 </ul>
             @else
-                <p class="text-slate-500 text-sm">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير في هذا الشيفت.' : 'No invoices in this shift.' }}</p>
+                <p class="text-slate-500 text-sm">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير في هذه المناوبة.' : 'No invoices in this shift.' }}</p>
             @endif
         </div>
     </div>

@@ -75,10 +75,11 @@ class DebtsController extends Controller
         );
 
         $message = app()->getLocale() === 'ar'
-            ? "تم تسجيل التبليغ بنجاح. المريض {$patientName} — المبلغ المستحق: {$amount} ريال — الخدمات: {$servicesList}"
-            : "Notification recorded. Patient {$patientName} — Amount due: {$amount} SAR — Services: {$servicesList}";
+            ? "تم تسجيل واقعة التبليغ بنجاح للمريض: {$patientName} — المبلغ المستحق: {$amount} ريال."
+            : "Notification recorded successfully for patient: {$patientName} — Amount due: {$amount} SAR.";
 
         return back()->with('success', $message);
+
     }
 
     /**
@@ -126,10 +127,11 @@ class DebtsController extends Controller
             ActivityLogger::log('Debt Marked Paid', 'Invoice', $invoice->id, "تم السداد من تاب المديونيات — مبلغ: " . number_format($amount, 2) . " ريال", null, ['payment_id' => $payment->id]);
 
             $message = app()->getLocale() === 'ar'
-                ? "تم تسجيل السداد بنجاح. المبلغ " . number_format($amount, 2) . " ريال سيظهر في إيرادات اليوم."
-                : "Payment recorded. Amount " . number_format($amount, 2) . " SAR will appear in today's revenue.";
+                ? "تم إثبات تحصيل المبلغ بنجاح (" . number_format($amount, 2) . " ريال). ستظهر العملية في تقرير إيرادات اليوم."
+                : "Payment collection recorded successfully (" . number_format($amount, 2) . " SAR). It will appear in today's revenue report.";
 
             return back()->with('success', $message);
+
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;

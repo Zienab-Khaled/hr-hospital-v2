@@ -225,5 +225,7 @@
             </div>
         </div>
     </div>
+
+    @include('components.report-footer')
 </body>
 </html>

@@ -45,9 +45,6 @@
                             </a>
                         @endcan
                     </div>
-                    <p class="text-slate-600 text-sm mb-2">
-                        {{ app()->getLocale() === 'ar' ? 'ابحث عن مريض برقم الهوية أو الاسم أو رقم الملف، ثم اضغط على اسمه من القائمة واضغط «متابعة» — سيتم إنشاء الزيارة وتسجيل دخول القسم تلقائياً.' : 'Search by identity, name or file number, then click the patient name and click Continue — the visit will be created and the patient registered to your department automatically.' }}
-                    </p>
                     <div class="flex flex-wrap gap-2">
                         <div class="flex-1 min-w-[200px] relative" id="visit_search_wrap">
                             <input type="text" id="visit_patient_search" autocomplete="off"
@@ -217,11 +214,6 @@
                                 </div>
                             @endforeach
                         </div>
-                        <p class="text-slate-600 text-sm italic">
-                            {{ app()->getLocale() === 'ar'
-                                ? 'يمكنك فتح زيارة موجودة أو إنشاء زيارة جديدة بالأسفل (إذا كان مسموحاً).'
-                                : 'You can open an existing visit or create a new one below.' }}
-                        </p>
                     </div>
                 @endif
 
@@ -349,9 +341,6 @@
                                                         </select>
                                                         <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-28 text-sm">
                                                     </div>
-                                                    <p class="text-xs text-emerald-700 font-medium">
-                                                        {{ app()->getLocale() === 'ar' ? 'الشركة تشيل حسب التغطية، والباقي على المريض' : 'Company covers per coverage; remainder on patient.' }}
-                                                    </p>
                                                 </div>
                                             @endif
                                             <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-sm shadow-md transition-colors shrink-0">
@@ -481,7 +470,6 @@
                     @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
                     <div class="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-gradient-to-br from-blue-50 to-slate-50">
                         <h3 class="text-xl font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility' }}</h3>
-                        <p class="text-slate-600 text-sm mb-4">{{ app()->getLocale() === 'ar' ? 'ابحث بالاسم أو الكود وأضف الخدمات. يمكنك اختيار قسم معين أو البحث في كل الخدمات.' : 'Search by name or code and add services. You can select a specific department or search all services.' }}</p>
 
                         <div class="mb-4">
                             <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'نوع الأحقية (القسم) - اختياري' : 'Eligibility type (Department) - Optional' }}</label>

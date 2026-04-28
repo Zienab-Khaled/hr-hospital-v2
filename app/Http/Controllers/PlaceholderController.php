@@ -870,15 +870,8 @@ class PlaceholderController extends Controller
             $user->assignRole($request->input('role'));
             ActivityLogger::log('user_created', User::class, $user->id, __('User created') . ': ' . $user->username, null, ['username' => $user->username, 'name' => $user->name]);
 
-            // Send credentials email
-            if ($user->email) {
-                try {
-                    Mail::to($user->email)->send(new UserCredentialsMail($request->input('username'), $request->input('password')));
-                } catch (\Exception $e) {
-                    // Log error but don't fail transaction
-                    \Log::error('Failed to send credentials email: ' . $e->getMessage());
-                }
-            }
+            // Email sending block removed as per user request
+
         });
 
         return redirect()->route('users.index')->with('success', __('User created successfully.'));

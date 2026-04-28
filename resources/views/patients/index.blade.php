@@ -242,10 +242,10 @@
         </div>
         <div class="w-36">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
-                {{ app()->getLocale() === 'ar' ? 'بلد المنشأ' : 'Country of Origin' }}
+                {{ app()->getLocale() === 'ar' ? 'الجنسية' : 'Nationality' }}
             </label>
             <input type="text" name="country_of_origin" value="{{ request('country_of_origin') }}"
-                placeholder="{{ app()->getLocale() === 'ar' ? 'بلد المنشأ' : 'Country' }}"
+                placeholder="{{ app()->getLocale() === 'ar' ? 'الجنسية' : 'Nationality' }}"
                 class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
     </x-index-filters>

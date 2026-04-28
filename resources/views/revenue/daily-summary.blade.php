@@ -485,6 +485,7 @@
                 </div>
             </div>
         </div>
+        @include('components.report-footer')
     </div>
 </div>
 @endsection

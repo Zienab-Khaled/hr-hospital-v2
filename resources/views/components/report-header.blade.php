@@ -4,8 +4,8 @@
     $countryAr = Setting::get('report_header_country_ar', 'المملكة العربية السعودية');
     $ministryAr = Setting::get('report_header_ministry_ar', 'وزارة الصحة');
     $clusterAr = Setting::get('health_cluster_name', 'تجمع الجوف الصحي');
-    $hospitalNameAr = Setting::get('hospital_name', 'مستشفى الملك عبدالعزيز التخصصي');
-    $hospitalNameEn = Setting::get('hospital_name_en', 'King Abdul-Aziz Specialist Hospital');
+    $hospitalNameAr = Setting::get('hospital_name', 'مستشفى الملك عبدالعزيز التخصصي بالجوف');
+    $hospitalNameEn = Setting::get('hospital_name_en', 'King Abdulaziz Specialist Hospital - Aljouf');
     $clusterNameEn = Setting::get('health_cluster_name_en', 'Aljouf Health Cluster');
     $logo = Setting::get('logo');
 @endphp
@@ -51,18 +51,21 @@
         text-align: center;
     }
     .report-header-text .line-ar {
-        font-size: 12px;
+        font-size: 18px;
         font-weight: 700;
     }
     .report-header-text .line-hospital-ar {
-        font-size: 14px;
-        font-weight: 800;
+        font-size: 24px;
+        font-weight: 900;
+        margin-top: 6px;
+        color: #000;
     }
     .report-header-text .line-hospital-en {
-        font-size: 11px;
-        font-weight: 600;
-        margin-top: 2px;
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 6px;
     }
+
     .report-header-logo {
         text-align: right;
         min-width: 120px;

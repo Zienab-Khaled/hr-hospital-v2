@@ -22,7 +22,7 @@
     @if ($isAdmin)
         <x-index-filters :action="route('visits.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم المريض، رقم الملف، رقم الهوية...' : 'Patient name, file no, identity...'">
             <div class="w-36">
-                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</label>
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</label>
                 <select name="shift_id" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
                     @foreach ($shifts as $s)
@@ -84,7 +84,7 @@
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</th>
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Dept' }}</th>
                     @if ($isAdmin)
-                        <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</th>
+                        <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</th>
                     @endif
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'مسجّل بواسطة' : 'Registered by' }}</th>
                     <th class="text-start p-3 w-32 text-slate-800">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</th>

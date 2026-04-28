@@ -440,20 +440,17 @@
     <!-- ====== HEADER ====== -->
     <div class="page-header">
         <div class="header-logo">
-            @if (App\Models\Setting::get('logo'))
-                <img src="{{ asset('storage/' . App\Models\Setting::get('logo')) }}" alt="شعار المستشفى">
+            @php $logo = \App\Models\Setting::get('logo'); @endphp
+            @if ($logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($logo))
+                <img src="{{ asset('storage/' . $logo) }}" alt="شعار المستشفى">
             @else
                 <div class="header-logo-placeholder">شعار</div>
             @endif
         </div>
         <div class="header-info">
-            <div class="hospital-name-ar">مستشفى
-                {{ App\Models\Setting::get('hospital_name', 'الأمير متعب بن عبدالعزيز') }}</div>
-            <div class="hospital-name-en">
-                {{ App\Models\Setting::get('hospital_name_en', 'Prince Muteb bin Abdulaziz Hospital') }}</div>
-            <div class="cluster-name">Empowered by
-                {{ App\Models\Setting::get('health_cluster_name_en', 'Aljouf Health Cluster') }}</div>
-            <div class="dept-name">إدارة تنمية الإيرادات</div>
+            <div class="hospital-name-ar" style="font-size: 22px; font-weight: 900;">مستشفى الملك عبدالعزيز التخصصي بالجوف</div>
+            <div class="hospital-name-en" style="font-size: 15px; font-weight: 700;">King Abdulaziz Specialist Hospital - Aljouf</div>
+            <div class="dept-name" style="font-size: 16px; font-weight: 800; color: #1e40af; margin-top: 5px;">إدارة تنمية الإيرادات</div>
         </div>
         <div class="header-spacer"></div>
     </div>
@@ -492,19 +489,21 @@
 
         <!-- Non-commitment paragraph -->
         <div class="pledge-text">
-            أفيدكم بأنني امتنعت عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج
-            نطاق التغطية التأمينية ، وقد أُشعرت بالتبعات المترتبة على ذلك وعلى هذا يتم التوقيع .
+            نفيدكم بأن المريض / <strong>{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</strong>
+            حامل هوية رقم / <strong>{{ $invoice->patient->identity_value }}</strong>
+            امتنع عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج
+            نطاق التغطية التأمينية، وقد أُشعر بالتبعات المترتبة على ذلك.
         </div>
 
         <!-- Closing -->
         <div class="pledge-closing">والله الموفق ،،،،</div>
     </div>
 
-    <!-- ====== ACKNOWLEDGMENT TABLE: المُقَرّ بما فيه ====== -->
+    <!-- ====== ACKNOWLEDGMENT TABLE: بيانات المريض الممتنع عن التوقيع ====== -->
     <table class="ack-table">
         <thead>
             <tr>
-                <th colspan="2">المُقَرّ بما فيه</th>
+                <th colspan="2">بيانات المريض الممتنع عن التوقيع</th>
             </tr>
         </thead>
         <tbody>
@@ -539,38 +538,21 @@
                 </td>
             </tr>
             <tr>
-                <td class="row-label">التاريخ :</td>
+                <td class="row-label">تاريخ المحضر :</td>
                 <td>
                     <span
                         class="fill-dots">{{ $invoice->invoice_date?->format('Y/m/d') ?? now()->format('Y/m/d') }}</span>
                 </td>
             </tr>
             <tr>
-                <td class="row-label">التوقيع :-</td>
+                <td class="row-label">توقيع الموظف المختص :</td>
                 <td class="sig-td">
-                    <div class="sig-canvas-wrap no-print" id="sigWrap">
-                        <p class="sig-hint no-print">وقّع هنا بصوابعك أو الماوس ↓</p>
-                        <canvas id="sigCanvas"></canvas>
+                    <div class="sig-img">
+                        @if (auth()->check() && auth()->user()->signature)
+                            <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" alt="توقيع الموظف" style="max-width: 150px; max-height: 70px;">
+                        @endif
                     </div>
-                    <div class="sig-actions no-print">
-                        <button class="btn-gray" onclick="clearSig()" type="button">مسح</button>
-                    </div>
-                    <img id="sigPreview" class="sig-preview" src="" alt="توقيع المريض">
-                </td>
-            </tr>
-            <tr>
-                <td class="row-label">البصمة الإلكترونية :-</td>
-                <td class="sig-td">
-                    <div class="fingerprint-wrap no-print">
-                        <p class="fingerprint-hint no-print">المريض يبصم على جهاز البصمة ← البصمة تظهر هنا تلقائياً أو بالضغط أدناه</p>
-                        <div class="fingerprint-actions no-print">
-                            <button type="button" class="btn btn-dark no-print" id="btnPasteFingerprint">👆 جلب البصمة من الجهاز (الحافظة)</button>
-                            <label class="btn btn-gray no-print" style="margin:0;">رفع صورة بصمة<input type="file" id="fingerprintInput" accept="image/*" class="sr-only"></label>
-                            <button type="button" class="btn-gray no-print" onclick="clearFingerprint()">مسح البصمة</button>
-                        </div>
-                        <div id="fingerprintPasteZone" class="fingerprint-paste no-print">أو الصق هنا (Ctrl+V) بعد البصم على الجهاز</div>
-                    </div>
-                    <img id="fingerprintPreview" class="fingerprint-preview" src="" alt="البصمة الإلكترونية">
+                    <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}</div>
                 </td>
             </tr>
         </tbody>
@@ -751,6 +733,6 @@
         }
     </script>
 
+    @include('components.report-footer')
 </body>
-
 </html>

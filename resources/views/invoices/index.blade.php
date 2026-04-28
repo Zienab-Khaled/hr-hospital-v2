@@ -19,7 +19,7 @@
         @if ($isAdmin)
             <div class="w-36">
                 <label
-                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الشيفت' : 'Shift' }}</label>
+                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</label>
                 <select name="shift_id"
                     class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
@@ -100,7 +100,7 @@
                             <div class="flex gap-1 mt-1">
                                 @if ($inv->sent_to_charity_mail_at)
                                     <span
-                                        title="{{ app()->getLocale() === 'ar' ? 'تم إرسال ميل للجمعية: ' . $inv->sent_to_charity_mail_at : 'Mail sent to charity: ' . $inv->sent_to_charity_mail_at }}"
+                                        title="{{ app()->getLocale() === 'ar' ? 'تم إرسال بريد إلكتروني للجمعية: ' . $inv->sent_to_charity_mail_at : 'Mail sent to charity: ' . $inv->sent_to_charity_mail_at }}"
                                         class="cursor-help">📧</span>
                                 @endif
                                 @if ($inv->printed_commitment_at)

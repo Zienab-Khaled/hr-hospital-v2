@@ -60,6 +60,12 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
 
+    // Password Reset Routes (Direct Reset)
+    Route::get('forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])
+        ->name('password.request');
+    Route::post('forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])
+        ->name('password.email');
+
     // API Token Routes
     Route::post('api/login', [App\Http\Controllers\Auth\AuthController::class, 'login']);
     Route::post('api/refresh', [App\Http\Controllers\Auth\AuthController::class, 'refresh']);

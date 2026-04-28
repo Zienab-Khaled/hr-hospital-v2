@@ -304,12 +304,12 @@
             @endforelse
         </div>
 
-        {{-- القسم 4: تم الإيداع (اتدفعت) — للعرض فقط --}}
+        {{-- القسم 4: تم الإيداع (تم الدفع) — للعرض فقط --}}
         <div class="mt-12">
             <h2 class="text-xl font-black text-slate-800 flex items-center gap-3 mb-6">
                 <span
                     class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">✅</span>
-                {{ app()->getLocale() === 'ar' ? 'تم الإيداع (اتدفعت)' : 'Deposited' }}
+                {{ app()->getLocale() === 'ar' ? 'تم الإيداع (تم الدفع)' : 'Deposited' }}
                 <span
                     class="px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white">{{ $depositedInvoices->count() }}</span>
             </h2>
@@ -327,7 +327,7 @@
                                     <span
                                         class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800">#{{ $invoice->invoice_number }}</span>
                                     <span
-                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white">{{ app()->getLocale() === 'ar' ? 'اتدفعت' : 'Deposited' }}</span>
+                                        class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white">{{ app()->getLocale() === 'ar' ? 'تم الدفع' : 'Deposited' }}</span>
                                     <a href="{{ route('invoices.show', $invoice) }}" target="_blank"
                                         class="text-[10px] font-black text-emerald-700 hover:underline">
                                         {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View' }}

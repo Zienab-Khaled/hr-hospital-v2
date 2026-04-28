@@ -440,9 +440,9 @@
                                             @if($item->service_id && $invoice->visit_id && (auth()->user()->can('invoices.create')))
                                                 <a href="{{ route('invoices.items.treatment-eligibility-print', [$invoice, $item]) }}"
                                                     target="_blank"
-                                                    title="{{ app()->getLocale() === 'ar' ? 'طباعة إحقاق علاج لهذه الخدمة فقط (بدون إنشاء فاتورة)' : 'Print treatment eligibility for this service only (no invoice created)' }}"
+                                                    title="{{ app()->getLocale() === 'ar' ? 'طباعة أحقية علاج لهذه الخدمة فقط (بدون إنشاء فاتورة)' : 'Print treatment eligibility for this service only (no invoice created)' }}"
                                                     class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">
-                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إحقاق علاج' : 'Eligibility' }}
+                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Eligibility' }}
                                                 </a>
                                             @endif
                                         </div>
@@ -891,7 +891,7 @@
 
                     <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-600 mb-2">
-                            {{ app()->getLocale() === 'ar' ? '📸 سكرينة عمليات المحصل' : '📸 Collector Operation Screenshot' }}
+                            {{ app()->getLocale() === 'ar' ? '📸 شاشة عمليات المحصل' : '📸 Collector Operation Screenshot' }}
                         </label>
                         <input type="file" name="collector_screenshot" accept="image/*"
                             class="w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-slate-600 file:text-white hover:file:bg-slate-700">
