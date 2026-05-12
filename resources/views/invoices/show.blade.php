@@ -864,6 +864,9 @@
                         + {{ app()->getLocale() === 'ar' ? 'إضافة طريقة دفع' : 'Add payment method' }}
                     </button>
                     <p id="split-sum-warning" class="mt-2 text-xs text-red-600 hidden"></p>
+                    <p class="mt-1 text-[11px] text-slate-600 leading-snug">
+                        {{ app()->getLocale() === 'ar' ? 'للدفع الجزئي مع بقاء مديونية: اكتب المبلغ في أسطر الطرق (مثلاً 50 شبكة) — يُحدَّث «إجمالي هذه الدفعة» تلقائياً ليطابق المجموع، ثم يمكنك الإرسال والباقي يظل على الفاتورة.' : 'For partial payment (debt remains): enter amounts in the lines (e.g. 50 POS) — «This payment total» updates to match the sum; you can submit and the rest stays on the invoice.' }}
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -960,6 +963,7 @@
             syncSplitAmountsToTotal();
             validateSplitSum();
             updateRemainingPreview();
+            refreshPaymentSubmitState();
         }
 
         function closePaymentModal() {
@@ -993,6 +997,19 @@
             return Math.round(s * 100) / 100;
         }
 
+        /** عند تعديل أسطر الدفع: جعل «إجمالي هذه الدفعة» = مجموع الأسطر (حدّاً أقصى المتبقي) — يدعم الدفع الجزئي مع مديونية. */
+        function syncTotalFromSplitAmounts() {
+            const totalInput = document.getElementById('payment-total-amount');
+            const form = document.getElementById('payment-form');
+            if (!totalInput || !form) return;
+            const maxR = parseFloat(form.dataset.effectiveRemaining || 0);
+            const sum = sumSplitAmounts();
+            if (sum > 0.009) {
+                const next = Math.min(sum, maxR);
+                totalInput.value = next.toFixed(2);
+            }
+        }
+
         function syncSplitAmountsToTotal() {
             const totalInput = document.getElementById('payment-total-amount');
             const rows = document.querySelectorAll('#split-rows-body [data-split-row]');
@@ -1002,21 +1019,63 @@
             validateSplitSum();
         }
 
+        function isPaymentLangAr() {
+            const l = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+            return l === 'ar' || l.indexOf('ar') === 0;
+        }
+
+        function refreshPaymentSubmitState() {
+            const submitBtn = document.getElementById('submit-payment-btn');
+            const form = document.getElementById('payment-form');
+            const totalInput = document.getElementById('payment-total-amount');
+            if (!submitBtn || !form || !totalInput) return;
+            const maxR = parseFloat(form.dataset.effectiveRemaining || 0);
+            const t = parseFloat(totalInput.value || 0);
+            const sum = sumSplitAmounts();
+            const ok = maxR > 0 && t > 0 && sum <= maxR + 0.02 && Math.abs(sum - t) <= 0.02;
+            submitBtn.disabled = !ok;
+            submitBtn.classList.toggle('opacity-50', !ok);
+            submitBtn.classList.toggle('cursor-not-allowed', !ok);
+        }
+
         function validateSplitSum() {
             const warn = document.getElementById('split-sum-warning');
             const totalInput = document.getElementById('payment-total-amount');
-            if (!warn || !totalInput) return true;
+            const form = document.getElementById('payment-form');
+            if (!warn || !totalInput || !form) {
+                refreshPaymentSubmitState();
+                return true;
+            }
+            const maxR = parseFloat(form.dataset.effectiveRemaining || 0);
             const target = parseFloat(totalInput.value || 0);
             const sum = sumSplitAmounts();
-            if (Math.abs(sum - target) > 0.02) {
-                warn.textContent = document.documentElement.lang === 'ar'
-                    ? 'مجموع المبالغ في الأسطر (' + sum.toFixed(2) + ') يجب أن يساوي الإجمالي (' + target.toFixed(2) + ').'
-                    : 'Line amounts (' + sum.toFixed(2) + ') must equal total (' + target.toFixed(2) + ').';
+            const isAr = isPaymentLangAr();
+
+            if (sum > maxR + 0.02) {
+                warn.textContent = isAr
+                    ? ('مجموع أسطر الدفع (' + sum.toFixed(2) + ') يتجاوز المتبقي على حصة المريض (' + maxR.toFixed(2) + '). خفّض المبالغ في الأسطر.')
+                    : ('Sum of payment lines (' + sum.toFixed(2) + ') exceeds patient share remaining (' + maxR.toFixed(2) + '). Lower the amounts.');
                 warn.classList.remove('hidden');
+                refreshPaymentSubmitState();
+                return false;
+            }
+            if (Math.abs(sum - target) > 0.02) {
+                warn.textContent = isAr
+                    ? ('مجموع المبالغ في الأسطر (' + sum.toFixed(2) + ') يجب أن يساوي «إجمالي هذه الدفعة» (' + target.toFixed(2) + '). عدّل الأسطر أو الإجمالي — أو اكتب المبلغ في السطر فيُحدَّث الإجمالي تلقائياً.')
+                    : ('Line amounts (' + sum.toFixed(2) + ') must equal this payment total (' + target.toFixed(2) + ').');
+                warn.classList.remove('hidden');
+                refreshPaymentSubmitState();
                 return false;
             }
             warn.classList.add('hidden');
+            refreshPaymentSubmitState();
             return true;
+        }
+
+        function onSplitAmountInput() {
+            syncTotalFromSplitAmounts();
+            validateSplitSum();
+            updateRemainingPreview();
         }
 
         function addSplitRow() {
@@ -1030,11 +1089,15 @@
             });
             body.appendChild(clone);
             reindexSplitRows();
-            clone.querySelectorAll('.split-amount, .split-method').forEach(function(el) {
-                el.addEventListener('input', validateSplitSum);
+            clone.querySelectorAll('.split-amount').forEach(function(el) {
+                el.addEventListener('input', onSplitAmountInput);
+                el.addEventListener('change', onSplitAmountInput);
+            });
+            clone.querySelectorAll('.split-method').forEach(function(el) {
                 el.addEventListener('change', validateSplitSum);
             });
             validateSplitSum();
+            updateRemainingPreview();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1048,12 +1111,16 @@
                         if (rows.length <= 1) return;
                         e.target.closest('[data-split-row]').remove();
                         reindexSplitRows();
-                        syncSplitAmountsToTotal();
+                        syncTotalFromSplitAmounts();
                         validateSplitSum();
+                        updateRemainingPreview();
                     }
                 });
-                body.querySelectorAll('.split-amount, .split-method').forEach(function(el) {
-                    el.addEventListener('input', validateSplitSum);
+                body.querySelectorAll('.split-amount').forEach(function(el) {
+                    el.addEventListener('input', onSplitAmountInput);
+                    el.addEventListener('change', onSplitAmountInput);
+                });
+                body.querySelectorAll('.split-method').forEach(function(el) {
                     el.addEventListener('change', validateSplitSum);
                 });
             }
@@ -1081,8 +1148,10 @@
                     syncSplitAmountsToTotal();
                     validateSplitSum();
                     updateRemainingPreview();
+                    refreshPaymentSubmitState();
                 });
             }
+            refreshPaymentSubmitState();
         });
 
         function updateRemainingPreview() {
@@ -1128,21 +1197,8 @@
                 totalInput.setAttribute('max', maxRemaining.toFixed(2));
             }
 
-            syncSplitAmountsToTotal();
             validateSplitSum();
             updateRemainingPreview();
-
-            const submitBtn = document.getElementById('submit-payment-btn');
-            if (submitBtn) {
-                const t = parseFloat(totalInput && totalInput.value ? totalInput.value : 0);
-                if (maxRemaining <= 0 || t <= 0) {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
         }
     </script>
 @endsection
