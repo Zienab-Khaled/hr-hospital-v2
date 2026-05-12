@@ -78,6 +78,7 @@ class VisitController extends Controller
                 $visit = Visit::create([
                     'patient_id' => $patient->id,
                     'department_id' => $myDepartment->id,
+                    'admission_entry_source' => Visit::inferAdmissionEntryFromDepartment($myDepartment),
                     'visit_date' => today(),
                     'shift_id' => $currentShift->id,
                     'case_type' => $myDepartment->name_ar ?? $myDepartment->name ?? 'clinics',
@@ -102,8 +103,12 @@ class VisitController extends Controller
             ->orderBy('name')
             ->get();
 
+        $defaultAdmissionSource = $myDepartment
+            ? Visit::inferAdmissionEntryFromDepartment($myDepartment)
+            : Visit::ADMISSION_OUTPATIENT_CLINICS;
+
         return view('visits.create', compact(
-            'currentShift', 'departments', 'eligibilityDepartments', 'entryFeeDepartments', 'myDepartment', 'patient', 'visit', 'activeVisits', 'registered'
+            'currentShift', 'departments', 'eligibilityDepartments', 'entryFeeDepartments', 'myDepartment', 'patient', 'visit', 'activeVisits', 'registered', 'defaultAdmissionSource'
         ));
     }
 
@@ -114,12 +119,12 @@ class VisitController extends Controller
     {
         $this->authorize('invoices.create');
 
-        $request->validate(['patient_id' => 'required|exists:patients,id']);
-
         $patient = Patient::findOrFail($request->input('patient_id'));
 
-        // Validate charity approval document if patient is charity type
-        $validationRules = ['patient_id' => 'required|exists:patients,id'];
+        $validationRules = [
+            'patient_id' => 'required|exists:patients,id',
+            'admission_entry_source' => 'required|in:outpatient_clinics,emergency',
+        ];
         if ($patient->payment_type === 'charity') {
             $validationRules['charity_approval_document'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
         }
@@ -139,6 +144,7 @@ class VisitController extends Controller
         $visit = Visit::create([
             'patient_id' => $patient->id,
             'department_id' => $departmentId,
+            'admission_entry_source' => $request->input('admission_entry_source'),
             'visit_date' => today(),
             'shift_id' => $currentShift?->id,
             'case_type' => $dept->name_ar ?? $dept->name ?? 'clinics',
@@ -609,7 +615,7 @@ class VisitController extends Controller
         $currentShift = Shift::currentAt();
 
         // For admin/manager: if no filters at all, redirect with today + current shift as defaults
-        if ($isAdmin && !$request->hasAny(['date', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'page'])) {
+        if ($isAdmin && !$request->hasAny(['date', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'admission_entry_source', 'page'])) {
             $defaults = ['date' => today()->toDateString()];
             if ($currentShift) {
                 $defaults['shift_id'] = $currentShift->id;
@@ -640,6 +646,9 @@ class VisitController extends Controller
             }
             if ($request->filled('date')) {
                 $query->whereDate('visit_date', $request->input('date'));
+            }
+            if ($request->filled('admission_entry_source')) {
+                $query->where('admission_entry_source', $request->input('admission_entry_source'));
             }
         }
 
@@ -688,13 +697,19 @@ class VisitController extends Controller
             abort(403);
         }
 
-        $valid = $request->validate([
+        $rules = [
             'department_id' => 'nullable|exists:departments,id',
             'shift_id' => 'nullable|exists:shifts,id',
             'visit_date' => 'nullable|date',
             'case_type' => 'required|string',
             'notes' => 'nullable|string',
-        ]);
+            'admission_entry_source' => 'nullable|in:outpatient_clinics,emergency',
+        ];
+        if ($request->boolean('redirect_to_create')) {
+            $rules['admission_entry_source'] = 'required|in:outpatient_clinics,emergency';
+        }
+
+        $valid = $request->validate($rules);
 
         $oldValues = $visit->getOriginal();
 

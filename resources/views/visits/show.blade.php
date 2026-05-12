@@ -42,6 +42,13 @@
                     </h1>
                     <p class="text-slate-500 font-medium">
                         {{ $visit->visit_date?->format('Y-m-d') ?? ($visit->created_at?->format('Y-m-d') ?? '—') }} |
+                        {{ app()->getLocale() === 'ar' ? 'مسار الدخول:' : 'Admission:' }}
+                        @if($visit->admission_entry_source)
+                            <span class="inline-flex align-middle px-2 py-0.5 rounded-md text-xs font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
+                        @else
+                            <span class="text-slate-400">—</span>
+                        @endif
+                        |
                         {{ app()->getLocale() === 'ar' ? 'تسجيل بواسطة' : 'Registered by' }}:
                         {{ $visit->registeredBy?->name ?? '—' }}
                     </p>
@@ -82,6 +89,16 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-4">
+                            <div class="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'مسار الدخول (مكتب الدخول)' : 'Admission desk route' }}
+                                </span>
+                                @if($visit->admission_entry_source)
+                                    <span class="inline-flex px-3 py-1 rounded-lg text-sm font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
+                                @else
+                                    <p class="text-lg font-bold text-slate-400">—</p>
+                                @endif
+                            </div>
                             <div class="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">
                                     {{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Department' }}

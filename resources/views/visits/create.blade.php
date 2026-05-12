@@ -149,6 +149,8 @@
                             }
                             </script>
 
+                            @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $defaultAdmissionSource ?? \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS])
+
                             <button type="submit" id="visit_go_btn" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-slate-50 font-semibold text-sm hover:bg-blue-700 shadow">
                                 {{ app()->getLocale() === 'ar' ? 'متابعة ← تسجيل دخول القسم' : 'Continue → Register to department' }}
                             </button>
@@ -231,6 +233,7 @@
                     <form action="{{ route('visits.store') }}" method="POST" class="mb-6">
                         @csrf
                         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+                        @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $defaultAdmissionSource ?? \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS])
                         <button type="submit" class="bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
                             @if (isset($activeVisits) && $activeVisits->isNotEmpty())
                                 {{ app()->getLocale() === 'ar' ? 'إنشاء زيارة جديدة (إضافية)' : 'Create New Visit (Additional)' }}
@@ -294,6 +297,12 @@
                                         <textarea name="notes" rows="1" class="{{ $inputClass }}">{{ $visitForPrint->notes ?? '' }}</textarea>
                                     </div>
                                 </div>
+                                @php
+                                    $vAdmission = $visitForPrint ?? $visit;
+                                    $admDefault = $vAdmission->admission_entry_source
+                                        ?? \App\Models\Visit::inferAdmissionEntryFromDepartment($vAdmission->department);
+                                @endphp
+                                @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $admDefault])
                                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
                                 </button>
@@ -599,7 +608,7 @@
                         {{ app()->getLocale() === 'ar' ? '← زيارة لمريض آخر' : '← Another patient' }}
                     </a>
                     <a href="{{ route('visits.index') }}" class="bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
-                        {{ app()->getLocale() === 'ar' ? 'قائمة الزيارات' : 'Visits list' }}
+                        {{ app()->getLocale() === 'ar' ? 'قائمة مكتب الدخول' : 'Admission list' }}
                     </a>
                 </div>
             @endif

@@ -1,9 +1,9 @@
 @extends('layouts.app')
-@section('title', app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits')
+@section('title', app()->getLocale() === 'ar' ? 'مكتب الدخول' : 'Admission office')
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h2 class="text-xl font-semibold text-slate-800">
-            {{ app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits' }}
+            {{ app()->getLocale() === 'ar' ? 'مكتب الدخول' : 'Admission office' }}
             @if (!$isAdmin && $currentShift)
                 <span class="text-sm font-normal text-slate-600">— {{ app()->getLocale() === 'ar' ? 'شيفت اليوم في قسمك' : 'Today\'s shift in your department' }}</span>
             @endif
@@ -14,7 +14,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                {{ app()->getLocale() === 'ar' ? 'إضافة زيارة جديدة' : 'Add New Visit' }}
+                {{ app()->getLocale() === 'ar' ? 'تسجيل دخول جديد' : 'New admission' }}
             </a>
         @endcan
     </div>
@@ -70,6 +70,18 @@
                     @endforeach
                 </select>
             </div>
+            <div class="w-52">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'مسار الدخول' : 'Admission route' }}</label>
+                <select name="admission_entry_source" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
+                    <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
+                    <option value="{{ \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS }}" {{ request('admission_entry_source') === \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'عيادات خارجية' : 'Outpatient clinics' }}
+                    </option>
+                    <option value="{{ \App\Models\Visit::ADMISSION_EMERGENCY }}" {{ request('admission_entry_source') === \App\Models\Visit::ADMISSION_EMERGENCY ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'الطوارئ' : 'Emergency' }}
+                    </option>
+                </select>
+            </div>
         </x-index-filters>
     @else
         <x-index-filters :action="route('visits.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم المريض، رقم الملف...' : 'Patient name, file no...'">
@@ -83,6 +95,7 @@
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</th>
                     <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Dept' }}</th>
+                    <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'مسار الدخول' : 'Admission' }}</th>
                     @if ($isAdmin)
                         <th class="text-start p-3 text-slate-800">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</th>
                     @endif
@@ -141,6 +154,13 @@
                                 <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded ms-1 border border-amber-200">
                                     {{ app()->getLocale() === 'ar' ? 'تم التحويل' : 'Transferred' }}
                                 </span>
+                            @endif
+                        </td>
+                        <td class="p-3">
+                            @if($v->admission_entry_source)
+                                <span class="inline-flex px-2 py-0.5 rounded-md text-[11px] font-black {{ $v->admissionEntrySourceBadgeClass() }}">{{ $v->admission_entry_source_label }}</span>
+                            @else
+                                <span class="text-slate-400 text-xs">—</span>
                             @endif
                         </td>
                         @if ($isAdmin)

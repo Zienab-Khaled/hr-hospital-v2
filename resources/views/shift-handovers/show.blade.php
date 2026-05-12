@@ -21,7 +21,7 @@
                 @endif
             </div>
 
-            <h3 class="text-lg font-semibold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'الزيارات' : 'Visits' }} ({{ $visits->count() }})</h3>
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'مكتب الدخول' : 'Admission office' }} ({{ $visits->count() }})</h3>
             @if ($visits->isNotEmpty())
                 <ul class="border border-slate-200 rounded-lg divide-y divide-slate-200 mb-6">
                     @foreach ($visits as $v)

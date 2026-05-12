@@ -206,6 +206,7 @@
                                 <tr class="bg-slate-50/50 text-slate-400">
                                     <th class="px-6 py-4 text-left {{ app()->getLocale() === 'ar' ? 'text-right' : '' }} font-black">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
                                     <th class="px-6 py-4 text-left {{ app()->getLocale() === 'ar' ? 'text-right' : '' }} font-black">{{ app()->getLocale() === 'ar' ? 'القسم الطبي' : 'Medical Dept' }}</th>
+                                    <th class="px-6 py-4 text-left {{ app()->getLocale() === 'ar' ? 'text-right' : '' }} font-black">{{ app()->getLocale() === 'ar' ? 'مسار الدخول' : 'Admission' }}</th>
                                     <th class="px-6 py-4 text-left {{ app()->getLocale() === 'ar' ? 'text-right' : '' }} font-black">{{ app()->getLocale() === 'ar' ? 'نوع الحالة' : 'Case' }}</th>
                                     <th class="px-6 py-4 text-center font-black">{{ app()->getLocale() === 'ar' ? 'الإجراء' : 'Action' }}</th>
                                 </tr>
@@ -218,6 +219,13 @@
                                     </td>
                                     <td class="px-6 py-4 text-slate-600 font-medium">
                                         {{ $visit->department ? (app()->getLocale() === 'ar' ? ($visit->department->name_ar ?? $visit->department->name) : $visit->department->name) : '—' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($visit->admission_entry_source)
+                                            <span class="inline-flex px-2 py-0.5 rounded-md text-[11px] font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
+                                        @else
+                                            <span class="text-slate-400 text-xs">—</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
                                         @if($visit->case_type === 'emergency')

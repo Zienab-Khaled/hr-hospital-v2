@@ -64,5 +64,7 @@
     "charity":"Charity",
     "Invoice created from visit eligibility":"Invoice created from visit eligibility",
     "Payment recorded successfully.": "Payment recorded successfully.",
-    "Professional email with price offer has been sent. The recipient can confirm or reject with written response.": "Professional email with price offer has been sent. The recipient can confirm or reject with written response."
+    "Professional email with price offer has been sent. The recipient can confirm or reject with written response.": "Professional email with price offer has been sent. The recipient can confirm or reject with written response.",
+    "Visits": "Admission office",
+    "Add Visit": "Register admission"
 }

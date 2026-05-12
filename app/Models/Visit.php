@@ -13,8 +13,12 @@ class Visit extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
 
+    public const ADMISSION_OUTPATIENT_CLINICS = 'outpatient_clinics';
+
+    public const ADMISSION_EMERGENCY = 'emergency';
+
     protected $fillable = [
-        'patient_id', 'department_id', 'visit_date', 'shift_id', 'case_type', 'notes',
+        'patient_id', 'department_id', 'admission_entry_source', 'visit_date', 'shift_id', 'case_type', 'notes',
         'referral_number', 'transferred_department_id', 'registered_by',
         'printed_eligibility_at', 'printed_price_inquiry_at'
     ];
@@ -72,6 +76,41 @@ class Visit extends Model implements HasMedia
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /** تخمين مسار الدخول من اسم/كود القسم (طوارئ vs عيادات) عند الإنشاء التلقائي */
+    public static function inferAdmissionEntryFromDepartment(?Department $department): string
+    {
+        if (! $department) {
+            return self::ADMISSION_OUTPATIENT_CLINICS;
+        }
+        $blob = mb_strtolower(
+            trim((string) ($department->name_ar ?? '').' '.(string) ($department->name ?? '').' '.(string) ($department->code ?? ''))
+        );
+        $needles = ['طوارئ', 'طوارى', 'emergency', 'e.r', ' e.r', 'e.r ', ' er', 'er ', 'ed ', ' aed', 'accident'];
+        foreach ($needles as $needle) {
+            if ($needle !== '' && str_contains($blob, $needle)) {
+                return self::ADMISSION_EMERGENCY;
+            }
+        }
+
+        return self::ADMISSION_OUTPATIENT_CLINICS;
+    }
+
+    public function getAdmissionEntrySourceLabelAttribute(): string
+    {
+        return match ($this->admission_entry_source) {
+            self::ADMISSION_EMERGENCY => app()->getLocale() === 'ar' ? 'الطوارئ' : 'Emergency',
+            self::ADMISSION_OUTPATIENT_CLINICS => app()->getLocale() === 'ar' ? 'مكتب دخول العيادات الخارجية' : 'Outpatient clinics admission',
+            default => '—',
+        };
+    }
+
+    public function admissionEntrySourceBadgeClass(): string
+    {
+        return $this->admission_entry_source === self::ADMISSION_EMERGENCY
+            ? 'bg-rose-100 text-rose-800 ring-1 ring-rose-200'
+            : 'bg-teal-100 text-teal-800 ring-1 ring-teal-200';
     }
 
     /**

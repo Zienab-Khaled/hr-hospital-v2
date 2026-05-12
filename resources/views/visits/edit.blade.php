@@ -20,6 +20,7 @@
             <form action="{{ route('visits.update', $visit) }}" method="POST">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="case_type" value="{{ old('case_type', $visit->case_type ?? '') }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
@@ -52,6 +53,18 @@
                                     {{ app()->getLocale() === 'ar' && $shift->name_ar ? $shift->name_ar : $shift->name }}
                                 </option>
                             @endforeach
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'مسار الدخول (مكتب الدخول)' : 'Admission desk route' }}</label>
+                        <select name="admission_entry_source" class="w-full border border-slate-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="{{ \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS }}" {{ old('admission_entry_source', $visit->admission_entry_source ?? \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS) === \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS ? 'selected' : '' }}>
+                                {{ app()->getLocale() === 'ar' ? 'مكتب دخول العيادات الخارجية' : 'Outpatient clinics admission' }}
+                            </option>
+                            <option value="{{ \App\Models\Visit::ADMISSION_EMERGENCY }}" {{ old('admission_entry_source', $visit->admission_entry_source) === \App\Models\Visit::ADMISSION_EMERGENCY ? 'selected' : '' }}>
+                                {{ app()->getLocale() === 'ar' ? 'الطوارئ' : 'Emergency' }}
+                            </option>
                         </select>
                     </div>
 
