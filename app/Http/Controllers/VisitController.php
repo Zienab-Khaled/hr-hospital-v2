@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Helpers\ActivityLogger;
+use App\Helpers\InvoiceAmountHelper;
 use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
 use App\Traits\HasIndexFilters;
@@ -297,6 +298,8 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
+            InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 Approval::create([
                     'invoice_id' => $invoice->id,
@@ -304,7 +307,7 @@ class VisitController extends Controller
                     'approval_type' => $patient->payment_type,
                     'insurance_company_id' => $patient->insurance_company_id,
                     'charity_entity_id' => $patient->charity_entity_id,
-                    'requested_amount' => $entryFee,
+                    'requested_amount' => (float) $invoice->total_amount,
                     'status' => 'pending',
                     'requested_by' => auth()->user()?->getKey(),
                 ]);
@@ -467,6 +470,8 @@ class VisitController extends Controller
                     ]);
                 }
 
+                InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+
                 // Approval request
                 if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                     $approval = Approval::create([
@@ -475,7 +480,7 @@ class VisitController extends Controller
                         'approval_type' => $patient->payment_type,
                         'insurance_company_id' => $patient->insurance_company_id,
                         'charity_entity_id' => $patient->charity_entity_id,
-                        'requested_amount' => $totalAmount,
+                        'requested_amount' => (float) $invoice->total_amount,
                         'status' => 'pending',
                         'requested_by' => auth()->user()?->getKey(),
                     ]);

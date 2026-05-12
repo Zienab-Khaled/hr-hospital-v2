@@ -230,27 +230,27 @@
                 <tr>
                     <td>{{ $item->service_id ? ($item->service?->code ?? '—') : '—' }}</td>
                     <td>{{ $item->service_id ? ($item->service?->name_ar ?: $item->service?->name ?? '—') : ($item->description ?? '—') }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ number_format((float) $item->unit_price, 2) }}</td>
-                    <td>{{ number_format((float) $item->total_price, 2) }}</td>
+                    <td>{{ \App\Helpers\NumeralHelper::toWesternDigits((string) (int) $item->quantity) }}</td>
+                    <td>{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $item->unit_price) }}</td>
+                    <td>{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $item->total_price) }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td style="text-align: right;">الإجمالي</td>
                 <td colspan="3"></td>
-                <td style="text-align: left;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+                <td style="text-align: left;">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $invoice->total_amount) }} ريال</td>
             </tr>
             @if ((float) $invoice->paid_amount > 0)
                 <tr class="total-row" style="color: #64748b; font-weight: normal;">
                     <td>المسدد نقداً (مقدم/مساهمة)</td>
                     <td colspan="3"></td>
-                    <td style="text-align: left;">- {{ number_format((float) $invoice->paid_amount, 2) }} ريال</td>
+                    <td style="text-align: left;">- {{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $invoice->paid_amount) }} ريال</td>
                 </tr>
             @endif
             <tr class="total-row" style="background: #e2e8f0; border-top: 2px solid #1e293b;">
                 <td>المبلغ المطلوب من الجمعية (المتبقي / الصافي)</td>
                 <td colspan="3"></td>
-                <td style="text-align: left; font-size: 13px;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
+                <td style="text-align: left; font-size: 13px;">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $invoice->remaining_amount) }} ريال</td>
             </tr>
         </tbody>
     </table>

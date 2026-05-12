@@ -15,6 +15,8 @@ use App\Models\CharityEntity;
 use App\Mail\ApprovalRequestMail;
 use App\Mail\InvoiceToPartyMail;
 use App\Helpers\ActivityLogger;
+use App\Helpers\CurrencyHelper;
+use App\Helpers\InvoiceAmountHelper;
 use App\Models\User;
 use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
@@ -306,6 +308,9 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice);
+            $invoice->refresh();
+
             // Attach medical report(s) if uploaded
             if ($request->hasFile('medical_reports')) {
                 foreach ($request->file('medical_reports') as $file) {
@@ -323,6 +328,17 @@ class InvoiceController extends Controller
 
             // NEW: Handle Financial Collection & Digital q-1 Documents
             if (!empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
+                $collectionAmt = (float) $validated['collection_amount'];
+                if ($collectionAmt > (float) $invoice->total_amount + 0.009) {
+                    throw ValidationException::withMessages([
+                        'collection_amount' => app()->getLocale() === 'ar'
+                            ? 'مبلغ التحصيل يتجاوز إجمالي الفاتورة (بعد تقريب النقد إن وُجد).'
+                            : 'Collection amount exceeds invoice total (after any cash rounding).',
+                    ]);
+                }
+
+                $invoice->load('items.service');
+
                 // 1. Create Payment record
                 $payment = \App\Models\Payment::create([
                     'invoice_id' => $invoice->id,
@@ -338,17 +354,16 @@ class InvoiceController extends Controller
                     'notes' => $validated['notes'] ?? 'Immediate collection upon creation',
                 ]);
 
-                // Prepare selected items data for receipt snapshot (Digital q-1)
+                // Prepare selected items data for receipt snapshot (Digital q-1) — من البنود بعد المزامنة/التقريب
                 $selectedItemsData = [];
-                foreach ($validated['services'] as $sData) {
-                    $s = \App\Models\Service::find($sData['service_id']);
+                foreach ($invoice->items as $itemRow) {
                     $selectedItemsData[] = [
-                        'id' => $sData['service_id'],
-                        'code' => $s?->code ?? '—',
-                        'name' => $s?->name_ar ?? $s?->name ?? '—',
-                        'qty' => (int) round((float) $sData['quantity']),
-                        'unit_price' => (float) $sData['unit_price'],
-                        'total' => (float) $sData['total_price'],
+                        'id' => $itemRow->service_id,
+                        'code' => $itemRow->service?->code ?? '—',
+                        'name' => $itemRow->service?->name_ar ?? $itemRow->service?->name ?? ($itemRow->description ?? '—'),
+                        'qty' => (int) $itemRow->quantity,
+                        'unit_price' => (float) $itemRow->unit_price,
+                        'total' => (float) $itemRow->total_price,
                     ];
                 }
 
@@ -409,7 +424,7 @@ class InvoiceController extends Controller
                     'approval_type' => $patient->payment_type,
                     'insurance_company_id' => $patient->insurance_company_id,
                     'charity_entity_id' => $patient->charity_entity_id,
-                    'requested_amount' => $totalAmount,
+                    'requested_amount' => (float) $invoice->total_amount,
                     'status' => 'pending',
                     'requested_by' => auth()->user()?->getKey(),
                 ]);
@@ -458,7 +473,7 @@ class InvoiceController extends Controller
             if ($notifyUsers->isNotEmpty()) {
                 Notification::send($notifyUsers, new SystemNotification([
                     'title' => app()->getLocale() === 'ar' ? 'فاتورة جديدة' : 'New Invoice Created',
-                    'message' => (app()->getLocale() === 'ar' ? "تم إصدار فاتورة بمبلغ " : "Invoice created with amount: ") . number_format($invoice->total_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $patient->fullArabicName(),
+                    'message' => (app()->getLocale() === 'ar' ? "تم إصدار فاتورة بمبلغ " : "Invoice created with amount: ") . CurrencyHelper::formatAmountDecimal($invoice->total_amount) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $patient->fullArabicName(),
                     'action_url' => route('invoices.show', $invoice),
                     'type' => 'success',
                 ]));
@@ -1003,20 +1018,11 @@ class InvoiceController extends Controller
 
         DB::beginTransaction();
         try {
-            // Calculate total amount
-            $totalAmount = collect($validated['services'])->sum('total_price');
-
-            // Update invoice
             $invoice->update([
                 'invoice_date' => $validated['invoice_date'],
                 'status' => $validated['status'],
-                'total_amount' => $totalAmount,
-                'remaining_amount' => $totalAmount - $invoice->paid_amount,
                 'notes' => $validated['notes'],
             ]);
-
-            $newValues = $invoice->toArray();
-            ActivityLogger::log('Invoice Updated', 'Invoice', $invoice->id, 'Invoice details updated', $oldValues, $newValues);
 
             // Delete old items and create new ones
             $invoice->items()->delete();
@@ -1029,6 +1035,11 @@ class InvoiceController extends Controller
                     'description' => $serviceData['description'] ?? null,
                 ]);
             }
+
+            InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+
+            $newValues = $invoice->toArray();
+            ActivityLogger::log('Invoice Updated', 'Invoice', $invoice->id, 'Invoice details updated', $oldValues, $newValues);
 
             DB::commit();
 

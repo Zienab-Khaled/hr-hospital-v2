@@ -15,6 +15,19 @@ class CurrencyHelper
         return $withSymbol ? $formatted . ' ' . self::symbol() : $formatted;
     }
 
+    /** أرقام لاتينية (0–9) للعرض في الفواتير ولو كانت واجهة النظام عربية */
+    public static function formatAmountDecimal(float|string $amount, int $decimals = 2): string
+    {
+        return NumeralHelper::toWesternDigits(number_format((float) $amount, $decimals, '.', ','));
+    }
+
+    /** مثل format مع أرقام لاتينية — للفواتير والطباعة */
+    public static function formatInvoice(float|string $amount, bool $withSymbol = true): string
+    {
+        $core = self::formatAmountDecimal($amount, 2);
+        return $withSymbol ? $core . ' ' . self::symbol() : $core;
+    }
+
     /**
      * Convert amount to Arabic words for official receipts (تفقيط - Saudi Riyal).
      * Returns e.g. "اثنان وأربعون ألف وخمس مائة وثمانون ريال فقط لاغير"

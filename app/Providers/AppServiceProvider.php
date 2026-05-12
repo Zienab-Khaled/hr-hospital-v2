@@ -46,5 +46,9 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('currency', function ($expression) {
             return "<?php echo \App\Helpers\CurrencyHelper::format($expression); ?>";
         });
+
+        Blade::directive('currencyInvoice', function ($expression) {
+            return "<?php echo \App\Helpers\CurrencyHelper::formatInvoice($expression); ?>";
+        });
     }
 }

@@ -77,8 +77,8 @@
                         <td class="p-3">{{ $inv->invoice_number ?? $inv->id }}</td>
                         <td class="p-3">{{ $inv->patient?->name }}</td>
                         <td class="p-3">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
-                        <td class="p-3">@currency($inv->total_amount)</td>
-                        <td class="p-3">@currency($inv->remaining_amount)</td>
+                        <td class="p-3">@currencyInvoice($inv->total_amount)</td>
+                        <td class="p-3">@currencyInvoice($inv->remaining_amount)</td>
                         <td class="p-3">
                             <div class="flex flex-col gap-1">
                                 <span class="font-medium text-slate-900">{{ $inv->status_label }}</span>

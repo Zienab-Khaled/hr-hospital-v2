@@ -191,7 +191,7 @@
                                 {{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Total Amount:' }}
                             </span>
                             <span id="grand-total" class="text-3xl font-bold ">
-                                {{ number_format($invoice->total_amount, 2) }}
+                                {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($invoice->total_amount) }}
                             </span>
                         </div>
                     </div>

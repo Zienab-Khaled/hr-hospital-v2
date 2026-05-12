@@ -398,7 +398,7 @@
                                                                 <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
                                                             @endif
                                                         </td>
-                                                        <td class="p-3 font-bold text-slate-900">@currency($inv->total_amount)</td>
+                                                        <td class="p-3 font-bold text-slate-900">@currencyInvoice($inv->total_amount)</td>
                                                         <td class="p-3">
                                                             <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                                                 {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">

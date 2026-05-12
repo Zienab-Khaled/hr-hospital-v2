@@ -388,9 +388,9 @@
                                 </td>
                                 <td class="border border-slate-300 px-2 py-2 text-center text-sm">{{ $item->quantity }}
                                 </td>
-                                <td class="border border-slate-300 px-2 py-2 text-center text-sm">@currency($item->unit_price)</td>
+                                <td class="border border-slate-300 px-2 py-2 text-center text-sm">@currencyInvoice($item->unit_price)</td>
                                 <td class="border border-slate-300 px-2 py-2 text-center text-sm font-medium">
-                                    @currency($item->total_price)</td>
+                                    @currencyInvoice($item->total_price)</td>
                                 @if ($hasInsuranceCoverage)
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
                                         @if ($item->insurance_coverage_type)
@@ -399,7 +399,7 @@
                                                 {{ round((float) $item->insurance_coverage_value, 0) }}%
                                             @else
                                                 {{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed' }}
-                                                @currency($item->insurance_coverage_value)
+                                                @currencyInvoice($item->insurance_coverage_value)
                                             @endif
                                         @else
                                             —
@@ -407,10 +407,10 @@
                                     </td>
                                     <td
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-emerald-700 font-medium">
-                                        @currency($item->insurance_covered_amount)</td>
+                                        @currencyInvoice($item->insurance_covered_amount)</td>
                                     <td
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">
-                                        @currency($item->patient_amount)</td>
+                                        @currencyInvoice($item->patient_amount)</td>
                                 @endif
                                 @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
@@ -536,7 +536,7 @@
                                 <tr class="border-b border-slate-100 hover:bg-slate-50">
                                     <td class="px-3 py-2 text-center font-medium">{{ $receipt?->receipt_number ?? '—' }}
                                     </td>
-                                    <td class="px-3 py-2 text-center font-bold text-green-700">@currency($payment->amount)</td>
+                                    <td class="px-3 py-2 text-center font-bold text-green-700">@currencyInvoice($payment->amount)</td>
                                     <td class="px-3 py-2 text-center">
                                         <span
                                             class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ in_array($receipt?->payment_method, ['card', 'bank_transfer', 'mixed']) ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
@@ -592,34 +592,34 @@
                 <div class="flex justify-between text-sm">
                     <span
                         class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Total:' }}</span>
-                    <span class="font-bold">@currency($invoice->total_amount)</span>
+                    <span class="font-bold">@currencyInvoice($invoice->total_amount)</span>
                 </div>
                 @if ($hasInsuranceCoverage && $totalInsuranceCovered > 0)
                     <div class="flex justify-between text-sm">
                         <span
                             class="font-semibold text-emerald-700">{{ app()->getLocale() === 'ar' ? 'إجمالي المغطى (التأمين):' : 'Insurance covered:' }}</span>
-                        <span class="font-bold text-emerald-700">@currency($totalInsuranceCovered)</span>
+                        <span class="font-bold text-emerald-700">@currencyInvoice($totalInsuranceCovered)</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span
                             class="font-semibold text-amber-800">{{ app()->getLocale() === 'ar' ? 'حصة المريض:' : 'Patient share:' }}</span>
-                        <span class="font-bold text-amber-800">@currency($totalPatientShare)</span>
+                        <span class="font-bold text-amber-800">@currencyInvoice($totalPatientShare)</span>
                     </div>
                 @endif
                 <div class="flex justify-between text-sm">
                     <span
                         class="font-semibold text-slate-700">{{ app()->getLocale() === 'ar' ? 'المدفوع:' : 'Paid:' }}</span>
-                    <span class="font-bold text-green-700">@currency($invoice->paid_amount)</span>
+                    <span class="font-bold text-green-700">@currencyInvoice($invoice->paid_amount)</span>
                 </div>
                 <div class="flex justify-between text-sm pt-2 border-t border-slate-300">
                     <span
                         class="font-semibold text-slate-700">{{ ($hasInsuranceCoverage || $isInsuranceOrCharity) ? (app()->getLocale() === 'ar' ? 'المتبقي للمريض (حصته):' : 'Remaining (patient share):') : (app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:') }}</span>
-                    <span class="font-bold text-slate-900">@currency($effectiveRemaining)</span>
+                    <span class="font-bold text-slate-900">@currencyInvoice($effectiveRemaining)</span>
                 </div>
                 @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && $totalRemaining != $effectiveRemaining)
                     <div class="flex justify-between text-sm">
                         <span class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة التأمين):' : 'Total remaining (debt — until claim paid):' }}</span>
-                        <span class="font-bold text-slate-800">@currency($totalRemaining)</span>
+                        <span class="font-bold text-slate-800">@currencyInvoice($totalRemaining)</span>
                     </div>
                 @endif
                 @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && (float) $invoice->paid_amount == 0)
@@ -805,11 +805,11 @@
                                         <p class="text-sm font-bold text-slate-800">
                                             {{ $item->service?->name_ar ?? $item->service?->name }}</p>
                                         <p class="text-[10px] text-slate-500">Qty: {{ $item->quantity }} @
-                                            @currency($item->unit_price)</p>
+                                            @currencyInvoice($item->unit_price)</p>
                                     </div>
                                 </div>
                                 <div class="text-end">
-                                    <span class="text-sm font-bold text-slate-900">@currency($item->patient_amount)</span>
+                                    <span class="text-sm font-bold text-slate-900">@currencyInvoice($item->patient_amount)</span>
                                 </div>
                             </label>
                         @endforeach

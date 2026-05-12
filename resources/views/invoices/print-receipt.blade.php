@@ -249,9 +249,9 @@
                     @foreach($receipt->selected_items as $item)
                     <tr>
                         <td class="col-desc">{{ $item['name'] ?? '—' }}</td>
-                        <td class="col-qty">{{ $item['qty'] ?? 0 }}</td>
-                        <td class="col-unit">{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
-                        <td class="col-amount">{{ number_format($item['total'] ?? 0, 2) }}</td>
+                        <td class="col-qty">{{ \App\Helpers\NumeralHelper::toWesternDigits((string) (int) ($item['qty'] ?? 0)) }}</td>
+                        <td class="col-unit">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) ($item['unit_price'] ?? 0)) }}</td>
+                        <td class="col-amount">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) ($item['total'] ?? 0)) }}</td>
                         <td class="col-code">{{ $item['code'] ?? '—' }}</td>
                     </tr>
                     @endforeach
@@ -265,11 +265,11 @@
 
         <div class="total-section">
             <div class="total-inline">
-                <span class="total-num">{{ number_format($displayAmount, 2) }} ريال</span>
+                <span class="total-num">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $displayAmount) }} ريال</span>
                 <span class="total-words">{{ $amountWords }}</span>
             </div>
             @if(($receipt->total_payment_amount ?? 0) > 0 && (float)$receipt->total_payment_amount !== (float)$displayAmount)
-            <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ number_format($receipt->total_payment_amount, 2) }} ريال</div>
+            <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $receipt->total_payment_amount) }} ريال</div>
             @endif
             @if ($nSplitLines > 1)
                 <table class="services-table" style="margin-top: 10px;">
@@ -284,7 +284,7 @@
                         @foreach ($splitLines as $line)
                             <tr>
                                 <td class="col-desc" style="text-align: right;">{{ PaymentReceipt::paymentMethodLabel($line->payment_method ?? '') }}</td>
-                                <td class="col-amount">{{ number_format((float) ($line->amount ?? 0), 2) }}</td>
+                                <td class="col-amount">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) ($line->amount ?? 0)) }}</td>
                                 <td class="col-code">{{ $line->reference_number ?? '—' }}</td>
                             </tr>
                         @endforeach
