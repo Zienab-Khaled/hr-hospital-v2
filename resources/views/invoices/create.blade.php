@@ -382,11 +382,11 @@
                     {{-- Total Section --}}
                     <div class="mt-6 pt-6 border-t-2 border-slate-300">
                         <div
-                            class="flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg shadow-lg">
-                            <span class="text-xl font-bold">
+                            class="flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg shadow-lg text-white">
+                            <span class="text-xl font-bold text-white">
                                 {{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Total Amount:' }}
                             </span>
-                            <span id="grand-total" class="text-3xl font-bold">0.00</span>
+                            <span id="grand-total" class="text-3xl font-bold text-white">0.00</span>
                         </div>
                         <div id="insurance-totals-wrap"
                             class="mt-3 space-y-2 {{ isset($patient) && $patient->payment_type === 'insurance' ? '' : 'hidden' }}">

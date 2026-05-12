@@ -22,7 +22,6 @@ use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -329,6 +328,9 @@ class InvoiceController extends Controller
             // NEW: Handle Financial Collection & Digital q-1 Documents
             if (!empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
                 $collectionAmt = (float) $validated['collection_amount'];
+                if (($validated['collection_method'] ?? '') === 'cash' && ($invoice->payment_type ?? '') === 'cash') {
+                    $collectionAmt = InvoiceAmountHelper::roundCashRiyalToWhole($collectionAmt);
+                }
                 if ($collectionAmt > (float) $invoice->total_amount + 0.009) {
                     throw ValidationException::withMessages([
                         'collection_amount' => app()->getLocale() === 'ar'
@@ -343,7 +345,7 @@ class InvoiceController extends Controller
                 $payment = \App\Models\Payment::create([
                     'invoice_id' => $invoice->id,
                     'payment_type' => $invoice->payment_type,
-                    'amount' => $validated['collection_amount'],
+                    'amount' => $collectionAmt,
                     'received_date' => now(),
                     'received_by' => auth()->user()->id,
                     'approved_by' => auth()->user()->id, // Auto-approve immediate collection
@@ -376,12 +378,12 @@ class InvoiceController extends Controller
                     'payment_id' => $payment->id,
                     'patient_id' => $invoice->patient_id,
                     'ministry_receipt_number' => $validated['ministry_receipt_number'] ?? null,
-                    'amount' => $validated['collection_amount'],
+                    'amount' => $collectionAmt,
                     'payment_method' => $validated['collection_method'],
                     'reference_number' => $validated['collection_reference'] ?? null,
                     'invoice_snapshot_total' => $invoice->total_amount,
-                    'invoice_snapshot_paid' => $invoice->paid_amount + $validated['collection_amount'],
-                    'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $validated['collection_amount']),
+                    'invoice_snapshot_paid' => $invoice->paid_amount + $collectionAmt,
+                    'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $collectionAmt),
                     'collected_by' => auth()->user()->id,
                     'collected_at' => now(),
                     'notes' => $validated['notes'],
@@ -391,7 +393,7 @@ class InvoiceController extends Controller
                 \App\Models\PaymentReceiptSplit::create([
                     'payment_receipt_id' => $receipt->id,
                     'payment_method' => $validated['collection_method'],
-                    'amount' => (float) $validated['collection_amount'],
+                    'amount' => $collectionAmt,
                     'reference_number' => $validated['collection_reference'] ?? null,
                     'sort_order' => 0,
                 ]);
@@ -405,7 +407,7 @@ class InvoiceController extends Controller
                 }
 
                 // 4. Update Invoice Totals and Status
-                $newPaidAmount = $invoice->paid_amount + $validated['collection_amount'];
+                $newPaidAmount = $invoice->paid_amount + $collectionAmt;
                 $newRemainingAmount = $invoice->total_amount - $newPaidAmount;
 
                 $invoice->update([
@@ -450,7 +452,7 @@ class InvoiceController extends Controller
             if ($deferredApprovalMail !== null) {
                 $approvalId = $deferredApprovalMail['approval_id'];
                 $mailTo = $deferredApprovalMail['to'];
-                Bus::dispatch(function () use ($approvalId, $mailTo) {
+                dispatch(function () use ($approvalId, $mailTo) {
                     $approval = Approval::query()->find($approvalId);
                     if (!$approval || $mailTo === '') {
                         return;

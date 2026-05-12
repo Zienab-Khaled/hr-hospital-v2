@@ -29,6 +29,9 @@
         ? $displaySelectedItems
         : ($receipt->selected_items ?? []);
     $remainingToCollect = round((float) ($receipt->invoice_snapshot_remaining ?? 0), 2);
+    $snapInvoiceTotal = round((float) ($receipt->invoice_snapshot_total ?? 0), 2);
+    $snapPaidThisReceipt = round((float) ($receipt->amount ?? 0), 2);
+    $snapPaidCumulative = round((float) ($receipt->invoice_snapshot_paid ?? 0), 2);
 @endphp
 <!DOCTYPE html>
 <html lang="ar-SA-u-nu-latn" dir="rtl">
@@ -169,6 +172,17 @@
         .total-section .total-num { font-size: 17px; font-weight: 700; }
         .total-section .total-words { font-size: 12px; line-height: 1.6; }
         .total-section .total-extra { margin-top: 4px; font-size: 10px; color: #555; }
+        .receipt-money-summary {
+            margin: 10px 0 12px;
+            padding: 10px 12px;
+            border: 2px solid #0f172a;
+            border-radius: 6px;
+            background: #f8fafc;
+            font-size: 12px;
+            line-height: 1.85;
+        }
+        .receipt-money-summary div { font-weight: 600; }
+        .receipt-money-summary strong { font-weight: 800; color: #0f172a; }
 
         .payment-type-section { margin-bottom: 18px; }
         .payment-type-section .section-label { font-weight: 700; margin-bottom: 6px; font-size: 12px; }
@@ -273,6 +287,13 @@
             </tbody>
         </table>
 
+        <div class="receipt-money-summary">
+            <div><strong>إجمالي الفاتورة:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapInvoiceTotal) }} ريال</div>
+            <div><strong>المدفوع في هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidThisReceipt) }} ريال</div>
+            <div><strong>إجمالي المسدد على الفاتورة بعد هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidCumulative) }} ريال</div>
+            <div><strong>المتبقي للتحصيل على الفاتورة:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($remainingToCollect) }} ريال</div>
+        </div>
+
         <div class="total-section">
             <div class="total-inline">
                 <span class="total-num">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $displayAmount) }} ريال</span>
@@ -280,12 +301,6 @@
             </div>
             @if(($receipt->total_payment_amount ?? 0) > 0 && (float)$receipt->total_payment_amount !== (float)$displayAmount)
             <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $receipt->total_payment_amount) }} ريال</div>
-            @endif
-            @if ($remainingToCollect > 0.02)
-                <div class="total-extra" style="font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 8px;">
-                    باقي للتحصيل على الفاتورة بعد هذا الإيصال:
-                    <span class="total-num" style="font-size: 15px;">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal($remainingToCollect) }} ريال</span>
-                </div>
             @endif
             @if ($nSplitLines >= 1 && (float) $receipt->amount > 0)
                 <table class="services-table" style="margin-top: 10px;">

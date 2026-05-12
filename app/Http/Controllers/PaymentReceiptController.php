@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentReceipt;
 use App\Models\PaymentReceiptSplit;
 use App\Helpers\ActivityLogger;
+use App\Helpers\InvoiceAmountHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -67,13 +68,6 @@ class PaymentReceiptController extends Controller
                 : 'Sum of payment lines (' . number_format($sumSplits, 2) . ') must equal total (' . number_format($declared, 2) . ').'])->withInput();
         }
 
-        $amountToRecord = $sumSplits;
-
-        if (isset($validated['patient_cash_amount']) && (float) $validated['patient_cash_amount'] > $amountToRecord) {
-            return back()->withErrors(['patient_cash_amount' => __('Cash amount from patient cannot exceed total payment.')])->withInput();
-        }
-        $patientCashOpt = isset($validated['patient_cash_amount']) ? (float) $validated['patient_cash_amount'] : null;
-
         $hasCoverage = $invoice->items->contains(fn ($i) => ! empty($i->insurance_coverage_type));
         $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
         $totalPatientShare = ($hasCoverage || $isInsuranceOrCharity)
@@ -82,7 +76,32 @@ class PaymentReceiptController extends Controller
         $patientPaidSoFar = (float) $invoice->payments->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
         $effectiveRemainingPatient = max(0, round($totalPatientShare - $patientPaidSoFar, 2));
 
-        if ($amountToRecord > $effectiveRemainingPatient) {
+        $cashOnly = $normalizedSplits->isNotEmpty() && $normalizedSplits->every(fn ($l) => ($l['payment_method'] ?? '') === 'cash');
+        if ($cashOnly) {
+            $roundedTotal = InvoiceAmountHelper::roundCashRiyalToWhole($sumSplits);
+            if (abs($roundedTotal - $sumSplits) > 0.005 && $roundedTotal <= $effectiveRemainingPatient + 0.02) {
+                $delta = round($roundedTotal - $sumSplits, 2);
+                $arr = $normalizedSplits->values()->all();
+                $last = count($arr) - 1;
+                $arr[$last]['amount'] = max(0.01, round((float) $arr[$last]['amount'] + $delta, 2));
+                $normalizedSplits = collect($arr);
+                $sumSplits = round((float) $normalizedSplits->sum(fn ($row) => (float) $row['amount']), 2);
+                if (abs($sumSplits - $roundedTotal) > 0.02) {
+                    $arr[$last]['amount'] = round((float) $arr[$last]['amount'] + ($roundedTotal - $sumSplits), 2);
+                    $normalizedSplits = collect($arr);
+                    $sumSplits = $roundedTotal;
+                }
+            }
+        }
+
+        $amountToRecord = $sumSplits;
+
+        if (isset($validated['patient_cash_amount']) && (float) $validated['patient_cash_amount'] > $amountToRecord) {
+            return back()->withErrors(['patient_cash_amount' => __('Cash amount from patient cannot exceed total payment.')])->withInput();
+        }
+        $patientCashOpt = isset($validated['patient_cash_amount']) ? (float) $validated['patient_cash_amount'] : null;
+
+        if ($amountToRecord > $effectiveRemainingPatient + 0.02) {
             return back()->withErrors(['amount' => __('Amount cannot exceed the remaining balance.')])->withInput();
         }
 

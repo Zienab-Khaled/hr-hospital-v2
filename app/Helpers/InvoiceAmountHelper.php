@@ -6,8 +6,8 @@ use App\Models\Invoice;
 
 /**
  * مزامنة إجمالي الفاتورة مع بنودها.
- * للفواتير النقدية (payment_type = cash): تقريب إجمالي المبلغ إلى ريال صحيح حسب قاعدة الهللات السعودية:
- * أقل من 50 هللة من الكسر تُهمل (للأسفل)، 50 هللة فأكثر تُعدّ ريالاً كاملاً (للأعلى).
+ * للفواتير النقدية (payment_type = cash): تقريب إجمالي المبلغ إلى ريال صحيح حسب طلب التشغيل:
+ * إذا كانت هللات الكسر (0–99) أكبر من 51 → يُرفع للريال التالي؛ إذا كانت ≤ 51 → يُقص للأسفل إلى ريال صحيح.
  */
 final class InvoiceAmountHelper
 {
@@ -19,11 +19,19 @@ final class InvoiceAmountHelper
         }
         $riyals = intdiv($sumHalalah, 100);
         $remainder = $sumHalalah % 100;
-        if ($remainder < 50) {
+        if ($remainder <= 51) {
             return $riyals * 100;
         }
 
         return ($riyals + 1) * 100;
+    }
+
+    /** تقريب مبلغ بالريال (كاش) إلى أقرب ريال صحيح بنفس قاعدة الهللات أعلاه. */
+    public static function roundCashRiyalToWhole(float $amountRiyal): float
+    {
+        $h = (int) round(max(0.0, $amountRiyal) * 100);
+
+        return round(self::roundHalalahSumToWholeRiyalHalalah($h) / 100, 2);
     }
 
     public static function syncInvoiceTotalsFromItems(Invoice $invoice): void
