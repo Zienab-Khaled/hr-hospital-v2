@@ -19,6 +19,10 @@
     $isCheque = $anyCheque;
     $s = $settingsData ?? [];
     $ministryNumber = $receipt->ministry_receipt_number ?? $receipt->receipt_number;
+    $rowsForTable = isset($displaySelectedItems) && is_array($displaySelectedItems) && count($displaySelectedItems) > 0
+        ? $displaySelectedItems
+        : ($receipt->selected_items ?? []);
+    $remainingToCollect = round((float) ($receipt->invoice_snapshot_remaining ?? 0), 2);
 @endphp
 <!DOCTYPE html>
 <html lang="ar-SA-u-nu-latn" dir="rtl">
@@ -245,8 +249,8 @@
                 </tr>
             </thead>
             <tbody>
-                @if(!empty($receipt->selected_items))
-                    @foreach($receipt->selected_items as $item)
+                @if(!empty($rowsForTable))
+                    @foreach($rowsForTable as $item)
                     <tr>
                         <td class="col-desc">{{ $item['name'] ?? '—' }}</td>
                         <td class="col-qty">{{ \App\Helpers\NumeralHelper::toWesternDigits((string) (int) ($item['qty'] ?? 0)) }}</td>
@@ -270,6 +274,12 @@
             </div>
             @if(($receipt->total_payment_amount ?? 0) > 0 && (float)$receipt->total_payment_amount !== (float)$displayAmount)
             <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $receipt->total_payment_amount) }} ريال</div>
+            @endif
+            @if ($remainingToCollect > 0.02)
+                <div class="total-extra" style="font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 8px;">
+                    باقي للتحصيل على الفاتورة بعد هذا الإيصال:
+                    <span class="total-num" style="font-size: 15px;">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal($remainingToCollect) }} ريال</span>
+                </div>
             @endif
             @if ($nSplitLines > 1)
                 <table class="services-table" style="margin-top: 10px;">

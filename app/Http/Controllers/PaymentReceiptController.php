@@ -90,10 +90,15 @@ class PaymentReceiptController extends Controller
         if (! empty($validated['item_ids'])) {
             $selectedItems = \App\Models\InvoiceItem::whereIn('id', $validated['item_ids'])->with('service')->get();
             foreach ($selectedItems as $item) {
+                $desc = trim((string) ($item->description ?? ''));
+                $lineName = $item->service?->name_ar
+                    ?? $item->service?->name
+                    ?? ($desc !== '' ? $desc : null)
+                    ?? '—';
                 $selectedItemsData[] = [
                     'id' => $item->id,
                     'code' => $item->service?->code ?? '—',
-                    'name' => $item->service?->name_ar ?? $item->service?->name ?? '—',
+                    'name' => $lineName,
                     'qty' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'total' => (float) $item->patient_amount,
@@ -269,8 +274,32 @@ class PaymentReceiptController extends Controller
     {
         $this->authorize('invoices.view');
 
-        $receipt->load(['payment.invoice', 'patient', 'collectedBy', 'splits']);
+        $receipt->load(['payment.invoice.items.service', 'patient', 'collectedBy', 'splits']);
         $invoice = $receipt->payment->invoice;
+        $rawItems = $receipt->selected_items;
+        if (! is_array($rawItems)) {
+            $rawItems = [];
+        }
+        $displaySelectedItems = [];
+        foreach ($rawItems as $item) {
+            $name = trim((string) ($item['name'] ?? ''));
+            if ($name === '' || $name === '—') {
+                $iid = isset($item['id']) ? (int) $item['id'] : 0;
+                $invItem = $iid ? $invoice->items->firstWhere('id', $iid) : null;
+                if (! $invItem && $iid) {
+                    $invItem = $invoice->items->firstWhere('service_id', $iid);
+                }
+                if ($invItem) {
+                    $name = trim((string) ($invItem->service?->name_ar ?? ''))
+                        ?: trim((string) ($invItem->service?->name ?? ''))
+                        ?: trim((string) ($invItem->description ?? ''));
+                }
+                if ($name === '') {
+                    $name = '—';
+                }
+            }
+            $displaySelectedItems[] = array_merge($item, ['name' => $name]);
+        }
         $manager = \App\Models\User::getManagerForSignature();
         $settingsData = [
             'logo' => \App\Models\Setting::get('logo'),
@@ -283,6 +312,6 @@ class PaymentReceiptController extends Controller
             'financial_dept_name' => \App\Models\Setting::get('financial_dept_name', 'إدارة الموارد المالية'),
         ];
 
-        return view('invoices.print-receipt', compact('receipt', 'invoice', 'settingsData', 'manager'));
+        return view('invoices.print-receipt', compact('receipt', 'invoice', 'settingsData', 'manager', 'displaySelectedItems'));
     }
 }

@@ -357,10 +357,14 @@ class InvoiceController extends Controller
                 // Prepare selected items data for receipt snapshot (Digital q-1) — من البنود بعد المزامنة/التقريب
                 $selectedItemsData = [];
                 foreach ($invoice->items as $itemRow) {
+                    $lineName = $itemRow->service?->name_ar
+                        ?? $itemRow->service?->name
+                        ?? (trim((string) ($itemRow->description ?? '')) !== '' ? trim((string) $itemRow->description) : null)
+                        ?? '—';
                     $selectedItemsData[] = [
-                        'id' => $itemRow->service_id,
+                        'id' => $itemRow->id,
                         'code' => $itemRow->service?->code ?? '—',
-                        'name' => $itemRow->service?->name_ar ?? $itemRow->service?->name ?? ($itemRow->description ?? '—'),
+                        'name' => $lineName,
                         'qty' => (int) $itemRow->quantity,
                         'unit_price' => (float) $itemRow->unit_price,
                         'total' => (float) $itemRow->total_price,
