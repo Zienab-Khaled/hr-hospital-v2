@@ -270,38 +270,18 @@
 
                     {{-- Actions Buttons --}}
 
-                        {{-- Visit Details Section (Always visible) --}}
+                        {{-- مسار الدخول + حفظ (بدون تعديل نوع الحالة / ملاحظات المتابعة من هذه الصفحة) --}}
                         <div class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
-                            <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                <span>📋</span>
-                                {{ app()->getLocale() === 'ar' ? 'بيانات الزيارة والمتابعة' : 'Visit Details & Follow-up' }}
-                            </h3>
                             <form action="{{ route('visits.update', $visitForPrint ?? $visit) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="redirect_to_create" value="1">
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'حالة الزيارة (نوع الحالة)' : 'Visit Case Type' }}</label>
-                                        <select name="case_type" class="{{ $inputClass }}">
-                                            @foreach($departments as $dept)
-                                                <option value="{{ $dept->name_ar ?? $dept->name }}" {{ ($visit->case_type ?? '') === ($dept->name_ar ?? $dept->name) ? 'selected' : '' }}>
-                                                    {{ $dept->name_ar ?? $dept->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'ملاحظات المتابعة' : 'Follow-up Notes' }}</label>
-                                        <textarea name="notes" rows="1" class="{{ $inputClass }}">{{ $visitForPrint->notes ?? '' }}</textarea>
-                                    </div>
-                                </div>
                                 @php
                                     $vAdmission = $visitForPrint ?? $visit;
                                     $admDefault = $vAdmission->admission_entry_source
                                         ?? \App\Models\Visit::inferAdmissionEntryFromDepartment($vAdmission->department);
                                 @endphp
+                                <input type="hidden" name="case_type" value="{{ old('case_type', $vAdmission->case_type ?? '') }}">
                                 @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $admDefault])
                                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}

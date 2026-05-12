@@ -869,17 +869,20 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'إجمالي الدفع (حصة المريض فقط)' : 'Total Payment (patient share only)' }} *
+                            {{ app()->getLocale() === 'ar' ? 'إجمالي هذه الدفعة (حصة المريض فقط)' : 'This payment total (patient share only)' }} *
                         </label>
                         @if ($hasInsuranceCoverage || $isInsuranceOrCharity)
                             <p class="text-xs text-amber-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المبلغ المستحق من المريض فقط — لا يدخل مبلغ شركة التأمين/الجمعية هنا.' : 'Amount due from patient only — do not enter insurance/charity portion here.' }}</p>
-                            @if ((float) $invoice->paid_amount == 0)
-                                <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الفاتورة غير مدفوعة — الإجمالي = المبلغ كامل حصة المريض.' : 'Invoice unpaid — total = full patient share amount.' }}</p>
-                            @endif
+                            <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'يمكنك تسجيل دفعة جزئية الآن (مثلاً جزء كاش وجزء شبكة) والباقي يبقى على الفاتورة حتى يُسدد لاحقاً.' : 'You can record a partial payment now (e.g. part cash, part POS). The rest stays on the invoice until settled later.' }}</p>
                         @endif
-                        <input type="number" name="amount" id="payment-total-amount" step="0.01"
-                            max="{{ $effectiveRemaining }}" value="{{ $effectiveRemaining }}" required readonly
-                            class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-slate-100 cursor-not-allowed">
+                        @if (!$hasInsuranceCoverage && !$isInsuranceOrCharity)
+                            <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'يمكنك دفع جزء من المبلغ الآن؛ مجموع أسطر طرق الدفع يجب أن يساوي «إجمالي هذه الدفعة» (يمكن أن يكون أقل من إجمالي الفاتورة).' : 'You can pay part of the amount now; the sum of payment lines must equal this payment total (it may be less than the full invoice).' }}</p>
+                        @endif
+                        <input type="number" name="amount" id="payment-total-amount" step="0.01" min="0.01"
+                            max="{{ $effectiveRemaining }}" value="{{ $effectiveRemaining }}" required
+                            class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-white focus:ring-2 focus:ring-green-500">
+                        <p id="payment-remaining-preview" class="mt-2 text-sm font-bold text-amber-800"></p>
+                        <p id="payment-items-sum-hint" class="mt-1 text-xs text-slate-500"></p>
                     </div>
                     <div class="hidden md:block"></div>
                 </div>
@@ -947,7 +950,16 @@
     <script>
         function openPaymentModal() {
             document.getElementById('payment-modal').classList.remove('hidden');
+            const form = document.getElementById('payment-form');
+            const totalInput = document.getElementById('payment-total-amount');
+            const maxR = form ? parseFloat(form.dataset.effectiveRemaining || 0) : 0;
+            if (totalInput && maxR > 0) {
+                totalInput.value = maxR.toFixed(2);
+            }
             updateCalculatedTotal();
+            syncSplitAmountsToTotal();
+            validateSplitSum();
+            updateRemainingPreview();
         }
 
         function closePaymentModal() {
@@ -1048,32 +1060,82 @@
             const payForm = document.getElementById('payment-form');
             if (payForm) {
                 payForm.addEventListener('submit', function(e) {
-                    if (!validateSplitSum()) e.preventDefault();
+                    if (!validateSplitSum()) {
+                        e.preventDefault();
+                        return;
+                    }
+                    const totalInput = document.getElementById('payment-total-amount');
+                    const maxR = parseFloat(payForm.dataset.effectiveRemaining || 0);
+                    const t = parseFloat(totalInput && totalInput.value ? totalInput.value : 0);
+                    if (t > maxR + 0.02) {
+                        e.preventDefault();
+                        alert(document.documentElement.lang === 'ar'
+                            ? 'مبلغ الدفعة (' + t.toFixed(2) + ') يتجاوز المتبقي (' + maxR.toFixed(2) + ').'
+                            : 'Payment amount (' + t.toFixed(2) + ') exceeds remaining (' + maxR.toFixed(2) + ').');
+                    }
+                });
+            }
+            const totalAmtEl = document.getElementById('payment-total-amount');
+            if (totalAmtEl) {
+                totalAmtEl.addEventListener('input', function() {
+                    syncSplitAmountsToTotal();
+                    validateSplitSum();
+                    updateRemainingPreview();
                 });
             }
         });
 
+        function updateRemainingPreview() {
+            const form = document.getElementById('payment-form');
+            const totalInput = document.getElementById('payment-total-amount');
+            const el = document.getElementById('payment-remaining-preview');
+            if (!form || !totalInput || !el) return;
+            const maxR = parseFloat(form.dataset.effectiveRemaining || 0);
+            const t = Math.round((parseFloat(totalInput.value || 0)) * 100) / 100;
+            const after = Math.max(0, Math.round((maxR - t) * 100) / 100);
+            const isAr = document.documentElement.lang === 'ar';
+            if (t <= 0) {
+                el.textContent = '';
+                return;
+            }
+            el.textContent = isAr
+                ? ('المتبقي على المريض بعد هذه الدفعة: ' + after.toFixed(2) + ' ر.س (من أصل متبقي قبل الدفعة: ' + maxR.toFixed(2) + ')')
+                : ('Patient share remaining after this payment: ' + after.toFixed(2) + ' SAR (was ' + maxR.toFixed(2) + ' before this payment).');
+        }
+
         function updateCalculatedTotal() {
-            let total = 0;
-            const checkboxes = document.querySelectorAll('input[name="item_ids[]"]:checked');
-            checkboxes.forEach(cb => {
-                total += parseFloat(cb.dataset.amount || 0);
+            let sumChecked = 0;
+            document.querySelectorAll('input[name="item_ids[]"]:checked').forEach(function(cb) {
+                sumChecked += parseFloat(cb.dataset.amount || 0) || 0;
             });
+            sumChecked = Math.round(sumChecked * 100) / 100;
 
             const form = document.getElementById('payment-form');
             const maxRemaining = form ? parseFloat(form.dataset.effectiveRemaining || 0) : 0;
-            const amountDue = maxRemaining > 0 ? Math.min(total, maxRemaining) : total;
+
+            const hint = document.getElementById('payment-items-sum-hint');
+            if (hint) {
+                const isAr = document.documentElement.lang === 'ar';
+                hint.textContent = sumChecked > 0
+                    ? (isAr
+                        ? ('مجموع البنود المحددة (للمرجعية على الإيصال): ' + sumChecked.toFixed(2) + ' — الحد الأقصى للدفعة الحالية: ' + maxRemaining.toFixed(2))
+                        : ('Selected lines total (for receipt): ' + sumChecked.toFixed(2) + ' — max you can pay this time: ' + maxRemaining.toFixed(2)))
+                    : '';
+            }
 
             const totalInput = document.getElementById('payment-total-amount');
-            if (totalInput) {
-                totalInput.value = amountDue.toFixed(2);
+            if (totalInput && maxRemaining > 0) {
+                totalInput.setAttribute('max', maxRemaining.toFixed(2));
             }
 
             syncSplitAmountsToTotal();
+            validateSplitSum();
+            updateRemainingPreview();
 
             const submitBtn = document.getElementById('submit-payment-btn');
             if (submitBtn) {
-                if (amountDue <= 0) {
+                const t = parseFloat(totalInput && totalInput.value ? totalInput.value : 0);
+                if (maxRemaining <= 0 || t <= 0) {
                     submitBtn.disabled = true;
                     submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 } else {

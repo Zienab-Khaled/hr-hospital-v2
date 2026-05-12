@@ -489,6 +489,7 @@
                                 <input type="number" name="collection_amount" id="collection_amount" step="0.01"
                                     value="{{ old('collection_amount') }}"
                                     class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-lg font-black text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                <p class="text-[11px] text-emerald-800/90 mt-1 leading-snug">{{ app()->getLocale() === 'ar' ? 'يمكن أن يكون أقل من إجمالي الفاتورة (تحصيل جزئي)؛ اترك فارغاً أو صفراً مع «بدون تحصيل» إن لم يُحصّل شيء عند الإنشاء.' : 'Can be less than invoice total (partial collection); leave empty with «No collection» if nothing is collected at creation.' }}</p>
                             </div>
                             <div>
                                 <label
