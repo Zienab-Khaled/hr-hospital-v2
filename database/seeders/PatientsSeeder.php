@@ -81,7 +81,6 @@ class PatientsSeeder extends Seeder
                 'gender' => $faker->randomElement(['male', 'female']),
                 'phone' => '+966' . $faker->numerify('#########'),
                 'country_of_origin' => $faker->randomElement(['Saudi Arabia', 'Egypt', 'Jordan', 'Yemen', 'Syria', 'Sudan', 'India', 'Pakistan', 'Bangladesh']),
-                'current_location' => $faker->randomElement(['Riyadh', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar', 'Tabuk']),
                 'sponsor_name' => $faker->boolean(40) ? $faker->name() : null,
                 'sponsor_phone' => $faker->boolean(40) ? '+966' . $faker->numerify('#########') : null,
                 'payment_type' => $paymentType,

@@ -124,10 +124,6 @@
                         <span class="text-sm font-black text-slate-700">{{ $patient->country_of_origin ?? '—' }}</span>
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-slate-50">
-                        <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'الموقع الحالي' : 'Location' }}</span>
-                        <span class="text-sm font-black text-slate-700">{{ $patient->current_location ?? '—' }}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b border-slate-50">
                         <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'القسم الحالي' : 'Department' }}</span>
                         <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-black">
                             {{ $patient->department ? ($patient->department->name_ar ?? $patient->department->name) : '—' }}

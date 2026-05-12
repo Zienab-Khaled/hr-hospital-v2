@@ -252,13 +252,6 @@
                             <input type="text" name="country_of_origin" value="{{ old('country_of_origin') }}" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الموقع الحالي' : 'Current Location' }} *
-                            </label>
-                            <input type="text" name="current_location" value="{{ old('current_location') }}" required
-                                class="w-full rounded border border-slate-300 px-3 py-2">
-                        </div>
                         <div id="sponsor_name_field" style="display: none;">
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'اسم الكفيل' : 'Sponsor Name' }} <span
