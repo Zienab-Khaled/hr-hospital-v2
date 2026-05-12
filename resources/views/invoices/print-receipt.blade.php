@@ -10,13 +10,19 @@
     $amountWords = CurrencyHelper::amountInArabicWords($displayAmount);
     $patient = $receipt->patient;
     $anyCash = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cash');
-    $anyCard = $splitLines->contains(fn ($l) => in_array($l->payment_method ?? '', ['card', 'loyalty_points'], true));
+    $anyCard = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'card');
+    $anyLoyaltyPoints = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points');
     $anyBank = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
     $anyCheque = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cheque');
     $isCash = $anyCash;
     $isCard = $anyCard;
+    $isLoyaltyPoints = $anyLoyaltyPoints;
     $isBank = $anyBank;
     $isCheque = $anyCheque;
+    $chequeLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'cheque');
+    $chequeRefFromSplit = $chequeLine ? (string) ($chequeLine->reference_number ?? '') : '';
+    $bankLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
+    $bankRefFromSplit = $bankLine ? (string) ($bankLine->reference_number ?? '') : '';
     $s = $settingsData ?? [];
     $ministryNumber = $receipt->ministry_receipt_number ?? $receipt->receipt_number;
     $rowsForTable = isset($displaySelectedItems) && is_array($displaySelectedItems) && count($displaySelectedItems) > 0
@@ -281,7 +287,7 @@
                     <span class="total-num" style="font-size: 15px;">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal($remainingToCollect) }} ريال</span>
                 </div>
             @endif
-            @if ($nSplitLines > 1)
+            @if ($nSplitLines >= 1 && (float) $receipt->amount > 0)
                 <table class="services-table" style="margin-top: 10px;">
                     <thead>
                         <tr>
@@ -308,10 +314,10 @@
             <div class="section-label">نوع السداد</div>
             <div class="payment-row">
                 <label class="payment-opt"><input type="checkbox" {{ $isCash ? 'checked' : '' }} disabled> نقدي</label>
-                <label class="payment-opt inline-field">شيك رقم <input type="text" class="editable-print-input" id="cheque-no" value="{{ $isCheque ? ($receipt->reference_number ?? '') : '' }}" placeholder="—"></label>
+                <label class="payment-opt inline-field">شيك رقم <input type="text" class="editable-print-input" id="cheque-no" value="{{ $chequeRefFromSplit !== '' ? $chequeRefFromSplit : ($isCheque ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
                 <label class="payment-opt"><input type="checkbox" {{ $isCard ? 'checked' : '' }} disabled> نقطة بيع / شبكة</label>
-                <label class="payment-opt"><input type="checkbox" {{ $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points') ? 'checked' : '' }} disabled> نقاط بيع</label>
-                <label class="payment-opt inline-field">إيداع في الحساب رقم : <input type="text" class="editable-print-input" id="deposit-account" value="{{ $isBank ? ($receipt->reference_number ?? '') : '' }}" placeholder="—"></label>
+                <label class="payment-opt"><input type="checkbox" {{ $isLoyaltyPoints ? 'checked' : '' }} disabled> نقاط بيع</label>
+                <label class="payment-opt inline-field">إيداع في الحساب رقم : <input type="text" class="editable-print-input" id="deposit-account" value="{{ $bankRefFromSplit !== '' ? $bankRefFromSplit : ($isBank ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
             </div>
             <div class="bank-row">
                 <span>على بنك : <input type="text" class="editable-print-input" id="bank-name" value="" placeholder="—"></span>
