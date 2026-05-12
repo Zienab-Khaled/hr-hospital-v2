@@ -41,6 +41,9 @@ class CharityClaimController extends Controller
                     ->orWhereHas('patient', function ($pq) use ($search) {
                         $pq->where('name', 'like', "%{$search}%")
                             ->orWhere('name_ar', 'like', "%{$search}%")
+                            ->orWhere('name_ar_first', 'like', "%{$search}%")
+                            ->orWhere('name_ar_father', 'like', "%{$search}%")
+                            ->orWhere('name_ar_family', 'like', "%{$search}%")
                             ->orWhere('file_number', 'like', "%{$search}%");
                     });
             });
@@ -244,7 +247,7 @@ class CharityClaimController extends Controller
                 if ($accountants->isNotEmpty()) {
                     \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
                         'title' => app()->getLocale() === 'ar' ? 'تم تحصيل مطالبة جمعية' : 'Charity Claim Paid',
-                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($charityClaim->approved_amount ?: $charityClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($charityClaim->invoice->patient->name_ar ?? $charityClaim->invoice->patient->name),
+                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($charityClaim->approved_amount ?: $charityClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $charityClaim->invoice->patient->fullArabicName(),
                         'action_url' => route('charity-claims.show', $charityClaim),
                         'type' => 'success',
                     ]));

@@ -72,7 +72,7 @@
                                 <label
                                     class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي):' : 'Name (Arabic):' }}</label>
                                 <input type="text" name="patient_name_ar"
-                                    value="{{ old('patient_name_ar', $patient->name_ar) }}" dir="rtl"
+                                    value="{{ old('patient_name_ar', $patient->fullArabicName()) }}" dir="rtl"
                                     class="{{ $inputClass }}">
                             </div>
                             <div>
@@ -158,9 +158,11 @@
                             </div>
                             <div>
                                 <label
-                                    class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'العمر:' : 'Age:' }}</label>
-                                <input type="number" name="patient_age" value="{{ old('patient_age', $patient->age) }}"
-                                    min="0" max="150" class="{{ $inputClass }}">
+                                    class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد:' : 'Date of birth:' }}</label>
+                                <input type="date" name="patient_date_of_birth"
+                                    value="{{ old('patient_date_of_birth', $patient->date_of_birth?->format('Y-m-d')) }}"
+                                    max="{{ now()->format('Y-m-d') }}"
+                                    class="{{ $inputClass }}">
                             </div>
                             <div>
                                 <label
@@ -265,6 +267,35 @@
                             <input type="hidden" name="patient_id" id="invoice_patient_id" value="">
                         </div>
                     @endif
+
+                    <div id="charity-treatment-invoice-wrap" class="hidden mt-4 rounded-lg border-2 border-teal-200 bg-teal-50/80 p-4">
+                        <p class="text-sm font-bold text-teal-900 mb-2">
+                            {{ app()->getLocale() === 'ar' ? '🤝 علاج أهلي — المريض لا يدفع (حصة المريض = 0)' : '🤝 Charity treatment — patient pays 0 (patient share = 0)' }}
+                        </p>
+                        <p class="text-xs text-teal-800 mb-3">
+                            {{ app()->getLocale() === 'ar' ? 'يظهر هذا الخيار عندما يكون نوع الدفع «جمعية». هل توجد أحقية علاج؟ إذا نعم تُسجَّل الفاتورة كنوع «أحقية العلاج».' : 'Shown when payment type is Charity. Treatment eligibility? If yes, the invoice is recorded as Treatment Eligibility type.' }}
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="radio" name="charity_treatment_invoice_mode" value=""
+                                    {{ old('charity_treatment_invoice_mode', '') === '' ? 'checked' : '' }}
+                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
+                                <span>{{ app()->getLocale() === 'ar' ? 'فاتورة عادية' : 'Regular invoice' }}</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="radio" name="charity_treatment_invoice_mode" value="eligibility"
+                                    {{ old('charity_treatment_invoice_mode') === 'eligibility' ? 'checked' : '' }}
+                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
+                                <span>{{ app()->getLocale() === 'ar' ? 'نعم — أحقية علاج (نوع الفاتورة: أحقية العلاج)' : 'Yes — treatment eligibility' }}</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="radio" name="charity_treatment_invoice_mode" value="no_eligibility"
+                                    {{ old('charity_treatment_invoice_mode') === 'no_eligibility' ? 'checked' : '' }}
+                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
+                                <span>{{ app()->getLocale() === 'ar' ? 'لا — علاج أهلي بدون أحقية' : 'No — charity treatment without eligibility' }}</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Invoice Date & Referral Number --}}
@@ -682,12 +713,20 @@
             const paymentTypeEl = document.getElementById('patient_payment_type');
             const insuranceWrap = document.getElementById('patient_insurance_wrap');
             const charityWrap = document.getElementById('patient_charity_wrap');
+            const charityTreatmentWrap = document.getElementById('charity-treatment-invoice-wrap');
             if (paymentTypeEl && insuranceWrap && charityWrap) {
                 function togglePaymentFields() {
                     const v = paymentTypeEl.value;
                     insuranceWrap.classList.toggle('hidden', v !== 'insurance');
                     charityWrap.classList.toggle('hidden', v !== 'charity');
                     window.invoicePatientIsInsurance = (v === 'insurance');
+                    if (charityTreatmentWrap) {
+                        charityTreatmentWrap.classList.toggle('hidden', v !== 'charity');
+                        if (v !== 'charity') {
+                            const def = charityTreatmentWrap.querySelector('input.charity-treatment-mode[value=""]');
+                            if (def) def.checked = true;
+                        }
+                    }
                     if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
                 }
                 paymentTypeEl.addEventListener('change', togglePaymentFields);

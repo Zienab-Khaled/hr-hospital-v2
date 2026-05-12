@@ -132,10 +132,12 @@ class PatientController extends Controller
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients',
             'name' => 'required|string|max:255',
-            'name_ar' => 'nullable|string|max:255',
+            'name_ar_first' => 'required|string|max:255',
+            'name_ar_father' => 'nullable|string|max:255',
+            'name_ar_family' => 'required|string|max:255',
             'identity_type' => 'required|in:national_id,visit_visa,iqama,passport,border_number,visa_number',
             'identity_value' => 'required|string|max:50|unique:patients,identity_value',
-            'age' => 'nullable|integer|min:0|max:150',
+            'date_of_birth' => 'required|date|before_or_equal:today|after:1900-01-01',
             'gender' => 'nullable|in:male,female',
             'country_of_origin' => 'nullable|string|max:255',
             'current_location' => 'nullable|string|max:255',
@@ -187,7 +189,7 @@ class PatientController extends Controller
         if ($notifyUsers->isNotEmpty()) {
             Notification::send($notifyUsers, new SystemNotification([
                 'title' => app()->getLocale() === 'ar' ? 'مريض جديد مسجل' : 'New Patient Registered',
-                'message' => (app()->getLocale() === 'ar' ? 'تم تسجيل المريض: ' : 'Patient registered: ') . ($patient->name_ar ?? $patient->name) . ' (#' . $patient->file_number . ')',
+                'message' => (app()->getLocale() === 'ar' ? 'تم تسجيل المريض: ' : 'Patient registered: ') . $patient->fullArabicName() . ' (#' . $patient->file_number . ')',
                 'action_url' => route('patients.show', $patient),
                 'type' => 'info',
             ]));
@@ -302,10 +304,12 @@ class PatientController extends Controller
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,
             'name' => 'required|string|max:255',
-            'name_ar' => 'nullable|string|max:255',
+            'name_ar_first' => 'required|string|max:255',
+            'name_ar_father' => 'nullable|string|max:255',
+            'name_ar_family' => 'required|string|max:255',
             'identity_type' => 'required|in:national_id,visit_visa,iqama,passport,border_number,visa_number',
             'identity_value' => 'required|string|max:50|unique:patients,identity_value,' . $patient->id,
-            'age' => 'nullable|integer|min:0|max:150',
+            'date_of_birth' => 'nullable|date|before_or_equal:today|after:1900-01-01',
             'gender' => 'nullable|in:male,female',
             'country_of_origin' => 'nullable|string|max:255',
             'current_location' => 'nullable|string|max:255',

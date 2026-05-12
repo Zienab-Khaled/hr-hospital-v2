@@ -63,7 +63,7 @@ class DebtsController extends Controller
         $patient = $invoice->patient;
         $servicesList = $invoice->items->map(fn ($i) => $i->service?->name_ar ?? $i->service?->name ?? $i->description)->filter()->implode('، ');
         $amount = number_format((float) $invoice->remaining_amount, 2);
-        $patientName = $patient->name_ar ?? $patient->name;
+        $patientName = $patient->fullArabicName();
 
         ActivityLogger::log(
             'Debt Notification Sent',

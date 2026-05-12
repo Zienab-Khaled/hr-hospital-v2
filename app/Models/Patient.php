@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,14 +16,91 @@ class Patient extends Model implements HasMedia
     use SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
-        'file_number', 'name', 'name_ar', 'identity_type', 'identity_value', 'phone',
+        'file_number', 'name', 'name_ar', 'name_ar_first', 'name_ar_father', 'name_ar_family',
+        'identity_type', 'identity_value', 'phone',
         'payment_type', 'insurance_company_id', 'charity_entity_id', 'department_id', 'notes', 'is_active',
-        'age', 'gender', 'country_of_origin', 'current_location', 'sponsor_name', 'sponsor_phone',
+        'date_of_birth', 'age', 'gender', 'country_of_origin', 'current_location', 'sponsor_name', 'sponsor_phone',
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'date_of_birth' => 'date',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Patient $patient) {
+            $first = trim((string) ($patient->name_ar_first ?? ''));
+            $father = trim((string) ($patient->name_ar_father ?? ''));
+            $family = trim((string) ($patient->name_ar_family ?? ''));
+            if ($first !== '' && $family !== '') {
+                $patient->name_ar = trim(implode(' ', array_filter([$first, $father, $family], fn ($s) => $s !== '')));
+            }
+            if ($patient->date_of_birth) {
+                $dob = $patient->date_of_birth instanceof \DateTimeInterface
+                    ? Carbon::instance($patient->date_of_birth)
+                    : Carbon::parse($patient->date_of_birth);
+                $patient->age = $dob->age;
+            }
+        });
+    }
+
+    /** Completed years: from date of birth if set, otherwise stored `age` (legacy). */
+    public function ageInYears(): ?int
+    {
+        if ($this->date_of_birth) {
+            $dob = $this->date_of_birth instanceof \DateTimeInterface
+                ? Carbon::instance($this->date_of_birth)
+                : Carbon::parse($this->date_of_birth);
+
+            return $dob->age;
+        }
+        $a = $this->attributes['age'] ?? null;
+
+        return $a !== null && $a !== '' ? (int) $a : null;
+    }
+
+    /** Full Arabic display: structured parts if present, otherwise legacy `name_ar`, then English `name`. */
+    public function fullArabicName(): string
+    {
+        $first = trim((string) ($this->name_ar_first ?? ''));
+        $father = trim((string) ($this->name_ar_father ?? ''));
+        $family = trim((string) ($this->name_ar_family ?? ''));
+        if ($first !== '' && $family !== '') {
+            return trim(implode(' ', array_filter([$first, $father, $family], fn ($s) => $s !== '')));
+        }
+        $legacy = trim((string) ($this->name_ar ?? ''));
+
+        return $legacy !== '' ? $legacy : trim((string) ($this->name ?? ''));
+    }
+
+    /**
+     * For edit form: if Arabic parts are empty but legacy `name_ar` exists, suggest splitting (last word = family).
+     *
+     * @return array{0: string, 1: string, 2: string} [first, father, family] for input defaults
+     */
+    public function suggestedArabicNamePartsForForm(): array
+    {
+        $first = trim((string) ($this->name_ar_first ?? ''));
+        $family = trim((string) ($this->name_ar_family ?? ''));
+        if ($first !== '' || $family !== '') {
+            return [$first, trim((string) ($this->name_ar_father ?? '')), $family];
+        }
+        $full = trim((string) ($this->name_ar ?? ''));
+        if ($full === '') {
+            return ['', '', ''];
+        }
+        $parts = preg_split('/\s+/u', $full, -1, PREG_SPLIT_NO_EMPTY);
+        if (count($parts) < 2) {
+            return [$full, '', ''];
+        }
+        $fam = array_pop($parts);
+        $given = implode(' ', $parts);
+
+        return [$given, '', $fam];
     }
 
     /** Identity type options: key => [ar, en] */

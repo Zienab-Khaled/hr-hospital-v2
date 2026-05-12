@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,7 +39,7 @@
     $settings = $settings ?? [];
     $invoice = $partySend->invoice;
     $patient = $invoice->patient ?? null;
-    $patientName = $patient ? ($patient->name_ar ?: $patient->name ?? '—') : '—';
+    $patientName = $patient ? ($patient->fullArabicName() ?: ($patient->name ?? '—')) : '—';
     $patientIdentity = $patient ? ($patient->identity_value ?: $patient->file_number ?? '—') : '—';
     $bankName = $settings['bank_name'] ?? 'البنك';
     $accountNumber = $settings['account_number'] ?? '';
@@ -115,29 +115,23 @@
                     <td>{{ number_format((float) $item->total_price, 2) }}</td>
                 </tr>
             @endforeach
+            <tr class="total-row">
+                <td colspan="2" style="text-align: right;">الإجمالي</td>
+                <td></td><td></td>
+                <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+            </tr>
             @if((float) $invoice->paid_amount > 0)
-                <tr class="total-row">
-                    <td colspan="2" style="text-align: right;">الإجمالي</td>
-                    <td></td><td></td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
-                </tr>
                 <tr class="total-row" style="font-weight: normal;">
                     <td colspan="2">المسدد نقداً (مقدم/مساهمة)</td>
                     <td></td><td></td>
                     <td style="text-align: right;">- {{ number_format((float) $invoice->paid_amount, 2) }} ريال</td>
                 </tr>
-                <tr class="total-row">
-                    <td colspan="2" style="text-align: right;">المبلغ المطلوب من الجمعية (الصافي)</td>
-                    <td></td><td></td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
-                </tr>
-            @else
-                <tr class="total-row">
-                    <td colspan="2" style="text-align: right;">الإجمالي</td>
-                    <td></td><td></td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
-                </tr>
             @endif
+            <tr class="total-row">
+                <td colspan="2" style="text-align: right;">المبلغ المطلوب من الجمعية (المتبقي / الصافي)</td>
+                <td></td><td></td>
+                <td style="text-align: right;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
+            </tr>
         </tbody>
     </table>
 

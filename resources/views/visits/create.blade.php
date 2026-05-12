@@ -166,7 +166,7 @@
                         </div>
                         <div>
                             <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي):' : 'Name (Arabic):' }}</label>
-                            <p class="text-slate-800 font-medium" dir="rtl">{{ $patient->name_ar ?? '—' }}</p>
+                            <p class="text-slate-800 font-medium" dir="rtl">{{ $patient->fullArabicName() }}</p>
                         </div>
                         <div>
                             <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'رقم الملف:' : 'File No:' }}</label>
@@ -176,6 +176,16 @@
                             <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'الهوية:' : 'Identity:' }}</label>
                             <p class="text-slate-800 font-medium">{{ $patient->identity_value }}</p>
                         </div>
+                        <div>
+                            <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد:' : 'Date of birth:' }}</label>
+                            <p class="text-slate-800 font-medium" dir="ltr">{{ $patient->date_of_birth?->format('Y-m-d') ?? '—' }}</p>
+                        </div>
+                        @if ($patient->ageInYears() !== null)
+                            <div>
+                                <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'العمر:' : 'Age:' }}</label>
+                                <p class="text-slate-800 font-medium">{{ $patient->ageInYears() }}</p>
+                            </div>
+                        @endif
                         @if ($patient->department)
                             <div>
                                 <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'القسم الحالي:' : 'Current department:' }}</label>
@@ -311,12 +321,12 @@
                                 @endif
                             </div>
 
-                            {{-- بلوك فاتورة الدخول (كشفية) + طباعة الأحقية — تصميم مخصص لمريض التأمين --}}
+                            {{-- كشفية دخول القسم: زر واحد ينشئ الفاتورة ويفتح طباعة الأحقية (بدون تكرار عنوان/زر) --}}
                             @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
                                 <div class="rounded-xl border-2 {{ $patientIsInsurance ? 'border-emerald-300 bg-emerald-50/80' : 'border-slate-200 bg-white' }} p-4 shadow-sm">
                                     <h4 class="text-base font-bold {{ $patientIsInsurance ? 'text-emerald-800' : 'text-slate-700' }} mb-3 flex items-center gap-2">
                                         <span>📋</span>
-                                        {{ app()->getLocale() === 'ar' ? 'فاتورة دخول (كشفية) + طباعة الأحقية' : 'Entry fee invoice + Print eligibility' }}
+                                        {{ app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee' }}
                                     </h4>
                                     <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
                                         @csrf
@@ -344,7 +354,7 @@
                                                 </div>
                                             @endif
                                             <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-sm shadow-md transition-colors shrink-0">
-                                                {{ app()->getLocale() === 'ar' ? '💰 فاتورة دخول + طباعة الأحقية' : '💰 Entry invoice + Print eligibility' }}
+                                                {{ app()->getLocale() === 'ar' ? 'إنشاء الفاتورة وطباعة الأحقية' : 'Create invoice & print eligibility' }}
                                             </button>
                                         </div>
                                     </form>
@@ -382,8 +392,8 @@
                                                         <td class="p-3 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
                                                         <td class="p-3 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
                                                         <td class="p-3">
-                                                            @if($inv->invoice_type === 'eligibility')
-                                                                <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                            @if(in_array($inv->invoice_type, ['eligibility', 'charity_treatment_free'], true))
+                                                                <span class="{{ $inv->invoice_type === 'eligibility' ? 'bg-purple-100 text-purple-700' : 'bg-teal-100 text-teal-800' }} px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
                                                             @else
                                                                 <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
                                                             @endif

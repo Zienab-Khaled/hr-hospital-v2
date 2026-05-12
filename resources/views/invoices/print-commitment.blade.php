@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -447,7 +447,7 @@
             <span class="lbl">نعم أنا المدعو /</span>
             <span class="fill">
                 @if ($invoice->patient)
-                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}
+                    {{ $invoice->patient->fullArabicName() }}
                 @endif
             </span>
             <span class="lbl" style="margin-right: 10px;">حامل إقامة رقم /</span>
@@ -484,7 +484,7 @@
                 <td class="row-label">الأسم :</td>
                 <td><span class="fill-dots">
                         @if ($invoice->patient)
-                            {{ $invoice->patient->name_ar ?? $invoice->patient->name }}
+                            {{ $invoice->patient->fullArabicName() }}
                         @endif
                     </span></td>
             </tr>

@@ -99,10 +99,16 @@
                         <div class="info-label">Phone</div>
                         <div class="info-value">{{ $patient->phone ?? '-' }}</div>
                     </div>
-                    @if($patient->age)
+                    @if($patient->date_of_birth)
+                        <div class="info-item">
+                            <div class="info-label">Date of birth</div>
+                            <div class="info-value">{{ $patient->date_of_birth->format('Y-m-d') }}</div>
+                        </div>
+                    @endif
+                    @if($patient->ageInYears() !== null)
                         <div class="info-item">
                             <div class="info-label">Age</div>
-                            <div class="info-value">{{ $patient->age }} years</div>
+                            <div class="info-value">{{ $patient->ageInYears() }} years</div>
                         </div>
                     @endif
                     @if($patient->gender)

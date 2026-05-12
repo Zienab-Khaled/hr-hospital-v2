@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,7 +39,7 @@
         @php
             $charity = $invoice->patient?->charityEntity;
             $charityName = $charity?->name_ar ?? $charity?->name ?? 'الجمعية الخيرية';
-            $patientName = $invoice->patient?->name_ar ?? $invoice->patient?->name ?? '—';
+            $patientName = $invoice->patient?->fullArabicName() ?? $invoice->patient?->name ?? '—';
         @endphp
 
         <p class="greeting">

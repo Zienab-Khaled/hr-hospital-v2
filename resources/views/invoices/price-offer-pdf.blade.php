@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
     <meta charset="utf-8">
@@ -208,7 +208,7 @@
 
     <div class="intro">
         السلام عليكم ورحمة الله وبركاته، تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة /
-        {{ $invoice->patient?->name_ar ?? $invoice->patient?->name ?? '—' }} رقم الجواز
+        {{ $invoice->patient?->fullArabicName() ?? $invoice->patient?->name ?? '—' }} رقم الجواز
         ({{ $invoice->patient?->identity_value ?: $invoice->patient?->file_number ?: '—' }}) ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في {{ $settings['bank_name'] ?? 'البنك' }} ({{ $settings['account_number'] ?? '' }}) رقم الآيبان {{ $settings['iban_number'] ?? '' }}
     </div>
 
@@ -235,34 +235,31 @@
                     <td>{{ number_format((float) $item->total_price, 2) }}</td>
                 </tr>
             @endforeach
-            @if ($invoice->paid_amount > 0)
-                <tr class="total-row">
-                    <td style="text-align: right;">الإجمالي</td>
-                    <td colspan="3"></td>
-                    <td style="text-align: left;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
-                </tr>
+            <tr class="total-row">
+                <td style="text-align: right;">الإجمالي</td>
+                <td colspan="3"></td>
+                <td style="text-align: left;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
+            </tr>
+            @if ((float) $invoice->paid_amount > 0)
                 <tr class="total-row" style="color: #64748b; font-weight: normal;">
                     <td>المسدد نقداً (مقدم/مساهمة)</td>
                     <td colspan="3"></td>
                     <td style="text-align: left;">- {{ number_format((float) $invoice->paid_amount, 2) }} ريال</td>
                 </tr>
-                <tr class="total-row" style="background: #e2e8f0; border-top: 2px solid #1e293b;">
-                    <td>المبلغ المطلوب من الجمعية (الصافي)</td>
-                    <td colspan="3"></td>
-                    <td style="text-align: left; font-size: 13px;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
-                </tr>
-            @else
-                <tr class="total-row" style="background: #e2e8f0; border-top: 2px solid #1e293b;">
-                    <td style="text-align: right;">الإجمالي</td>
-                    <td colspan="3"></td>
-                    <td style="text-align: left; font-size: 13px;">{{ number_format((float) $invoice->total_amount, 2) }} ريال</td>
-                </tr>
             @endif
+            <tr class="total-row" style="background: #e2e8f0; border-top: 2px solid #1e293b;">
+                <td>المبلغ المطلوب من الجمعية (المتبقي / الصافي)</td>
+                <td colspan="3"></td>
+                <td style="text-align: left; font-size: 13px;">{{ number_format((float) $invoice->remaining_amount, 2) }} ريال</td>
+            </tr>
         </tbody>
     </table>
 
     @php
-        $amountForCharity = $invoice->paid_amount > 0 ? (float) $invoice->remaining_amount : (float) $invoice->total_amount;
+        $amountForCharity = (float) $invoice->remaining_amount;
+        if ($amountForCharity <= 0 && (float) $invoice->total_amount > 0) {
+            $amountForCharity = (float) $invoice->total_amount;
+        }
         $amountWords = \App\Helpers\CurrencyHelper::amountInArabicWords($amountForCharity);
     @endphp
     <div class="amount-words-block">

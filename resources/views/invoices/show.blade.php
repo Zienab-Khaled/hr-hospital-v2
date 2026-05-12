@@ -248,9 +248,9 @@
                         class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'الحالة:' : 'Status:' }}</span>
                     <p class="text-lg font-medium text-slate-900">
                         {{ $invoice->status_label }}
-                        @if ($invoice->invoice_type === 'eligibility')
+                        @if (in_array($invoice->invoice_type, ['eligibility', 'charity_treatment_free'], true))
                             <span
-                                class="ms-2 bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-bold">{{ $invoice->invoice_type_label }}</span>
+                                class="ms-2 {{ $invoice->invoice_type === 'eligibility' ? 'bg-purple-100 text-purple-800' : 'bg-teal-100 text-teal-900' }} px-2 py-0.5 rounded text-xs font-bold">{{ $invoice->invoice_type_label }}</span>
                         @endif
                     </p>
                 </div>
@@ -297,10 +297,10 @@
                     <p><span
                             class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span>
                         {{ $invoice->patient->name }}</p>
-                    @if ($invoice->patient->name_ar)
+                    @if ($invoice->patient->fullArabicName())
                         <p dir="rtl"><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'الاسم (عربي):' : 'Name (AR):' }}</span>
-                            {{ $invoice->patient->name_ar }}</p>
+                            {{ $invoice->patient->fullArabicName() }}</p>
                     @endif
                     <p><span
                             class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الملف:' : 'File No:' }}</span>
@@ -539,8 +539,8 @@
                                     <td class="px-3 py-2 text-center font-bold text-green-700">@currency($payment->amount)</td>
                                     <td class="px-3 py-2 text-center">
                                         <span
-                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ in_array($receipt?->payment_method, ['card', 'bank_transfer']) ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                                            {{ $receipt?->payment_method_label ?? ($payment->payment_type ?? '—') }}
+                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ in_array($receipt?->payment_method, ['card', 'bank_transfer', 'mixed']) ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                                            {{ $receipt?->split_methods_summary ?? $receipt?->payment_method_label ?? ($payment->payment_type ?? '—') }}
                                         </span>
                                     </td>
                                     <td class="px-3 py-2 text-center">
@@ -816,6 +816,56 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        {{ app()->getLocale() === 'ar' ? 'طرق الدفع (يمكن إضافة أكثر من طريقة — مجموع الأسطر = إجمالي الدفع)' : 'Payment methods (add multiple lines — sum must equal total)' }}
+                    </label>
+                    <div class="overflow-x-auto rounded-lg border-2 border-slate-200 bg-white">
+                        <table class="w-full text-sm" id="split-payment-table">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700">
+                                    <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'الطريقة' : 'Method' }}</th>
+                                    <th class="p-2 text-start font-bold w-32">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                    <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'مرجع' : 'Ref.' }}</th>
+                                    <th class="p-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="split-rows-body">
+                                <tr data-split-row>
+                                    <td class="p-2 align-top">
+                                        <select name="split_lines[0][payment_method]" class="split-method w-full rounded border border-slate-300 px-2 py-1.5 font-medium">
+                                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش' : 'Cash' }}</option>
+                                            <option value="card">{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
+                                            <option value="bank_transfer">{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank transfer' }}</option>
+                                            <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
+                                            <option value="loyalty_points">{{ app()->getLocale() === 'ar' ? 'نقاط بيع' : 'Loyalty / sale points' }}</option>
+                                            @if ($invoice->patient && in_array($invoice->patient->payment_type, ['insurance', 'charity']))
+                                                <option value="insurance">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
+                                                <option value="charity">{{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
+                                            @endif
+                                        </select>
+                                    </td>
+                                    <td class="p-2 align-top">
+                                        <input type="number" name="split_lines[0][amount]" step="0.01" min="0.01" required
+                                            class="split-amount w-full rounded border border-slate-300 px-2 py-1.5 font-bold text-green-800">
+                                    </td>
+                                    <td class="p-2 align-top">
+                                        <input type="text" name="split_lines[0][reference_number]" placeholder="—"
+                                            class="w-full rounded border border-slate-300 px-2 py-1.5 text-xs">
+                                    </td>
+                                    <td class="p-2 align-top text-center">
+                                        <button type="button" class="btn-remove-split text-red-600 font-bold text-lg leading-none hidden" title="{{ app()->getLocale() === 'ar' ? 'حذف السطر' : 'Remove' }}">×</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="btn-add-split-row" class="mt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+                        + {{ app()->getLocale() === 'ar' ? 'إضافة طريقة دفع' : 'Add payment method' }}
+                    </button>
+                    <p id="split-sum-warning" class="mt-2 text-xs text-red-600 hidden"></p>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
@@ -831,34 +881,7 @@
                             max="{{ $effectiveRemaining }}" value="{{ $effectiveRemaining }}" required readonly
                             class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-lg font-bold text-green-700 bg-slate-100 cursor-not-allowed">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'طريقة التحصيل' : 'Collection Method' }} *
-                        </label>
-                        <select name="payment_method" required
-                            class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500">
-                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</option>
-                            <option value="card">{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}
-                            </option>
-                            <option value="bank_transfer">
-                                {{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
-                            <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
-                            @if ($invoice->patient && in_array($invoice->patient->payment_type, ['insurance', 'charity']))
-                                <option value="insurance">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}
-                                </option>
-                                <option value="charity">{{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
-                            @endif
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">
-                        {{ app()->getLocale() === 'ar' ? 'المبلغ اللي يدفعه المريض كاش (اختياري)' : 'Amount paid in cash by patient (optional)' }}
-                    </label>
-                    <input type="number" name="patient_cash_amount" id="patient-cash-amount" step="0.01"
-                        min="0" placeholder="0"
-                        class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <div class="hidden md:block"></div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -934,6 +957,102 @@
             if (e.target === this) closePaymentModal();
         });
 
+        function reindexSplitRows() {
+            const body = document.getElementById('split-rows-body');
+            if (!body) return;
+            const rows = body.querySelectorAll('[data-split-row]');
+            rows.forEach(function(row, index) {
+                row.querySelectorAll('select, input').forEach(function(el) {
+                    const n = el.getAttribute('name');
+                    if (n && n.indexOf('split_lines[') === 0) {
+                        el.setAttribute('name', n.replace(/split_lines\[\d+]/, 'split_lines[' + index + ']'));
+                    }
+                });
+                const rm = row.querySelector('.btn-remove-split');
+                if (rm) rm.classList.toggle('hidden', rows.length <= 1);
+            });
+        }
+
+        function sumSplitAmounts() {
+            let s = 0;
+            document.querySelectorAll('#split-rows-body .split-amount').forEach(function(inp) {
+                s += parseFloat(inp.value || 0) || 0;
+            });
+            return Math.round(s * 100) / 100;
+        }
+
+        function syncSplitAmountsToTotal() {
+            const totalInput = document.getElementById('payment-total-amount');
+            const rows = document.querySelectorAll('#split-rows-body [data-split-row]');
+            if (!totalInput || rows.length !== 1) return;
+            const amt = rows[0].querySelector('.split-amount');
+            if (amt) amt.value = parseFloat(totalInput.value || 0).toFixed(2);
+            validateSplitSum();
+        }
+
+        function validateSplitSum() {
+            const warn = document.getElementById('split-sum-warning');
+            const totalInput = document.getElementById('payment-total-amount');
+            if (!warn || !totalInput) return true;
+            const target = parseFloat(totalInput.value || 0);
+            const sum = sumSplitAmounts();
+            if (Math.abs(sum - target) > 0.02) {
+                warn.textContent = document.documentElement.lang === 'ar'
+                    ? 'مجموع المبالغ في الأسطر (' + sum.toFixed(2) + ') يجب أن يساوي الإجمالي (' + target.toFixed(2) + ').'
+                    : 'Line amounts (' + sum.toFixed(2) + ') must equal total (' + target.toFixed(2) + ').';
+                warn.classList.remove('hidden');
+                return false;
+            }
+            warn.classList.add('hidden');
+            return true;
+        }
+
+        function addSplitRow() {
+            const body = document.getElementById('split-rows-body');
+            const first = body && body.querySelector('[data-split-row]');
+            if (!body || !first) return;
+            const clone = first.cloneNode(true);
+            clone.querySelectorAll('input').forEach(function(i) {
+                if (i.classList.contains('split-amount')) i.value = '';
+                else i.value = '';
+            });
+            body.appendChild(clone);
+            reindexSplitRows();
+            clone.querySelectorAll('.split-amount, .split-method').forEach(function(el) {
+                el.addEventListener('input', validateSplitSum);
+                el.addEventListener('change', validateSplitSum);
+            });
+            validateSplitSum();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const addBtn = document.getElementById('btn-add-split-row');
+            if (addBtn) addBtn.addEventListener('click', addSplitRow);
+            const body = document.getElementById('split-rows-body');
+            if (body) {
+                body.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('btn-remove-split')) {
+                        const rows = body.querySelectorAll('[data-split-row]');
+                        if (rows.length <= 1) return;
+                        e.target.closest('[data-split-row]').remove();
+                        reindexSplitRows();
+                        syncSplitAmountsToTotal();
+                        validateSplitSum();
+                    }
+                });
+                body.querySelectorAll('.split-amount, .split-method').forEach(function(el) {
+                    el.addEventListener('input', validateSplitSum);
+                    el.addEventListener('change', validateSplitSum);
+                });
+            }
+            const payForm = document.getElementById('payment-form');
+            if (payForm) {
+                payForm.addEventListener('submit', function(e) {
+                    if (!validateSplitSum()) e.preventDefault();
+                });
+            }
+        });
+
         function updateCalculatedTotal() {
             let total = 0;
             const checkboxes = document.querySelectorAll('input[name="item_ids[]"]:checked');
@@ -950,8 +1069,7 @@
                 totalInput.value = amountDue.toFixed(2);
             }
 
-            const cashInput = document.getElementById('patient-cash-amount');
-            if (cashInput) cashInput.max = totalInput ? parseFloat(totalInput.value) || 0 : 0;
+            syncSplitAmountsToTotal();
 
             const submitBtn = document.getElementById('submit-payment-btn');
             if (submitBtn) {

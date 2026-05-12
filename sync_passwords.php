@@ -16,7 +16,7 @@ foreach ($users as $user) {
     // Update password in DB while we are at it
     $user->password = Hash::make($user->username);
     $user->save();
-    
+
     $output .= "{$user->name} | {$user->username} | {$user->username}\n";
 }
 

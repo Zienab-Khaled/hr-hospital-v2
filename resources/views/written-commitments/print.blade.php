@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <title>تعهد خطي</title>
@@ -306,7 +306,7 @@
         <div class="pledge-line">
             <span class="label">نعم أنا المدعو /</span>
             <span class="fill-line" style="min-width: 180px;">
-                {{ $commitment->patient->name_ar ?? $commitment->patient->name ?? '' }}
+                {{ $commitment->patient->fullArabicName() ?: ($commitment->patient->name ?? '') }}
             </span>
             <span class="label" style="margin-right: 10px;">حامل إقامة رقم /</span>
             <span class="fill-line" style="min-width: 140px;">
@@ -345,7 +345,7 @@
                 <tr>
                     <td>الأسم :</td>
                     <td>
-                        <span class="fill-dots">{{ $commitment->patient->name_ar ?? $commitment->patient->name ?? '' }}</span>
+                        <span class="fill-dots">{{ $commitment->patient->fullArabicName() ?: ($commitment->patient->name ?? '') }}</span>
                     </td>
                 </tr>
                 <tr>

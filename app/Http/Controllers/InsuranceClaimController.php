@@ -25,7 +25,7 @@ class InsuranceClaimController extends Controller
             if ($invoice && $invoice->patient_id == $request->patient_id && $invoice->patient->payment_type === 'insurance') {
                 $prefill = [
                     'patient_id' => $invoice->patient_id,
-                    'patient_name' => $invoice->patient->name_ar ?? $invoice->patient->name,
+                    'patient_name' => $invoice->patient->fullArabicName(),
                     'patient_file_number' => $invoice->patient->file_number ?? '',
                     'invoice_id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
@@ -54,6 +54,9 @@ class InsuranceClaimController extends Controller
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
                     ->orWhere('name_ar', 'like', "%{$q}%")
+                    ->orWhere('name_ar_first', 'like', "%{$q}%")
+                    ->orWhere('name_ar_father', 'like', "%{$q}%")
+                    ->orWhere('name_ar_family', 'like', "%{$q}%")
                     ->orWhere('file_number', 'like', "%{$q}%")
                     ->orWhere('identity_value', 'like', "%{$q}%");
             })
@@ -165,7 +168,7 @@ class InsuranceClaimController extends Controller
                 if ($accountants->isNotEmpty()) {
                     \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
                         'title' => app()->getLocale() === 'ar' ? 'تم تحصيل مطالبة تأمين' : 'Insurance Claim Paid',
-                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($insuranceClaim->approved_amount ?: $insuranceClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($insuranceClaim->invoice->patient->name_ar ?? $insuranceClaim->invoice->patient->name),
+                        'message' => (app()->getLocale() === 'ar' ? "تم سداد مطالبة بمبلغ " : "Claim paid with amount: ") . number_format($insuranceClaim->approved_amount ?: $insuranceClaim->invoice->remaining_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $insuranceClaim->invoice->patient->fullArabicName(),
                         'action_url' => route('insurance-claims.show', $insuranceClaim),
                         'type' => 'success',
                     ]));

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\NumeralHelper;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentReceipt;
@@ -276,7 +277,7 @@ class RevenueWorkflowController extends Controller
     }
 
     /**
-     * ملخص الإيرادات اليومي (نموذج موارد - ٤): ثلاث فترات، تصنيف شيكات مصدقة / نقاط بيع / نقدي، ونطاق أرقام الإيصالات.
+     * ملخص الإيرادات اليومي (نموذج موارد - 4): ثلاث فترات، تصنيف شيكات مصدقة / نقاط بيع / نقدي، ونطاق أرقام الإيصالات.
      */
     public function dailyRevenueSummary(Request $request)
     {
@@ -287,7 +288,7 @@ class RevenueWorkflowController extends Controller
 
         $periods = [
             1 => [
-                'label_ar' => 'الفترة الأولى (من ١٢ منتصف الليل إلى الثامنة صباحاً)',
+                'label_ar' => 'الفترة الأولى (من 12 منتصف الليل إلى الثامنة صباحاً)',
                 'start' => $carbonDate->copy()->startOfDay(),
                 'end' => $carbonDate->copy()->setTime(7, 59, 59),
             ],
@@ -297,7 +298,7 @@ class RevenueWorkflowController extends Controller
                 'end' => $carbonDate->copy()->setTime(15, 59, 59),
             ],
             3 => [
-                'label_ar' => 'الفترة الثالثة (من الرابعة مساءً إلى ١٢ منتصف الليل)',
+                'label_ar' => 'الفترة الثالثة (من الرابعة مساءً إلى 12 منتصف الليل)',
                 'start' => $carbonDate->copy()->setTime(16, 0, 0),
                 'end' => $carbonDate->copy()->endOfDay(),
             ],
@@ -380,7 +381,7 @@ class RevenueWorkflowController extends Controller
         }
 
         $dayName = $carbonDate->locale('ar')->dayName;
-        $hijri = $carbonDate->locale('ar')->translatedFormat('d / m / Y');
+        $hijri = NumeralHelper::toWesternDigits($carbonDate->locale('ar')->translatedFormat('d / m / Y'));
         $gregorian = $carbonDate->format('d / m / Y');
 
         // إجمالي اليوم من سجل الدفعات (Payment) حتى تظهر كل الفواتير حتى بدون إيصال
@@ -446,11 +447,11 @@ class RevenueWorkflowController extends Controller
 
         $activeTab = $request->input('tab', 'moarad-4');
         $tabs = [
-            'moarad-4' => ['label_ar' => 'خلاصة الإيرادات اليومية (موارد - ٤)', 'label_en' => 'Daily Revenue Summary (Resources-4)'],
+            'moarad-4' => ['label_ar' => 'خلاصة الإيرادات اليومية (موارد - 4)', 'label_en' => 'Daily Revenue Summary (Resources-4)'],
             'by-method' => ['label_ar' => 'ملخص حسب طريقة التحصيل', 'label_en' => 'Summary by collection method'],
-            'monthly' => ['label_ar' => 'خلاصة الإيرادات الشهرية (موارد - ١١)', 'label_en' => 'Monthly Revenue Summary (Resources-11)'],
-            'monthly-stats' => ['label_ar' => 'إحصائية شهرية (موارد - ٩)', 'label_en' => 'Monthly Statistics (Resources-9)'],
-            'receipt-order' => ['label_ar' => 'أمر قبض (موارد - ٥)', 'label_en' => 'Receipt Order (Resources-5)'],
+            'monthly' => ['label_ar' => 'خلاصة الإيرادات الشهرية (موارد - 11)', 'label_en' => 'Monthly Revenue Summary (Resources-11)'],
+            'monthly-stats' => ['label_ar' => 'إحصائية شهرية (موارد - 9)', 'label_en' => 'Monthly Statistics (Resources-9)'],
+            'receipt-order' => ['label_ar' => 'أمر قبض (موارد - 5)', 'label_en' => 'Receipt Order (Resources-5)'],
         ];
 
         $monthInput = $request->input('month', Carbon::today()->format('Y-m'));
@@ -505,7 +506,7 @@ class RevenueWorkflowController extends Controller
         $monthlyTotalCash = array_sum(array_column($monthlyWeeks, 'collected_cash'));
         $monthlyTotalInsurance = array_sum(array_column($monthlyWeeks, 'collected_insurance'));
         $monthlyTotalCharity = array_sum(array_column($monthlyWeeks, 'collected_charity'));
-        $monthYearAr = $monthStart->locale('ar')->translatedFormat('F Y');
+        $monthYearAr = NumeralHelper::toWesternDigits($monthStart->locale('ar')->translatedFormat('F Y'));
         $monthYearEn = $monthStart->format('F Y');
         $hospitalName = \App\Models\Setting::get('hospital_name', 'المستشفى');
 

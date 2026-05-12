@@ -81,7 +81,7 @@ class ApprovalController extends Controller
 
             Notification::send($notifyUsers, new SystemNotification([
                 'title' => (app()->getLocale() === 'ar' ? 'تحديث طلب موافقة: ' : 'Approval update: ') . $statusLabel,
-                'message' => (app()->getLocale() === 'ar' ? "تم تحديث طلب الموافقة من " : "Approval request from ") . $partyName . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($approval->patient->name_ar ?? $approval->patient->name),
+                'message' => (app()->getLocale() === 'ar' ? "تم تحديث طلب الموافقة من " : "Approval request from ") . $partyName . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $approval->patient->fullArabicName(),
                 'action_url' => route('invoices.show', $approval->invoice_id),
                 'type' => $approval->status === 'approved' ? 'success' : 'danger',
             ]));

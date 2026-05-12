@@ -148,7 +148,7 @@
                                         {{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}
                                     </a>
                                 </div>
-                                <h3 class="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                                <h3 class="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{{ $invoice->patient->fullArabicName() }}</h3>
                                 <div class="flex items-center gap-3 mt-1.5">
                                     <span class="text-xs text-slate-500 font-bold flex items-center gap-1">
                                         <span class="opacity-50">🕒</span> {{ $invoice->created_at->format('H:i') }}

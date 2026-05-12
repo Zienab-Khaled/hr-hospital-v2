@@ -163,7 +163,7 @@ class VisitController extends Controller
         $deptName = $visit->department->name_ar ?? $visit->department->name;
         Notification::send($notifyUsers, new SystemNotification([
             'title' => app()->getLocale() === 'ar' ? 'زيارة جديدة' : 'New Patient Visit',
-            'message' => (app()->getLocale() === 'ar' ? "تم تسجيل زيارة للمريض: " : "Visit registered for patient: ") . ($patient->name_ar ?? $patient->name) . (app()->getLocale() === 'ar' ? " بلقسم: " : " in department: ") . $deptName,
+            'message' => (app()->getLocale() === 'ar' ? "تم تسجيل زيارة للمريض: " : "Visit registered for patient: ") . $patient->fullArabicName() . (app()->getLocale() === 'ar' ? " بلقسم: " : " in department: ") . $deptName,
             'action_url' => route('visits.show', $visit),
             'type' => 'success',
         ]));
@@ -497,7 +497,7 @@ class VisitController extends Controller
                 }
 
                 DB::commit();
-                ActivityLogger::log('Invoice Auto-Created', 'Invoice', $invoice->id, 'Invoice created automatically from Eligibility Print for patient: ' . ($patient->name_ar ?? $patient->name), null, $invoice->toArray());
+                ActivityLogger::log('Invoice Auto-Created', 'Invoice', $invoice->id, 'Invoice created automatically from Eligibility Print for patient: ' . $patient->fullArabicName(), null, $invoice->toArray());
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Auto-invoice creation failed: ' . $e->getMessage());
@@ -505,7 +505,7 @@ class VisitController extends Controller
         }
 
         // Log the action
-        ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, null);
+        ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . $visit->patient->fullArabicName(), null, null);
 
         return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName'));
     }
@@ -578,7 +578,7 @@ class VisitController extends Controller
         ]);
 
         // Log the action
-        ActivityLogger::log('Print Price Inquiry', 'Visit', $visit->id, 'Price inquiry form printed for patient: ' . ($visit->patient->name_ar ?? $visit->patient->name), null, ['title' => $printTitle]);
+        ActivityLogger::log('Print Price Inquiry', 'Visit', $visit->id, 'Price inquiry form printed for patient: ' . $visit->patient->fullArabicName(), null, ['title' => $printTitle]);
 
         return view('visits.price-inquiry-print', compact('visit', 'services', 'manager', 'printTitle'));
     }
@@ -641,7 +641,7 @@ class VisitController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['patient.name', 'patient.name_ar', 'patient.file_number', 'patient.identity_value', 'notes'],
+            ['patient.name', 'patient.name_ar', 'patient.name_ar_first', 'patient.name_ar_father', 'patient.name_ar_family', 'patient.file_number', 'patient.identity_value', 'notes'],
             ['shift_id' => 'shift_id', 'department_id' => 'department_id', 'registered_by' => 'registered_by'],
             ['insurance_company_id' => ['patient', 'insurance_company_id']]
         );

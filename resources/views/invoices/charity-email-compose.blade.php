@@ -38,7 +38,7 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'مدة العلاج (اختياري)' : 'Treatment duration (optional)' }}</label>
                         <input type="text" name="treatment_duration" value="{{ old('treatment_duration') }}"
                             class="w-full rounded border border-slate-300 px-3 py-2 @error('treatment_duration') border-red-500 @enderror"
-                            placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: أسبوعان، ٣ جلسات...' : 'e.g. 2 weeks, 3 sessions...' }}">
+                            placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: أسبوعان، 3 جلسات...' : 'e.g. 2 weeks, 3 sessions...' }}">
                         @error('treatment_duration')
                             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                         @enderror

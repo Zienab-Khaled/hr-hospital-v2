@@ -58,13 +58,26 @@ class PatientsSeeder extends Seeder
                 : ($identityType === 'iqama' ? '2' . $faker->numerify('##########')
                 : $faker->bothify('?######'));
             
+            $ar = $arabicNames[$i];
+            $parts = preg_split('/\s+/u', $ar, -1, PREG_SPLIT_NO_EMPTY);
+            if (count($parts) >= 2) {
+                $nameArFamily = array_pop($parts);
+                $nameArFirst = implode(' ', $parts);
+            } else {
+                $nameArFirst = $parts[0] ?? $ar;
+                $nameArFamily = $parts[0] ?? $ar;
+            }
+            $nameArFather = null;
+
             Patient::create([
                 'file_number' => 'F-' . date('Ymd') . '-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                 'name' => $englishNames[$i],
-                'name_ar' => $arabicNames[$i],
+                'name_ar_first' => $nameArFirst,
+                'name_ar_father' => $nameArFather,
+                'name_ar_family' => $nameArFamily,
                 'identity_type' => $identityType,
                 'identity_value' => $identityValue,
-                'age' => $faker->numberBetween(18, 80),
+                'date_of_birth' => $faker->dateTimeBetween('-75 years', '-20 years')->format('Y-m-d'),
                 'gender' => $faker->randomElement(['male', 'female']),
                 'phone' => '+966' . $faker->numerify('#########'),
                 'country_of_origin' => $faker->randomElement(['Saudi Arabia', 'Egypt', 'Jordan', 'Yemen', 'Syria', 'Sudan', 'India', 'Pakistan', 'Bangladesh']),

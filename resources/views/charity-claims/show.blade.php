@@ -138,7 +138,7 @@
                             class="mb-4 p-3 rounded-lg border {{ $loop->first ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200' }}">
                             <p class="text-slate-800 text-sm">{{ $note->body }}</p>
                             <p class="text-[10px] text-slate-500 mt-2">
-                                {{ $note->created_at->translatedFormat('d/m/Y H:i') }}
+                                {{ western_digits($note->created_at->translatedFormat('d/m/Y H:i')) }}
                                 @if ($note->createdByUser)
                                     — {{ $note->createdByUser->name_ar ?? ($note->createdByUser->name ?? '') }}
                                 @endif
@@ -201,7 +201,7 @@
                             <span
                                 class="text-slate-500 font-semibold">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span>
                             <span
-                                class="font-medium text-slate-800 ms-1">{{ $charityClaim->invoice?->patient?->name_ar ?? ($charityClaim->invoice?->patient?->name ?? '—') }}</span>
+                                class="font-medium text-slate-800 ms-1">{{ $charityClaim->invoice?->patient?->fullArabicName() ?: ($charityClaim->invoice?->patient?->name ?? '—') }}</span>
                         </div>
                         <div>
                             <span

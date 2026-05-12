@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+<html lang="{{ app()->getLocale() === 'ar' ? 'ar-SA-u-nu-latn' : app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <title>
@@ -66,7 +66,7 @@
     <div class="info-grid">
         <div class="info-item">
             <span class="info-label">{{ app()->getLocale() === 'ar' ? 'المريض' : 'Patient' }}</span>
-            <div class="info-value">{{ app()->getLocale() === 'ar' && $visit->patient->name_ar ? $visit->patient->name_ar : $visit->patient->name }}</div>
+            <div class="info-value">{{ app()->getLocale() === 'ar' && $visit->patient->fullArabicName() ? $visit->patient->fullArabicName() : $visit->patient->name }}</div>
             <div style="font-size: 12px; margin-top: 2px;">{{ $visit->patient->file_number }}</div>
         </div>
         <div class="info-item">

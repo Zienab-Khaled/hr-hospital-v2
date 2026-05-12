@@ -74,7 +74,7 @@
                             <td class="p-3">
                                 <a href="{{ route('invoices.show', $inv) }}" class="text-blue-600 hover:underline font-medium">{{ $inv->invoice_number }}</a>
                             </td>
-                            <td class="p-3">{{ $inv->patient->name_ar ?? $inv->patient->name ?? '—' }}</td>
+                            <td class="p-3">{{ $inv->patient->fullArabicName() ?: ($inv->patient->name ?? '—') }}</td>
                             <td class="p-3">{{ $inv->patient->insuranceCompany->name_ar ?? $inv->patient->insuranceCompany->name ?? '—' }}</td>
                             <td class="p-3 font-bold text-slate-800">{{ number_format($claimAmount, 2) }}</td>
                             <td class="p-3">
@@ -173,7 +173,7 @@
                     @forelse($claims as $claim)
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="p-3"><a href="{{ route('invoices.show', $claim->invoice) }}" class="text-blue-600 hover:underline font-medium">{{ $claim->invoice?->invoice_number ?? '—' }}</a></td>
-                            <td class="p-3">{{ $claim->invoice?->patient?->name_ar ?? $claim->invoice?->patient?->name ?? '—' }}</td>
+                            <td class="p-3">{{ $claim->invoice?->patient?->fullArabicName() ?: ($claim->invoice?->patient?->name ?? '—') }}</td>
                             <td class="p-3">{{ $claim->insuranceCompany?->name_ar ?? $claim->insuranceCompany?->name ?? '—' }}</td>
                             <td class="p-3">{{ $claim->sent_date?->format('Y-m-d') ?? '—' }}</td>
                             <td class="p-3 font-medium">{{ $claim->approved_amount ? number_format((float)$claim->approved_amount, 2) : '—' }}</td>

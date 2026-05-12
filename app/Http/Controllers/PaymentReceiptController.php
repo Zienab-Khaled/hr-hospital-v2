@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentReceipt;
+use App\Models\PaymentReceiptSplit;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PaymentReceiptController extends Controller
 {
+    /** طرق الدفع المسموح بها في أسطر الإيصال. لا يجمع تأمين/جمعية مع طرق أخرى في نفس الإيصال. */
+    private const SPLIT_METHODS = ['cash', 'card', 'bank_transfer', 'cheque', 'loyalty_points', 'insurance', 'charity'];
+
+    private const SINGLE_METHODS = ['cash', 'card', 'bank_transfer', 'cheque', 'loyalty_points', 'insurance', 'charity'];
+
     public function store(Request $request)
     {
         $this->authorize('payments.create');
@@ -18,7 +25,11 @@ class PaymentReceiptController extends Controller
         $validated = $request->validate([
             'invoice_id' => 'required|exists:invoices,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,card,bank_transfer,cheque,insurance,charity',
+            'payment_method' => ['nullable', 'string', Rule::in(self::SINGLE_METHODS)],
+            'split_lines' => 'nullable|array|max:12',
+            'split_lines.*.payment_method' => ['nullable', 'string', Rule::in(self::SPLIT_METHODS)],
+            'split_lines.*.amount' => 'nullable|numeric|min:0.01',
+            'split_lines.*.reference_number' => 'nullable|string|max:100',
             'patient_cash_amount' => 'nullable|numeric|min:0',
             'reference_number' => 'nullable|string|max:100',
             'ministry_receipt_number' => 'nullable|string|max:50',
@@ -29,20 +40,41 @@ class PaymentReceiptController extends Controller
             'item_ids.*' => 'exists:invoice_items,id',
         ]);
 
-        if (isset($validated['patient_cash_amount']) && (float) $validated['patient_cash_amount'] > (float) $validated['amount']) {
-            return back()->withErrors(['patient_cash_amount' => __('Cash amount from patient cannot exceed total payment.')])->withInput();
-        }
-        $validated['patient_cash_amount'] = isset($validated['patient_cash_amount']) ? (float) $validated['patient_cash_amount'] : null;
-
         $invoice = Invoice::with(['patient', 'items.service', 'payments.receipt'])->findOrFail($validated['invoice_id']);
 
-        // المبلغ الفعلي اللي يُسجّل كدفعة على الفاتورة: لو دخل "المبلغ اللي يدفعه المريض كاش" نستخدمه، وإلا المبلغ الكامل
-        $amountToRecord = ($validated['patient_cash_amount'] !== null && $validated['patient_cash_amount'] > 0)
-            ? (float) $validated['patient_cash_amount']
-            : (float) $validated['amount'];
+        $normalizedSplits = $this->normalizePaymentSplits($request, $validated);
 
-        // عند تسجيل دفعة من المريض: لا يتجاوز المبلغ حصة المريض المتبقية (بدون احتساب دفعات التأمين/الجمعية)
-        $hasCoverage = $invoice->items->contains(fn ($i) => !empty($i->insurance_coverage_type));
+        if ($normalizedSplits->isEmpty()) {
+            return back()->withErrors(['split_lines' => app()->getLocale() === 'ar'
+                ? 'أضف سطراً واحداً على الأقل لطرق الدفع والمبالغ.'
+                : 'Add at least one payment line with method and amount.'])->withInput();
+        }
+
+        $methods = $normalizedSplits->pluck('payment_method');
+        if ($methods->contains('insurance') || $methods->contains('charity')) {
+            if ($normalizedSplits->count() !== 1) {
+                return back()->withErrors(['split_lines' => app()->getLocale() === 'ar'
+                    ? 'دفعة التأمين أو الجمعية يجب أن تكون في سطر واحد دون دمج مع طرق أخرى.'
+                    : 'Insurance or charity payment must be a single line (cannot combine with other methods).'])->withInput();
+            }
+        }
+
+        $sumSplits = round((float) $normalizedSplits->sum('amount'), 2);
+        $declared = round((float) $validated['amount'], 2);
+        if (abs($sumSplits - $declared) > 0.02) {
+            return back()->withErrors(['amount' => app()->getLocale() === 'ar'
+                ? 'مجموع طرق الدفع (' . number_format($sumSplits, 2) . ') يجب أن يساوي إجمالي الدفع (' . number_format($declared, 2) . ').'
+                : 'Sum of payment lines (' . number_format($sumSplits, 2) . ') must equal total (' . number_format($declared, 2) . ').'])->withInput();
+        }
+
+        $amountToRecord = $sumSplits;
+
+        if (isset($validated['patient_cash_amount']) && (float) $validated['patient_cash_amount'] > $amountToRecord) {
+            return back()->withErrors(['patient_cash_amount' => __('Cash amount from patient cannot exceed total payment.')])->withInput();
+        }
+        $patientCashOpt = isset($validated['patient_cash_amount']) ? (float) $validated['patient_cash_amount'] : null;
+
+        $hasCoverage = $invoice->items->contains(fn ($i) => ! empty($i->insurance_coverage_type));
         $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
         $totalPatientShare = ($hasCoverage || $isInsuranceOrCharity)
             ? (float) $invoice->items->sum(fn ($i) => (float) $i->patient_amount)
@@ -54,9 +86,8 @@ class PaymentReceiptController extends Controller
             return back()->withErrors(['amount' => __('Amount cannot exceed the remaining balance.')])->withInput();
         }
 
-        // Prepare selected items data for receipt snapshot
         $selectedItemsData = [];
-        if (!empty($validated['item_ids'])) {
+        if (! empty($validated['item_ids'])) {
             $selectedItems = \App\Models\InvoiceItem::whereIn('id', $validated['item_ids'])->with('service')->get();
             foreach ($selectedItems as $item) {
                 $selectedItemsData[] = [
@@ -64,41 +95,64 @@ class PaymentReceiptController extends Controller
                     'code' => $item->service?->code ?? '—',
                     'name' => $item->service?->name_ar ?? $item->service?->name ?? '—',
                     'qty' => $item->quantity,
-                    'unit_price' => (float)$item->unit_price,
-                    'total' => (float)$item->patient_amount,
+                    'unit_price' => (float) $item->unit_price,
+                    'total' => (float) $item->patient_amount,
                 ];
             }
         }
 
+        $paymentType = $normalizedSplits->count() > 1
+            ? 'mixed'
+            : ($normalizedSplits->first()['payment_method'] ?? 'cash');
+
+        $receiptPaymentMethod = $normalizedSplits->count() > 1 ? 'mixed' : $paymentType;
+        $cashFromSplits = round((float) $normalizedSplits->where('payment_method', 'cash')->sum('amount'), 2);
+
+        if ($normalizedSplits->count() > 1) {
+            $patientCashStored = null;
+            $totalPaymentStored = null;
+        } else {
+            $patientCashStored = ($patientCashOpt !== null && $patientCashOpt > 0)
+                ? $patientCashOpt
+                : ($cashFromSplits > 0 ? $cashFromSplits : null);
+            $totalPaymentStored = ($patientCashStored !== null && (float) $patientCashStored > 0 && (float) $patientCashStored < $amountToRecord)
+                ? $amountToRecord
+                : null;
+        }
+
+        $mergedRef = $normalizedSplits->pluck('reference_number')->filter()->implode(' / ');
+        if ($mergedRef === '') {
+            $mergedRef = $validated['reference_number'] ?? null;
+        }
+
         DB::beginTransaction();
         try {
-            // 1. Create Payment record (بالمبلغ الفعلي اللي يُخصم من الفاتورة)
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
-                'payment_type' => $validated['payment_method'],
+                'payment_type' => $paymentType,
                 'amount' => $amountToRecord,
                 'received_date' => now(),
                 'received_by' => auth()->user()->id,
-                'approved_by' => auth()->user()->id, // Auto-approve manual payment receipt
+                'approved_by' => auth()->user()->id,
                 'approved_at' => now(),
-                'reference_no' => $validated['reference_number'],
+                'reference_no' => $mergedRef,
                 'status' => 'approved',
                 'notes' => $validated['notes'],
                 'audit_status' => 'matched',
             ]);
 
-            // 2. Create Payment Receipt
             $newPaidTotal = $invoice->paid_amount + $amountToRecord;
             $newRemainingTotal = max(0, round((float) $invoice->total_amount - $newPaidTotal, 2));
+
             $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'patient_id' => $invoice->patient_id,
                 'ministry_receipt_number' => $validated['ministry_receipt_number'] ?? null,
                 'amount' => $amountToRecord,
-                'patient_cash_amount' => $validated['patient_cash_amount'],
-                'total_payment_amount' => ($validated['patient_cash_amount'] !== null && $validated['patient_cash_amount'] > 0) ? (float) $validated['amount'] : null,
-                'payment_method' => $validated['payment_method'],
-                'reference_number' => $validated['reference_number'],
+                'patient_cash_amount' => $patientCashStored,
+                'total_payment_amount' => $totalPaymentStored,
+                'payment_method' => $receiptPaymentMethod,
+                'reference_number' => $mergedRef,
                 'invoice_snapshot_total' => $invoice->total_amount,
                 'invoice_snapshot_paid' => $newPaidTotal,
                 'invoice_snapshot_remaining' => $newRemainingTotal,
@@ -108,7 +162,16 @@ class PaymentReceiptController extends Controller
                 'selected_items' => $selectedItemsData,
             ]);
 
-            // 3. Handle Media Uploads
+            foreach ($normalizedSplits->values() as $i => $line) {
+                PaymentReceiptSplit::create([
+                    'payment_receipt_id' => $receipt->id,
+                    'payment_method' => $line['payment_method'],
+                    'amount' => $line['amount'],
+                    'reference_number' => $line['reference_number'],
+                    'sort_order' => (int) $i,
+                ]);
+            }
+
             if ($request->hasFile('physical_receipt')) {
                 $receipt->addMediaFromRequest('physical_receipt')
                     ->toMediaCollection('physical_receipt');
@@ -118,7 +181,6 @@ class PaymentReceiptController extends Controller
                     ->toMediaCollection('collector_screenshot');
             }
 
-            // 4. Update Invoice: paid_amount = إجمالي المستلم (مريض + تأمين)، remaining_amount = الإجمالي − المستلم (حتى يدخل جزء التأمين في المديونية حتى تُدفع المطالبة)
             $newPaidAmount = $invoice->paid_amount + $amountToRecord;
             $newRemainingAmount = max(0, round((float) $invoice->total_amount - $newPaidAmount, 2));
 
@@ -131,20 +193,20 @@ class PaymentReceiptController extends Controller
 
             DB::commit();
 
-            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$amountToRecord} recorded via {$validated['payment_method']}. services: " . collect($selectedItemsData)->pluck('name')->implode(', '));
+            $splitNote = $normalizedSplits->map(fn ($l) => $l['payment_method'] . ':' . $l['amount'])->implode(', ');
+            ActivityLogger::log('Payment Recorded', 'Invoice', $invoice->id, "Payment of {$amountToRecord} recorded ({$splitNote}). services: " . collect($selectedItemsData)->pluck('name')->implode(', '));
 
-            // Notify Accountants with ALL invoice file links
             $accountants = \App\Models\User::role('accountant')->get();
             if ($accountants->isNotEmpty()) {
                 $fileLinks = $invoice->getAllRelatedMediaUrls();
                 $messagePrefix = app()->getLocale() === 'ar' ? 'تم تحصيل دفعة جديدة للفاتورة: ' : 'New payment collected for invoice: ';
 
                 \Illuminate\Support\Facades\Notification::send($accountants, new \App\Notifications\SystemNotification([
-                    'title' => app()->getLocale() === 'ar' ? '✅ تم تحصيل مبلع' : '✅ Payment Collected',
+                    'title' => app()->getLocale() === 'ar' ? '✅ تم تحصيل مبلغ' : '✅ Payment Collected',
                     'message' => $messagePrefix . " {$invoice->invoice_number} | " . (app()->getLocale() === 'ar' ? 'المبلغ: ' : 'Amount: ') . number_format($amountToRecord, 2),
                     'action_url' => route('payment-receipts.print', $receipt),
                     'type' => 'success',
-                    'metadata' => ['links' => $fileLinks] // This allows the notification system to show document links
+                    'metadata' => ['links' => $fileLinks],
                 ]));
             }
 
@@ -152,15 +214,62 @@ class PaymentReceiptController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             \Illuminate\Support\Facades\Log::error('PaymentReceipt store error: ' . $e->getMessage());
+
             return back()->withErrors(['error' => 'Error recording payment: ' . $e->getMessage()])->withInput();
         }
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array{payment_method: string, amount: float, reference_number: ?string}>
+     */
+    private function normalizePaymentSplits(Request $request, array $validated): \Illuminate\Support\Collection
+    {
+        $rows = $request->input('split_lines', []);
+        $out = collect();
+
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                $m = $row['payment_method'] ?? null;
+                $amt = isset($row['amount']) ? (float) $row['amount'] : 0;
+                $ref = isset($row['reference_number']) ? trim((string) $row['reference_number']) : '';
+                if ($m && in_array($m, self::SPLIT_METHODS, true) && $amt > 0) {
+                    $out->push([
+                        'payment_method' => $m,
+                        'amount' => round($amt, 2),
+                        'reference_number' => $ref !== '' ? $ref : null,
+                    ]);
+                }
+            }
+        }
+
+        if ($out->isNotEmpty()) {
+            return $out;
+        }
+
+        $singleMethod = $validated['payment_method'] ?? null;
+        if ($singleMethod && in_array($singleMethod, self::SINGLE_METHODS, true)) {
+            $amt = round((float) $validated['amount'], 2);
+            $ref = isset($validated['reference_number']) ? trim((string) $validated['reference_number']) : '';
+            if ($amt > 0) {
+                $out->push([
+                    'payment_method' => $singleMethod,
+                    'amount' => $amt,
+                    'reference_number' => $ref !== '' ? $ref : null,
+                ]);
+            }
+        }
+
+        return $out;
     }
 
     public function print(PaymentReceipt $receipt)
     {
         $this->authorize('invoices.view');
 
-        $receipt->load(['payment.invoice', 'patient', 'collectedBy']);
+        $receipt->load(['payment.invoice', 'patient', 'collectedBy', 'splits']);
         $invoice = $receipt->payment->invoice;
         $manager = \App\Models\User::getManagerForSignature();
         $settingsData = [

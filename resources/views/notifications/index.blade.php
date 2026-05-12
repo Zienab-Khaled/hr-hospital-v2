@@ -61,7 +61,7 @@
                         <p class="text-slate-600 text-sm mb-3">{{ $data['message'] ?? '' }}</p>
                         <div class="flex items-center gap-3">
                             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
+                                {{ western_digits(\Carbon\Carbon::parse($notification->created_at)->diffForHumans()) }}
                             </span>
                             @if(isset($data['action_url']) && $data['action_url'] !== '#')
                                 <a href="{{ route('notifications.read', $notification) }}" class="text-indigo-600 font-black text-xs hover:underline flex items-center gap-1">

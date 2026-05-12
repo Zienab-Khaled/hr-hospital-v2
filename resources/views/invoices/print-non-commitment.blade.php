@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -466,7 +466,7 @@
             <span class="lbl">نعم أنا المدعو /</span>
             <span class="fill">
                 @if ($invoice->patient)
-                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}
+                    {{ $invoice->patient->fullArabicName() }}
                 @endif
             </span>
             <span class="lbl" style="margin-right: 10px;">حامل إقامة رقم /</span>
@@ -489,7 +489,7 @@
 
         <!-- Non-commitment paragraph -->
         <div class="pledge-text">
-            نفيدكم بأن المريض / <strong>{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</strong>
+            نفيدكم بأن المريض / <strong>{{ $invoice->patient->fullArabicName() }}</strong>
             حامل هوية رقم / <strong>{{ $invoice->patient->identity_value }}</strong>
             امتنع عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج
             نطاق التغطية التأمينية، وقد أُشعر بالتبعات المترتبة على ذلك.
@@ -512,7 +512,7 @@
                 <td>
                     <span class="fill-dots">
                         @if ($invoice->patient)
-                            {{ $invoice->patient->name_ar ?? $invoice->patient->name }}
+                            {{ $invoice->patient->fullArabicName() }}
                         @endif
                     </span>
                 </td>

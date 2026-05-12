@@ -138,7 +138,7 @@
                             <span
                                 class="text-slate-500 font-semibold">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span>
                             <span
-                                class="font-medium text-slate-800 ms-1">{{ $insuranceClaim->invoice?->patient?->name_ar ?? ($insuranceClaim->invoice?->patient?->name ?? '—') }}</span>
+                                class="font-medium text-slate-800 ms-1">{{ $insuranceClaim->invoice?->patient?->fullArabicName() ?: ($insuranceClaim->invoice?->patient?->name ?? '—') }}</span>
                         </div>
                         <div>
                             <span

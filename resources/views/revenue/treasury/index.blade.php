@@ -131,7 +131,7 @@
                                     </a>
                                 </div>
                                 <h3 class="text-lg font-black text-slate-900">
-                                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                                    {{ $invoice->patient->fullArabicName() }}</h3>
                                 <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)
                                     {{ app()->getLocale() === 'ar' ? 'محصل' : 'collected' }}</p>
                             </div>
@@ -194,7 +194,7 @@
                                     </a>
                                 </div>
                                 <h3 class="text-lg font-black text-slate-900">
-                                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                                    {{ $invoice->patient->fullArabicName() }}</h3>
                                 <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)</p>
                             </div>
                         </div>
@@ -262,7 +262,7 @@
                                     </a>
                                 </div>
                                 <h3 class="text-lg font-black text-slate-900">
-                                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                                    {{ $invoice->patient->fullArabicName() }}</h3>
                                 <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)</p>
                             </div>
                         </div>
@@ -334,12 +334,12 @@
                                     </a>
                                 </div>
                                 <h3 class="text-lg font-black text-slate-900">
-                                    {{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                                    {{ $invoice->patient->fullArabicName() }}</h3>
                                 <p class="text-sm font-bold text-slate-600 mt-1">@currency($invoice->paid_amount ?? 0)</p>
                                 @if ($invoice->deposited_at)
                                     <p class="text-xs font-bold text-emerald-600 mt-1">
                                         {{ app()->getLocale() === 'ar' ? 'تاريخ الإيداع:' : 'Deposited at:' }}
-                                        {{ $invoice->deposited_at->translatedFormat('d/m/Y H:i') }}</p>
+                                        {{ western_digits($invoice->deposited_at->translatedFormat('d/m/Y H:i')) }}</p>
                                 @endif
                             </div>
                         </div>

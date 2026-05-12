@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -83,6 +85,43 @@ class PaymentReceipt extends Model implements HasMedia
         return $this->hasOne(CollectionOrder::class);
     }
 
+    public function splits(): HasMany
+    {
+        return $this->hasMany(PaymentReceiptSplit::class)->orderBy('sort_order');
+    }
+
+    /** @return Collection<int, PaymentReceiptSplit|object{payment_method: string, amount: float|int|string, reference_number: ?string}> */
+    public function splitsForDisplay(): Collection
+    {
+        if ($this->relationLoaded('splits') ? $this->splits->isNotEmpty() : $this->splits()->exists()) {
+            return $this->relationLoaded('splits') ? $this->splits : $this->splits()->get();
+        }
+
+        return collect([
+            (object) [
+                'payment_method' => $this->payment_method,
+                'amount' => $this->amount,
+                'reference_number' => $this->reference_number,
+            ],
+        ]);
+    }
+
+    public static function paymentMethodLabel(?string $method): string
+    {
+        $labels = [
+            'cash' => app()->getLocale() === 'ar' ? 'كاش' : 'Cash',
+            'card' => app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card',
+            'bank_transfer' => app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
+            'cheque' => app()->getLocale() === 'ar' ? 'شيك' : 'Cheque',
+            'loyalty_points' => app()->getLocale() === 'ar' ? 'نقاط بيع' : 'Loyalty / sale points',
+            'insurance' => app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance',
+            'charity' => app()->getLocale() === 'ar' ? 'جمعية' : 'Charity',
+            'mixed' => app()->getLocale() === 'ar' ? 'متعدد' : 'Mixed',
+        ];
+
+        return $labels[$method ?? ''] ?? ($method ?? '—');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('physical_receipt')->singleFile();
@@ -91,14 +130,29 @@ class PaymentReceipt extends Model implements HasMedia
 
     public function getPaymentMethodLabelAttribute(): string
     {
-        $labels = [
-            'cash' => app()->getLocale() === 'ar' ? 'كاش' : 'Cash',
-            'card' => app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card',
-            'bank_transfer' => app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer',
-            'cheque' => app()->getLocale() === 'ar' ? 'شيك' : 'Cheque',
-            'insurance' => app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance',
-            'charity' => app()->getLocale() === 'ar' ? 'جمعية' : 'Charity',
-        ];
-        return $labels[$this->payment_method] ?? $this->payment_method;
+        $lines = $this->splitsForDisplay();
+        if ($lines->count() > 1) {
+            return static::paymentMethodLabel('mixed');
+        }
+        if ($lines->count() === 1) {
+            $m = $lines->first()->payment_method ?? null;
+
+            return static::paymentMethodLabel($m);
+        }
+
+        return static::paymentMethodLabel($this->payment_method);
+    }
+
+    /** عرض مختصر لجميع طرق الإيصال (للجدول) */
+    public function getSplitMethodsSummaryAttribute(): string
+    {
+        $parts = $this->splitsForDisplay()->map(function ($row) {
+            $m = is_object($row) && isset($row->payment_method) ? $row->payment_method : null;
+            $a = is_object($row) && isset($row->amount) ? (float) $row->amount : 0;
+
+            return static::paymentMethodLabel($m) . ' ' . number_format($a, 2);
+        });
+
+        return $parts->implode(app()->getLocale() === 'ar' ? ' + ' : ' + ');
     }
 }

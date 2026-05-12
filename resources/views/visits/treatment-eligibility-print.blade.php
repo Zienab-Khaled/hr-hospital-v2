@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -329,7 +329,7 @@
         <div class="content-body">
             <div class="info-row">
                 <div class="info-label">المريض :</div>
-                <div class="info-value">{{ $visit->patient->name_ar ?? $visit->patient->name }}</div>
+                <div class="info-value">{{ $visit->patient->fullArabicName() }}</div>
             </div>
 
             <div class="info-row">

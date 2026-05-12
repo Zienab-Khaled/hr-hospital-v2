@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-SA-u-nu-latn" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <title>{{ app()->getLocale() === 'ar' ? 'تقرير رسمي - الإيرادات والتحصيل' : 'Official Report - Revenue & Collection' }}</title>

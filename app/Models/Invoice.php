@@ -153,10 +153,12 @@ class Invoice extends Model implements HasMedia
             'ar' => [
                 'regular' => 'فاتورة عادية',
                 'eligibility' => 'أحقية العلاج',
+                'charity_treatment_free' => 'علاج أهلي (بدون أحقية — مجاني على المريض)',
             ],
             'en' => [
                 'regular' => 'Regular Invoice',
                 'eligibility' => 'Treatment Eligibility',
+                'charity_treatment_free' => 'Charity treatment (no eligibility — patient pays 0)',
             ],
         ];
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';

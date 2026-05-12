@@ -80,7 +80,7 @@
                         @endphp
                         <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
                             <td class="py-3 px-4 font-medium text-slate-800">
-                                {{ $patient->name_ar ?? $patient->name }}
+                                {{ $patient->fullArabicName() }}
                                 @if($patient->phone)
                                     <span class="block text-xs text-slate-500">{{ $patient->phone }}</span>
                                 @endif

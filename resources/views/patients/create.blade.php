@@ -35,7 +35,7 @@
                     {{-- Mode: Scan with camera --}}
                     <div id="mode_scan_box" class="space-y-4">
                         <p class="text-sm text-slate-600">
-                            {{ app()->getLocale() === 'ar' ? 'الخطوة ١: وجه الوثيقة (الأمام)' : 'Step 1: Front of document' }}
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة 1: وجه الوثيقة (الأمام)' : 'Step 1: Front of document' }}
                         </p>
                         <div class="flex flex-wrap gap-3 items-start">
                             <button type="button" id="btn_capture_front"
@@ -50,7 +50,7 @@
                             </div>
                         </div>
                         <p class="text-sm text-slate-600 pt-2">
-                            {{ app()->getLocale() === 'ar' ? 'الخطوة ٢: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة 2: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
                         <div class="flex flex-wrap gap-3 items-start">
                             <button type="button" id="btn_capture_back"
                                 class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 hover:border-violet-700 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -158,7 +158,7 @@
                         {{ app()->getLocale() === 'ar' ? '👤 المعلومات الشخصية' : '👤 Personal Information' }}
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'الاسم (إنجليزي)' : 'Name (English)' }} *
                             </label>
@@ -168,12 +168,38 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }} *
-                            </label>
-                            <input type="text" name="name_ar" value="{{ old('name_ar') }}" dir="rtl" required
-                                class="w-full rounded border border-slate-300 px-3 py-2">
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'الاسم الأول (عربي)' : 'First name (Arabic)' }} *
+                                </label>
+                                <input type="text" name="name_ar_first" value="{{ old('name_ar_first') }}" dir="rtl" required
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_first') border-red-500 @enderror">
+                                @error('name_ar_first')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'اسم الأب (عربي)' : 'Father name (Arabic)' }}
+                                    <span class="text-slate-400 font-normal text-xs">({{ app()->getLocale() === 'ar' ? 'اختياري' : 'optional' }})</span>
+                                </label>
+                                <input type="text" name="name_ar_father" value="{{ old('name_ar_father') }}" dir="rtl"
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_father') border-red-500 @enderror">
+                                @error('name_ar_father')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'الاسم الأخير / العائلة (عربي)' : 'Last / family name (Arabic)' }} *
+                                </label>
+                                <input type="text" name="name_ar_family" value="{{ old('name_ar_family') }}" dir="rtl" required
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_family') border-red-500 @enderror">
+                                @error('name_ar_family')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
@@ -188,10 +214,14 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }} *
+                                {{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد' : 'Date of birth' }} *
                             </label>
-                            <input type="number" name="age" value="{{ old('age') }}" min="0" required
-                                max="150" class="w-full rounded border border-slate-300 px-3 py-2">
+                            <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" required
+                                max="{{ now()->format('Y-m-d') }}"
+                                class="w-full rounded border border-slate-300 px-3 py-2 @error('date_of_birth') border-red-500 @enderror">
+                            @error('date_of_birth')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
@@ -693,7 +723,10 @@
                         extractStatus.classList.add('text-emerald-600');
                         var d = res.data;
                         if (d.name) document.querySelector('input[name="name"]').value = d.name;
-                        if (d.name_ar) document.querySelector('input[name="name_ar"]').value = d.name_ar;
+                        if (d.name_ar) {
+                            var inf = document.querySelector('input[name="name_ar_first"]');
+                            if (inf) inf.value = d.name_ar;
+                        }
                         if (d.identity_value) document.getElementById('identity_value').value = d.identity_value;
                         if (d.identity_type) {
                             var typeSelect = document.getElementById('identity_type');

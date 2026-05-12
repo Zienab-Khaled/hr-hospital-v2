@@ -83,7 +83,7 @@
                                 </span>
                                 <span class="text-slate-400 text-[10px] font-black tracking-widest">#{{ $invoice->invoice_number }}</span>
                             </div>
-                            <h3 class="text-2xl font-black text-slate-900">{{ $invoice->patient->name_ar ?? $invoice->patient->name }}</h3>
+                            <h3 class="text-2xl font-black text-slate-900">{{ $invoice->patient->fullArabicName() }}</h3>
                             <div class="flex items-center gap-4 mt-2">
                                 <span class="text-xs text-slate-500 font-bold">🏢 {{ $invoice->visit?->shift ? (app()->getLocale() === 'ar' ? ($invoice->visit->shift->name_ar ?? $invoice->visit->shift->name) : $invoice->visit->shift->name) : '—' }}</span>
                                 <span class="text-xs text-slate-500 font-bold">💰 {{ number_format($invoice->total_amount, 2) }} SR</span>

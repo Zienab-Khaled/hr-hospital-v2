@@ -20,6 +20,7 @@ use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -70,6 +71,9 @@ class InvoiceController extends Controller
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
                     ->orWhere('name_ar', 'like', "%{$q}%")
+                    ->orWhere('name_ar_first', 'like', "%{$q}%")
+                    ->orWhere('name_ar_father', 'like', "%{$q}%")
+                    ->orWhere('name_ar_family', 'like', "%{$q}%")
                     ->orWhere('file_number', 'like', "%{$q}%")
                     ->orWhere('identity_value', 'like', "%{$q}%")
                     ->orWhere('phone', 'like', "%{$q}%")
@@ -83,7 +87,7 @@ class InvoiceController extends Controller
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'name_ar' => $p->name_ar,
+                    'name_ar' => $p->fullArabicName(),
                     'file_number' => $p->file_number,
                     'identity_value' => $p->identity_value,
                     'phone' => $p->phone,
@@ -161,7 +165,7 @@ class InvoiceController extends Controller
             'patient_identity_type' => 'nullable|string|max:50',
             'patient_identity_value' => 'nullable|string|max:100',
             'patient_phone' => 'nullable|string|max:50',
-            'patient_age' => 'nullable|integer|min:0|max:150',
+            'patient_date_of_birth' => 'nullable|date|before_or_equal:today|after:1900-01-01',
             'patient_gender' => 'nullable|string|max:20',
             'patient_country_of_origin' => 'nullable|string|max:100',
             'patient_sponsor_name' => 'nullable|string|max:255',
@@ -174,6 +178,8 @@ class InvoiceController extends Controller
             'medical_reports' => 'nullable|array',
             'medical_reports.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             'visit_id' => 'nullable|exists:visits,id',
+            // علاج أهلي: مجاني على المريض + أحقية علاج أم لا (يظهر فقط لمرضى الجمعية في النموذج)
+            'charity_treatment_invoice_mode' => 'nullable|string|in:,eligibility,no_eligibility',
             // Collection Fields
             'collection_amount' => 'nullable|numeric|min:0',
             'collection_method' => 'nullable|string|in:cash,card,bank_transfer,cheque',
@@ -193,24 +199,45 @@ class InvoiceController extends Controller
             $paymentType = $validated['patient_payment_type'] ?? null;
             $patientUpdates = array_filter([
                 'name' => $validated['patient_name'] ?? null,
-                'name_ar' => $validated['patient_name_ar'] ?? null,
                 'file_number' => $validated['patient_file_number'] ?? null,
                 'identity_type' => $identityType && array_key_exists($identityType, Patient::identityTypeOptions()) ? $identityType : null,
                 'identity_value' => $validated['patient_identity_value'] ?? null,
                 'phone' => $validated['patient_phone'] ?? null,
-                'age' => isset($validated['patient_age']) ? (int) $validated['patient_age'] : null,
+                'date_of_birth' => ! empty($validated['patient_date_of_birth'] ?? null) ? $validated['patient_date_of_birth'] : null,
                 'gender' => in_array($gender, ['male', 'female'], true) ? $gender : null,
                 'country_of_origin' => $validated['patient_country_of_origin'] ?? null,
                 'sponsor_name' => $validated['patient_sponsor_name'] ?? null,
                 'sponsor_phone' => $validated['patient_sponsor_phone'] ?? null,
             ], fn ($v) => $v !== null && $v !== '');
+            if (array_key_exists('patient_name_ar', $validated) && is_string($validated['patient_name_ar']) && trim($validated['patient_name_ar']) !== '') {
+                $patientUpdates['name_ar'] = trim($validated['patient_name_ar']);
+                $patientUpdates['name_ar_first'] = null;
+                $patientUpdates['name_ar_father'] = null;
+                $patientUpdates['name_ar_family'] = null;
+            }
             if (in_array($paymentType, ['cash', 'insurance', 'charity'], true)) {
                 $patientUpdates['payment_type'] = $paymentType;
                 $patientUpdates['insurance_company_id'] = $paymentType === 'insurance' ? ($validated['patient_insurance_company_id'] ?? null) : null;
                 $patientUpdates['charity_entity_id'] = $paymentType === 'charity' ? ($validated['patient_charity_entity_id'] ?? null) : null;
             }
-            if (!empty($patientUpdates)) {
+            if (! empty($patientUpdates)) {
                 $patient->update($patientUpdates);
+            }
+            $patient->refresh();
+
+            $finalPaymentType = $patient->payment_type;
+            $charityMode = trim((string) ($validated['charity_treatment_invoice_mode'] ?? ''));
+            if ($charityMode !== '' && $finalPaymentType !== 'charity') {
+                throw ValidationException::withMessages([
+                    'charity_treatment_invoice_mode' => app()->getLocale() === 'ar'
+                        ? 'خيار «علاج أهلي / أحقية» يخص مرضى الجمعية فقط.'
+                        : 'Charity treatment / eligibility options apply only to charity patients.',
+                ]);
+            }
+            $forceCharityPatientFree = $finalPaymentType === 'charity' && in_array($charityMode, ['eligibility', 'no_eligibility'], true);
+            $invoiceType = 'regular';
+            if ($forceCharityPatientFree) {
+                $invoiceType = $charityMode === 'eligibility' ? 'eligibility' : 'charity_treatment_free';
             }
 
             // Use existing visit (e.g. from "create visit" flow) or create one
@@ -239,9 +266,6 @@ class InvoiceController extends Controller
             $patientMediaIds = $patient->getMedia('documents')->merge($patient->getMedia('medical-reports'))->pluck('id')->all();
             $printMediaIds = isset($validated['print_media_ids']) ? array_values(array_intersect(array_map('intval', $validated['print_media_ids']), $patientMediaIds)) : null;
 
-            // Determine initial payment_type for the invoice
-            $finalPaymentType = $patient->payment_type;
-
             // Create invoice
             $invoice = Invoice::create([
                 'patient_id' => $patient->id,
@@ -256,15 +280,21 @@ class InvoiceController extends Controller
                 'notes' => $validated['notes'],
                 'print_media_ids' => $printMediaIds ?: null,
                 'payment_type' => $finalPaymentType,
+                'invoice_type' => $invoiceType,
                 'audit_status' => 'under_review',
             ]);
 
             // Create invoice items (quantity: ensure integer for DB; optional insurance coverage per line)
             foreach ($validated['services'] as $serviceData) {
-                $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
-                    ? $serviceData['insurance_coverage_type'] : null;
-                $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
-                    ? (float) $serviceData['insurance_coverage_value'] : null;
+                if ($forceCharityPatientFree) {
+                    $coverageType = 'percentage';
+                    $coverageValue = 100.0;
+                } else {
+                    $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
+                        ? $serviceData['insurance_coverage_type'] : null;
+                    $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
+                        ? (float) $serviceData['insurance_coverage_value'] : null;
+                }
                 $invoice->items()->create([
                     'service_id' => (int) $serviceData['service_id'],
                     'quantity' => (int) round((float) $serviceData['quantity']),
@@ -339,6 +369,14 @@ class InvoiceController extends Controller
                     'selected_items' => $selectedItemsData,
                 ]);
 
+                \App\Models\PaymentReceiptSplit::create([
+                    'payment_receipt_id' => $receipt->id,
+                    'payment_method' => $validated['collection_method'],
+                    'amount' => (float) $validated['collection_amount'],
+                    'reference_number' => $validated['collection_reference'] ?? null,
+                    'sort_order' => 0,
+                ]);
+
                 // 3. Attach Proof Documents (Spatie Media Library)
                 if ($request->hasFile('physical_receipt')) {
                     $receipt->addMediaFromRequest('physical_receipt')->toMediaCollection('physical_receipt');
@@ -362,7 +400,8 @@ class InvoiceController extends Controller
                 $invoice->refresh(); // Sync the model state
             }
 
-            // Create approval request for insurance/charity patients
+            // Create approval request for insurance/charity patients (email sent after HTTP response — avoids SMTP hang/timeouts blocking the request)
+            $deferredApprovalMail = null;
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 $approval = Approval::create([
                     'invoice_id' => $invoice->id,
@@ -375,7 +414,6 @@ class InvoiceController extends Controller
                     'requested_by' => auth()->user()?->getKey(),
                 ]);
 
-                // Get email recipient
                 $recipientEmail = null;
                 if ($patient->payment_type === 'insurance' && $patient->insuranceCompany) {
                     $recipientEmail = $patient->insuranceCompany->email;
@@ -383,18 +421,31 @@ class InvoiceController extends Controller
                     $recipientEmail = $patient->charityEntity->email;
                 }
 
-                // Send approval request email
                 if ($recipientEmail) {
-                    try {
-                        Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
-                    } catch (\Exception $e) {
-                        // Log error but don't fail the invoice creation
-                        \Log::error('Failed to send approval email: ' . $e->getMessage());
-                    }
+                    $deferredApprovalMail = ['approval_id' => $approval->id, 'to' => $recipientEmail];
                 }
             }
 
             DB::commit();
+
+            if ($deferredApprovalMail !== null) {
+                $approvalId = $deferredApprovalMail['approval_id'];
+                $mailTo = $deferredApprovalMail['to'];
+                Bus::dispatch(function () use ($approvalId, $mailTo) {
+                    $approval = Approval::query()->find($approvalId);
+                    if (!$approval || $mailTo === '') {
+                        return;
+                    }
+                    try {
+                        Mail::to($mailTo)->send(new ApprovalRequestMail($approval));
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to send approval email (after response): ' . $e->getMessage(), [
+                            'approval_id' => $approvalId,
+                            'exception' => $e,
+                        ]);
+                    }
+                })->afterResponse();
+            }
 
             $message = in_array($patient->payment_type, ['insurance', 'charity'])
                 ? __('Invoice created and approval request sent successfully.')
@@ -407,7 +458,7 @@ class InvoiceController extends Controller
             if ($notifyUsers->isNotEmpty()) {
                 Notification::send($notifyUsers, new SystemNotification([
                     'title' => app()->getLocale() === 'ar' ? 'فاتورة جديدة' : 'New Invoice Created',
-                    'message' => (app()->getLocale() === 'ar' ? "تم إصدار فاتورة بمبلغ " : "Invoice created with amount: ") . number_format($invoice->total_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . ($patient->name_ar ?? $patient->name),
+                    'message' => (app()->getLocale() === 'ar' ? "تم إصدار فاتورة بمبلغ " : "Invoice created with amount: ") . number_format($invoice->total_amount, 2) . (app()->getLocale() === 'ar' ? " للمريض: " : " for patient: ") . $patient->fullArabicName(),
                     'action_url' => route('invoices.show', $invoice),
                     'type' => 'success',
                 ]));
@@ -437,7 +488,7 @@ class InvoiceController extends Controller
             'patient.charityEntity',
             'items.service',
             'items.completedByUser',
-            'payments',
+            'payments.receipt.splits',
             'visit.registeredBy',
             'partySends'
         ]);
@@ -625,7 +676,7 @@ class InvoiceController extends Controller
         $bankName = Setting::get('bank_name', 'البنك');
         $accountNumber = Setting::get('account_number', '');
         $ibanNumber = Setting::get('iban_number', '');
-        $patientName = $patient->name_ar ?: $patient->name ?? '—';
+        $patientName = $patient->fullArabicName() ?: '—';
         $patientIdentity = $patient->identity_value ?: $patient->file_number ?? '—';
         $defaultIntro = 'تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / ' . $patientName . ' رقم الجواز (' . $patientIdentity . ') ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في ' . $bankName . ' (' . $accountNumber . ') رقم الأيبان ' . $ibanNumber;
         $defaultSubject = (app()->getLocale() === 'ar' ? 'عرض سعر / فاتورة ' : 'Price offer / Invoice ') . $invoice->invoice_number;

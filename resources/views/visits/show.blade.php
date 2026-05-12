@@ -259,7 +259,7 @@
                             </svg>
                         </div>
                         <h4 class="text-xl font-black text-slate-900 text-center">
-                            {{ $visit->patient?->name_ar ?? ($visit->patient?->name ?? '—') }}</h4>
+                            {{ $visit->patient?->fullArabicName() ?: ($visit->patient?->name ?? '—') }}</h4>
                         <span class="text-sm text-slate-400 font-bold mt-1">#{{ $visit->patient->file_number }}</span>
                     </div>
 

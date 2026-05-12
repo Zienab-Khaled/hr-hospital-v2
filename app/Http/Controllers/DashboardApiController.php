@@ -27,6 +27,9 @@ class DashboardApiController extends Controller
 
         $patients = Patient::where('name', 'LIKE', "%{$query}%")
             ->orWhere('name_ar', 'LIKE', "%{$query}%")
+            ->orWhere('name_ar_first', 'LIKE', "%{$query}%")
+            ->orWhere('name_ar_father', 'LIKE', "%{$query}%")
+            ->orWhere('name_ar_family', 'LIKE', "%{$query}%")
             ->orWhere('file_number', 'LIKE', "%{$query}%")
             ->orWhere('identity_value', 'LIKE', "%{$query}%")
             ->limit(10)

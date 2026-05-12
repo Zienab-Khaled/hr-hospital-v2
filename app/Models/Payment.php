@@ -50,11 +50,21 @@ class Payment extends Model
         $labels = [
             'ar' => [
                 'cash' => 'كاش',
+                'card' => 'شبكة',
+                'bank_transfer' => 'تحويل بنكي',
+                'cheque' => 'شيك',
+                'loyalty_points' => 'نقاط بيع',
+                'mixed' => 'طرق متعددة',
                 'insurance' => 'تأمين',
                 'charity' => 'جمعية',
             ],
             'en' => [
                 'cash' => 'Cash',
+                'card' => 'Card / POS',
+                'bank_transfer' => 'Bank Transfer',
+                'cheque' => 'Cheque',
+                'loyalty_points' => 'Loyalty points',
+                'mixed' => 'Multiple methods',
                 'insurance' => 'Insurance',
                 'charity' => 'Charity',
             ],

@@ -63,7 +63,7 @@
 
             <div class="space-y-4 text-sm">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <p><span class="font-bold text-slate-600">{{ app()->getLocale() === 'ar' ? 'التاريخ:' : 'Date:' }}</span> {{ now()->translatedFormat('d F Y') }}</p>
+                    <p><span class="font-bold text-slate-600">{{ app()->getLocale() === 'ar' ? 'التاريخ:' : 'Date:' }}</span> {{ western_digits(now()->translatedFormat('d F Y')) }}</p>
                     <p><span class="font-bold text-slate-600">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة:' : 'Invoice No:' }}</span> {{ $invoice->invoice_number ?? '—' }}</p>
                 </div>
 
@@ -82,7 +82,7 @@
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <p class="font-bold text-slate-700 mb-2">{{ app()->getLocale() === 'ar' ? 'بيانات المريض' : 'Patient details' }}</p>
                     <div class="grid grid-cols-2 gap-2 text-sm">
-                        <p><span class="text-slate-600">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span> {{ $patient->name_ar ?? $patient->name ?? '—' }}</p>
+                        <p><span class="text-slate-600">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</span> {{ $patient->fullArabicName() ?: ($patient->name ?? '—') }}</p>
                         <p><span class="text-slate-600">{{ app()->getLocale() === 'ar' ? 'رقم الملف:' : 'File No:' }}</span> {{ $patient->file_number ?? '—' }}</p>
                     </div>
                 </div>

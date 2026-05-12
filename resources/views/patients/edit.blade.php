@@ -29,7 +29,7 @@
                     </div>
                     <div id="mode_scan_box" class="space-y-4">
                         <p class="text-sm text-slate-600">
-                            {{ app()->getLocale() === 'ar' ? 'الخطوة ١: وجه الوثيقة' : 'Step 1: Front of document' }}</p>
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة 1: وجه الوثيقة' : 'Step 1: Front of document' }}</p>
                         <div class="flex flex-wrap gap-3 items-start">
                             <button type="button" id="btn_capture_front"
                                 class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700">
@@ -43,7 +43,7 @@
                             </div>
                         </div>
                         <p class="text-sm text-slate-600 pt-2">
-                            {{ app()->getLocale() === 'ar' ? 'الخطوة ٢: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
+                            {{ app()->getLocale() === 'ar' ? 'الخطوة 2: ظهر الوثيقة' : 'Step 2: Back of document' }}</p>
                         <div class="flex flex-wrap gap-3 items-start">
                             <button type="button" id="btn_capture_back"
                                 class="border-2 border-violet-600 bg-violet-600  px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -153,13 +153,50 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)' }} *
-                            </label>
-                            <input type="text" name="name_ar" value="{{ old('name_ar', $patient->name_ar) }}"
-                                dir="rtl" required class="w-full rounded border border-slate-300 px-3 py-2">
+                        @php
+                            $sug = $patient->suggestedArabicNamePartsForForm();
+                            $arFirst = old('name_ar_first', ($patient->name_ar_first !== null && $patient->name_ar_first !== '') ? $patient->name_ar_first : $sug[0]);
+                            $arFather = old('name_ar_father', $patient->name_ar_father ?? $sug[1]);
+                            $arFamily = old('name_ar_family', ($patient->name_ar_family !== null && $patient->name_ar_family !== '') ? $patient->name_ar_family : $sug[2]);
+                        @endphp
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'الاسم الأول (عربي)' : 'First name (Arabic)' }} *
+                                </label>
+                                <input type="text" name="name_ar_first" value="{{ $arFirst }}" dir="rtl" required
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_first') border-red-500 @enderror">
+                                @error('name_ar_first')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'اسم الأب (عربي)' : 'Father name (Arabic)' }}
+                                    <span class="text-slate-400 font-normal text-xs">({{ app()->getLocale() === 'ar' ? 'اختياري' : 'optional' }})</span>
+                                </label>
+                                <input type="text" name="name_ar_father" value="{{ $arFather }}" dir="rtl"
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_father') border-red-500 @enderror">
+                                @error('name_ar_father')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? 'الاسم الأخير / العائلة (عربي)' : 'Last / family name (Arabic)' }} *
+                                </label>
+                                <input type="text" name="name_ar_family" value="{{ $arFamily }}" dir="rtl" required
+                                    class="w-full rounded border border-slate-300 px-3 py-2 @error('name_ar_family') border-red-500 @enderror">
+                                @error('name_ar_family')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
+                        @if (trim((string) ($patient->name_ar ?? '')) !== '' && trim((string) ($patient->name_ar_first ?? '')) === '' && trim((string) ($patient->name_ar_family ?? '')) === '')
+                            <p class="md:col-span-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                {{ app()->getLocale() === 'ar' ? 'تم اقتراح تقسيم الاسم العربي الحالي إلى الحقول أعلاه؛ راجع القيم ثم احفظ.' : 'The current Arabic name was split into the fields above; review and save.' }}
+                            </p>
+                        @endif
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'رقم الملف' : 'File Number' }} *
@@ -173,10 +210,20 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }} *
+                                {{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد' : 'Date of birth' }}
                             </label>
-                            <input type="number" name="age" value="{{ old('age', $patient->age) }}" min="0" required
-                                max="150" class="w-full rounded border border-slate-300 px-3 py-2">
+                            <input type="date" name="date_of_birth"
+                                value="{{ old('date_of_birth', $patient->date_of_birth?->format('Y-m-d')) }}"
+                                max="{{ now()->format('Y-m-d') }}"
+                                class="w-full rounded border border-slate-300 px-3 py-2 @error('date_of_birth') border-red-500 @enderror">
+                            @error('date_of_birth')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @if (! $patient->date_of_birth && $patient->age)
+                                <p class="mt-1 text-xs text-amber-700">
+                                    {{ app()->getLocale() === 'ar' ? 'يُفضّل إدخال تاريخ الميلاد بدل الاعتماد على العمر المحفوظ سابقاً.' : 'Prefer entering date of birth instead of the previously stored age.' }}
+                                </p>
+                            @endif
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">
@@ -761,7 +808,10 @@
                             extractStatus.classList.add('text-emerald-600');
                             var d = res.data;
                             if (d.name) document.querySelector('input[name="name"]').value = d.name;
-                            if (d.name_ar) document.querySelector('input[name="name_ar"]').value = d.name_ar;
+                            if (d.name_ar) {
+                                var inf = document.querySelector('input[name="name_ar_first"]');
+                                if (inf) inf.value = d.name_ar;
+                            }
                             if (d.identity_value) document.getElementById('identity_value').value = d.identity_value;
                             if (d.identity_type) {
                                 var sel = document.getElementById('identity_type');

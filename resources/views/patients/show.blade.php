@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', (app()->getLocale() === 'ar' ? 'ملف المريض' : 'Patient Profile') . ' - ' . ($patient->name_ar ?? $patient->name))
+@section('title', (app()->getLocale() === 'ar' ? 'ملف المريض' : 'Patient Profile') . ' - ' . $patient->fullArabicName())
 
 @section('content')
 <style>
@@ -33,7 +33,7 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-3xl font-black text-slate-800">{{ $patient->name_ar ?? $patient->name }}</h1>
+                <h1 class="text-3xl font-black text-slate-800">{{ $patient->fullArabicName() }}</h1>
                 <div class="flex items-center gap-3 mt-1 text-slate-500 font-bold">
                     <span>#{{ $patient->file_number }}</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
@@ -100,8 +100,12 @@
                 </h3>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center py-3 border-b border-slate-50">
-                        <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'العمر' : 'Age' }}</span>
-                        <span class="text-sm font-black text-slate-700">{{ $patient->age ?? '—' }}</span>
+                        <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد' : 'Date of birth' }}</span>
+                        <span class="text-sm font-black text-slate-700" dir="ltr">{{ $patient->date_of_birth?->format('Y-m-d') ?? '—' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                        <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'العمر (سنوات)' : 'Age (years)' }}</span>
+                        <span class="text-sm font-black text-slate-700">{{ $patient->ageInYears() ?? '—' }}</span>
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-slate-50">
                         <span class="text-sm text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'الجنس' : 'Gender' }}</span>

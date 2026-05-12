@@ -259,7 +259,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['patient.name', 'patient.name_ar', 'patient.file_number', 'patient.identity_value', 'notes'],
+            ['patient.name', 'patient.name_ar', 'patient.name_ar_first', 'patient.name_ar_father', 'patient.name_ar_family', 'patient.file_number', 'patient.identity_value', 'notes'],
             [],
             []
         );
@@ -300,7 +300,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['invoice_number', 'patient.name', 'patient.name_ar', 'patient.file_number'],
+            ['invoice_number', 'patient.name', 'patient.name_ar', 'patient.name_ar_first', 'patient.name_ar_father', 'patient.name_ar_family', 'patient.file_number'],
             [
                 'registered_by' => 'created_by', // Wait, does invoice have created_by? Let's check.
             ]

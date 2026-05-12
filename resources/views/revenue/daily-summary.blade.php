@@ -96,11 +96,11 @@
     </div>
 
     <div class="daily-summary-wrap bg-white p-6 rounded-2xl shadow-sm print:shadow-none">
-        {{-- Tab: موارد - ٤ (ثلاث فترات) --}}
+        {{-- Tab: موارد - 4 (ثلاث فترات) --}}
         <div class="tab-pane {{ $activeTab === 'moarad-4' ? 'active' : '' }}" data-tab="moarad-4">
             @include('components.report-header')
             <p class="text-center text-sm text-slate-500 mt-2 mb-1">الدليل التنظيمي للخدمات الصحية بمقابل</p>
-            <p class="text-center font-bold text-slate-800 mb-4">نموذج رقم (موارد - ٤)</p>
+            <p class="text-center font-bold text-slate-800 mb-4">نموذج رقم (موارد - 4)</p>
             <h2 class="text-center text-xl font-black text-slate-900 mb-6">خلاصة الإيرادات اليومية</h2>
             <p class="mb-6">
                 يوم <strong>{{ $dayName }}</strong>
@@ -242,11 +242,11 @@
             </div>
         </div>
 
-        {{-- Tab: خلاصة الإيرادات الشهرية (موارد - ١١) --}}
+        {{-- Tab: خلاصة الإيرادات الشهرية (موارد - 11) --}}
         <div class="tab-pane {{ $activeTab === 'monthly' ? 'active' : '' }}" data-tab="monthly">
             @include('components.report-header')
             <p class="text-center text-sm text-slate-500 mt-2 mb-1">الدليل التنظيمي للخدمات الصحية بمقابل</p>
-            <p class="text-center font-bold text-slate-800 mb-2">نموذج رقم (موارد - ١١)</p>
+            <p class="text-center font-bold text-slate-800 mb-2">نموذج رقم (موارد - 11)</p>
             <h2 class="text-center text-xl font-black text-slate-900 mb-4 underline">خلاصة الإيرادات الشهرية</h2>
             <p class="text-center text-sm mb-2">تقرير شهري لإيرادات الخدمة الصحية بمقابل</p>
             <p class="text-center text-sm mb-4">في <span class="fillable-red">{{ $hospitalName }}</span> — لشهر <span class="fillable-red">{{ app()->getLocale() === 'ar' ? $monthYearAr : $monthYearEn }}</span></p>
@@ -382,11 +382,11 @@
             </div>
         </div>
 
-        {{-- Tab: نموذج إحصائية الشهرية (موارد - ٩) --}}
+        {{-- Tab: نموذج إحصائية الشهرية (موارد - 9) --}}
         <div class="tab-pane {{ $activeTab === 'monthly-stats' ? 'active' : '' }}" data-tab="monthly-stats">
             @include('components.report-header')
             <p class="text-center text-sm text-slate-500 mt-2 mb-1">الدليل التنظيمي للخدمات الصحية بمقابل</p>
-            <p class="text-center font-bold text-slate-800 mb-2">نموذج رقم (موارد - ٩)</p>
+            <p class="text-center font-bold text-slate-800 mb-2">نموذج رقم (موارد - 9)</p>
             <h2 class="text-center text-xl font-black text-slate-900 mb-4 underline">نموذج إحصائية الشهرية</h2>
             <p class="text-sm mb-4">إحصائية شهر <span class="fillable-red">({{ app()->getLocale() === 'ar' ? $monthYearAr : $monthYearEn }})</span></p>
 
@@ -436,11 +436,11 @@
             </div>
         </div>
 
-        {{-- Tab: أمر قبض (موارد - ٥) — حقول قابلة للملء --}}
+        {{-- Tab: أمر قبض (موارد - 5) — حقول قابلة للملء --}}
         <div class="tab-pane {{ $activeTab === 'receipt-order' ? 'active' : '' }}" data-tab="receipt-order">
             @include('components.report-header')
             <p class="text-center text-sm text-slate-500 mt-2 mb-1">الدليل التنظيمي للخدمات الصحية بمقابل</p>
-            <p class="text-center font-bold text-slate-800 mb-4">نموذج رقم (موارد - ٥)</p>
+            <p class="text-center font-bold text-slate-800 mb-4">نموذج رقم (موارد - 5)</p>
             <h2 class="text-center text-xl font-black text-slate-900 mb-8 underline">أمر قبض</h2>
 
             <div class="form-block">

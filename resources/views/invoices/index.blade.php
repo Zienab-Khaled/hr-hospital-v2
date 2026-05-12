@@ -82,9 +82,9 @@
                         <td class="p-3">
                             <div class="flex flex-col gap-1">
                                 <span class="font-medium text-slate-900">{{ $inv->status_label }}</span>
-                                @if ($inv->invoice_type === 'eligibility')
+                                @if (in_array($inv->invoice_type, ['eligibility', 'charity_treatment_free'], true))
                                     <span
-                                        class="bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit uppercase">{{ $inv->invoice_type_label }}</span>
+                                        class="{{ $inv->invoice_type === 'eligibility' ? 'bg-purple-100 text-purple-800' : 'bg-teal-100 text-teal-900' }} px-1.5 py-0.5 rounded text-[10px] font-bold w-fit uppercase">{{ $inv->invoice_type_label }}</span>
                                 @endif
                                 @if ($inv->payment_type === 'charity')
                                     <span
