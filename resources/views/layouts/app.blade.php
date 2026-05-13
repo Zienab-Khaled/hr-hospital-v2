@@ -102,6 +102,15 @@
             border-radius: 0.5rem;
             padding: 0.5rem 0.75rem;
         }
+
+        /* حقول التاريخ/الوقت في واجهة RTL: منع انعكاس مقاطع placeholder (مثل شهر → رهش) */
+        form input[type="date"],
+        form input[type="datetime-local"],
+        form input[type="time"] {
+            direction: ltr;
+            unicode-bidi: isolate;
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -212,6 +221,7 @@
             </footer>
         </main>
     </div>
+    <x-western-numerals-script />
 </body>
 
 </html>
