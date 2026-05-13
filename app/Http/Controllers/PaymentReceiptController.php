@@ -151,6 +151,11 @@ class PaymentReceiptController extends Controller
 
         DB::beginTransaction();
         try {
+            $paidBeforePatient = (float) Payment::query()
+                ->where('invoice_id', $invoice->id)
+                ->whereNotIn('payment_type', ['insurance', 'charity'])
+                ->sum('amount');
+
             $payment = Payment::create([
                 'invoice_id' => $invoice->id,
                 'payment_type' => $paymentType,
@@ -165,7 +170,7 @@ class PaymentReceiptController extends Controller
                 'audit_status' => 'matched',
             ]);
 
-            $newPaidTotal = $invoice->paid_amount + $amountToRecord;
+            $newPaidTotal = round($paidBeforePatient + $amountToRecord, 2);
             $newRemainingTotal = max(0, round((float) $invoice->total_amount - $newPaidTotal, 2));
 
             $receipt = PaymentReceipt::create([
@@ -205,7 +210,7 @@ class PaymentReceiptController extends Controller
                     ->toMediaCollection('collector_screenshot');
             }
 
-            $newPaidAmount = $invoice->paid_amount + $amountToRecord;
+            $newPaidAmount = round($paidBeforePatient + $amountToRecord, 2);
             $newRemainingAmount = max(0, round((float) $invoice->total_amount - $newPaidAmount, 2));
 
             $invoice->update([
