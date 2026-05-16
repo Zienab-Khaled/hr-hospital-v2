@@ -10,7 +10,7 @@
     </div>
     <a href="{{ route('shifts.create') }}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-        <span>{{ app()->getLocale() === 'ar' ? 'إضافة وردية جديدة' : 'Add New Shift' }}</span>
+        <span>{{ app()->getLocale() === 'ar' ? 'إضافة Shift جديد' : 'Add New Shift' }}</span>
     </a>
 </div>
 
@@ -32,7 +32,7 @@
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="px-6 py-4 text-sm text-slate-600 text-center font-medium">{{ $shift->sort_order }}</td>
                 <td class="px-6 py-4 text-sm font-semibold text-slate-800">{{ $shift->name_ar }}</td>
-                <td class="px-6 py-4 text-sm text-slate-600">{{ $shift->name }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600" dir="ltr" lang="en">{{ $shift->englishLabelWithTime() }}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                         {{ \Carbon\Carbon::parse($shift->start_time)->format('h:i A') }}
@@ -55,7 +55,7 @@
                     @endif
                 </td>
                 <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
-                    <a href="{{ route('shifts.edit', $shift) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="{{ __('Edit') }}">
+                    <a href="{{ route('shifts.edit', $shift) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="{{ app()->getLocale() === 'ar' ? 'تعديل الـ Shift' : 'Edit Shift' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </a>
                     <form action="{{ route('shifts.destroy', $shift) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذه الوردية؟' : 'Are you sure you want to delete this shift?' }}')" class="inline">

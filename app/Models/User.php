@@ -45,6 +45,11 @@ class User extends \Illuminate\Foundation\Auth\User
         return $this->belongsTo(Department::class);
     }
 
+    public function shifts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Shift::class, 'shift_user')->withTimestamps();
+    }
+
     /** Delegations I created (I am the delegator). */
     public function delegationsGiven(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

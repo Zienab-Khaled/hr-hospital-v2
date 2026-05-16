@@ -18,11 +18,11 @@
             <span>🩺</span> {{ app()->getLocale() === 'ar' ? 'إضافة زيارة' : 'Add Visit' }}
         </a>
     @endcan
-    @can('invoices.create')
+    @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
         <a href="{{ route('invoices.create') }}" class="ml-1 px-4 py-2 rounded-t bg-amber-600 text-sm font-bold hover:bg-orange-600 flex items-center gap-1 ">
             <span>💰</span> {{ app()->getLocale() === 'ar' ? 'إضافة فاتورة' : 'Add Invoice' }}
         </a>
-    @endcan
+    @endif
 @endsection
 
 @section('content')
@@ -117,9 +117,9 @@
                 <span>💰</span> {{ __("Invoices") }}
             </h2>
             <div class="flex flex-wrap gap-2 mb-4">
-                @can('invoices.create')
+                @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                     <a href="{{ route('invoices.create') }}" class="bg-orange-500  px-4 py-2 rounded text-white text-sm font-bold hover:bg-orange-600">+ {{ __("Add Invoice") }}</a>
-                @endcan
+                @endif
                 <a href="{{ route('invoices.index') }}" class="bg-slate-100 text-slate-600 px-4 py-2 rounded text-sm hover:bg-slate-200">{{ __("Full Page") }}</a>
             </div>
             <div class="overflow-x-auto">
@@ -141,8 +141,8 @@
         </div>
         @endcan
 
-        {{-- Claims Section (حسب صلاحية claims.view) --}}
-        @can('claims.view')
+        {{-- Claims Section --}}
+        @if(\App\Support\RoleNav::canSeeClaimsMenu(auth()->user()))
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>📑</span> {{ app()->getLocale() === 'ar' ? 'المطالبات' : 'Claims' }}
@@ -175,12 +175,12 @@
             </div>
             <a href="{{ route('charity-claims.index') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
-        @endcan
+        @endif
     </div>
 
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {{-- Patients Summary (حسب صلاحية patients.view) --}}
-        @can('patients.view')
+        {{-- Patients Summary --}}
+        @if(\App\Support\RoleNav::canSeePatientManagement(auth()->user()))
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <span>📋</span> {{ __("Patients") }}
@@ -208,10 +208,10 @@
             </div>
             <a href="{{ auth()->user()->hasRole('insurance_clerk') ? route('patients.section.insurance') : route('patients.section.followup') }}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">{{ __("View All") }}</a>
         </div>
-        @endcan
+        @endif
 
-        {{-- Financial Summary (حسب صلاحية reports.view أو payments.view) --}}
-        @if(auth()->user()->can('reports.view') || auth()->user()->can('payments.view'))
+        {{-- Financial Summary (الإدارة فقط) --}}
+        @if(\App\Support\RoleNav::canSeeFinancialSummary(auth()->user()))
         <div class="bg-white rounded-lg shadow p-6 border border-slate-200">
             <h2 class="text-lg font-semibold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? 'ملخص مالي' : 'Financial summary' }}</h2>
             <div class="space-y-4">
@@ -236,11 +236,7 @@
                     </div>
                 </div>
             </div>
-            @can('payments.view')
-                <a href="{{ route('payments.index') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
-            @elsecan('reports.view')
-                <a href="{{ route('revenue.control-room') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
-            @endcan
+            <a href="{{ route('revenue.control-room') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline font-medium">{{ __("View Detailed Reports") }}</a>
         </div>
         @endif
     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shift;
+use App\Models\User;
 use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -25,7 +26,9 @@ class ShiftController extends Controller
     public function create()
     {
         Gate::authorize('settings.manage');
-        return view('shifts.create');
+        $staffUsers = User::query()->where('status', 'active')->orderBy('name')->get();
+
+        return view('shifts.create', compact('staffUsers'));
     }
 
     /**
@@ -42,6 +45,8 @@ class ShiftController extends Controller
             'end_time' => 'required',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'exists:users,id',
         ]);
 
         if (!isset($validated['name_ar'])) {
@@ -49,6 +54,8 @@ class ShiftController extends Controller
         }
 
         $validated['is_active'] = $request->boolean('is_active', true);
+        $userIds = $validated['user_ids'] ?? [];
+        unset($validated['user_ids']);
 
         // Auto-assign sort order if not provided
         if (!isset($validated['sort_order'])) {
@@ -56,6 +63,7 @@ class ShiftController extends Controller
         }
 
         $shift = Shift::create($validated);
+        $shift->users()->sync($userIds);
 
         ActivityLogger::log('shift_created', Shift::class, $shift->id, __('Shift created') . ': ' . $shift->name, null, $shift->toArray());
 
@@ -68,7 +76,10 @@ class ShiftController extends Controller
     public function edit(Shift $shift)
     {
         Gate::authorize('settings.manage');
-        return view('shifts.edit', compact('shift'));
+        $shift->load('users');
+        $staffUsers = User::query()->where('status', 'active')->orderBy('name')->get();
+
+        return view('shifts.edit', compact('shift', 'staffUsers'));
     }
 
     /**
@@ -85,6 +96,8 @@ class ShiftController extends Controller
             'end_time' => 'required',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'exists:users,id',
         ]);
 
         if (!isset($validated['name_ar'])) {
@@ -92,9 +105,12 @@ class ShiftController extends Controller
         }
 
         $validated['is_active'] = $request->boolean('is_active', true);
+        $userIds = $validated['user_ids'] ?? [];
+        unset($validated['user_ids']);
 
         $old = $shift->toArray();
         $shift->update($validated);
+        $shift->users()->sync($userIds);
 
         ActivityLogger::log('shift_updated', Shift::class, $shift->id, __('Shift updated') . ': ' . $shift->name, $old, $shift->toArray());
 

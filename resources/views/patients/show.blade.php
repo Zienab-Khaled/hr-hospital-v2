@@ -43,7 +43,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            @can('invoices.create')
+            @can('visits.create')
                 <a href="{{ route('visits.create', ['patient_id' => $patient->id]) }}"
                     class="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,6 +51,8 @@
                     </svg>
                     {{ app()->getLocale() === 'ar' ? 'تسجيل زيارة' : 'Register Visit' }}
                 </a>
+            @endcan
+            @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id]) }}"
                     class="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +60,7 @@
                     </svg>
                     {{ app()->getLocale() === 'ar' ? 'تقديم خدمة' : 'Add Service' }}
                 </a>
-            @endcan
+            @endif
             @can('patients.edit')
                 <a href="{{ route('patients.edit', $patient) }}"
                     class="flex items-center gap-2 px-5 py-3 bg-white text-violet-600 border border-violet-100 rounded-xl font-black text-sm hover:bg-violet-50 transition-all shadow-sm">
@@ -237,13 +239,13 @@
                                             <span>{{ app()->getLocale() === 'ar' ? 'عرض' : 'View' }}</span>
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                         </a>
-                                        @can('invoices.create')
+                                        @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                             <a href="{{ route('visits.create', ['patient_id' => $visit->patient_id, 'visit_id' => $visit->id, 'registered' => 1]) }}"
                                                 title="{{ app()->getLocale() === 'ar' ? 'فتح شاشة الخدمات والفاتورة' : 'Open services screen' }}"
                                                 class="inline-flex items-center gap-1 ms-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold text-xs hover:bg-emerald-600 hover:text-white transition-all">
                                                 {{ app()->getLocale() === 'ar' ? 'خدمات' : 'Services' }}
                                             </a>
-                                        @endcan
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach

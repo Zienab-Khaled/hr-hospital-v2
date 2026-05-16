@@ -226,19 +226,17 @@
         @endif
 
         {{-- Date range (registration) – all pages --}}
-        <div class="w-32">
+        <div class="min-w-[11rem]">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                 {{ app()->getLocale() === 'ar' ? 'تسجيل من' : 'Reg. From' }}
             </label>
-            <input type="date" name="date_from" value="{{ request('date_from') }}"
-                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <x-date-latin-input name="date_from" :value="request('date_from')" />
         </div>
-        <div class="w-32">
+        <div class="min-w-[11rem]">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
                 {{ app()->getLocale() === 'ar' ? 'تسجيل إلى' : 'Reg. To' }}
             </label>
-            <input type="date" name="date_to" value="{{ request('date_to') }}"
-                class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <x-date-latin-input name="date_to" :value="request('date_to')" />
         </div>
         <div class="w-36">
             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">

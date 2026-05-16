@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', app()->getLocale() === 'ar' ? 'تعديل الوردية' : 'Edit Shift')
+@section('title', app()->getLocale() === 'ar' ? 'تعديل الـ Shift' : 'Edit Shift')
 
 @section('content')
 <div class="mb-6 flex items-center gap-4">
     <a href="{{ route('shifts.index') }}" class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ app()->getLocale() === 'ar' ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7' }}"/></svg>
     </a>
-    <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'تعديل الوردية' : 'Edit Shift' }}: {{ $shift->name_ar }}</h2>
+    <h2 class="text-xl font-semibold text-slate-800">{{ app()->getLocale() === 'ar' ? 'تعديل الـ Shift' : 'Edit Shift' }}: <span dir="ltr" lang="en">{{ $shift->englishLabelWithTime() }}</span></h2>
 </div>
 
 <div class="max-w-xl bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -60,9 +60,11 @@
                 </div>
             </div>
 
+            @include('shifts.partials.staff-assign', ['shift' => $shift, 'staffUsers' => $staffUsers])
+
             <div class="pt-4 border-t border-slate-100 flex gap-3">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                    {{ app()->getLocale() === 'ar' ? 'تحديث الوردية' : 'Update Shift' }}
+                    {{ app()->getLocale() === 'ar' ? 'تحديث الـ Shift' : 'Update Shift' }}
                 </button>
                 <a href="{{ route('shifts.index') }}" class="bg-slate-100 text-slate-600 px-6 py-2 rounded-lg hover:bg-slate-200 transition-colors font-medium text-center">
                     {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}

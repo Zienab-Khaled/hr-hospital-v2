@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Shift extends Model
@@ -17,6 +18,48 @@ class Shift extends Model
     public function visits(): HasMany
     {
         return $this->hasMany(Visit::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'shift_user')->withTimestamps();
+    }
+
+    /** اسم الفترة بالإنجليزية (Morning / Afternoon / Night) — يُعرض دائماً في الفلاتر حتى لو الواجهة عربية. */
+    public function englishPeriodName(): string
+    {
+        $n = strtolower(trim((string) ($this->name ?? '')));
+
+        if (str_contains($n, 'morning')) {
+            return 'Morning';
+        }
+        if (str_contains($n, 'afternoon')) {
+            return 'Afternoon';
+        }
+        if (str_contains($n, 'night')) {
+            return 'Night';
+        }
+
+        if (str_contains($n, 'shift 1') || str_contains($n, '12-8') || str_contains($n, '12–8')) {
+            return 'Night';
+        }
+        if (str_contains($n, 'shift 2') || str_contains($n, '8-4') || str_contains($n, '8–4')) {
+            return 'Morning';
+        }
+        if (str_contains($n, 'shift 3') || str_contains($n, '4-12') || str_contains($n, '4–12')) {
+            return 'Afternoon';
+        }
+
+        return $this->name ?: 'Shift';
+    }
+
+    /** مثال: Morning (08:00 – 16:00) */
+    public function englishLabelWithTime(): string
+    {
+        $start = \Carbon\Carbon::parse($this->start_time)->format('H:i');
+        $end = \Carbon\Carbon::parse($this->end_time)->format('H:i');
+
+        return $this->englishPeriodName() . ' (' . $start . ' – ' . $end . ')';
     }
 
     /**
@@ -37,5 +80,11 @@ class Shift extends Model
             }
         }
         return $shifts->first();
+    }
+
+    /** @alias currentAt() — للتوافق مع الاستدعاءات القديمة */
+    public static function getCurrentShift(): ?self
+    {
+        return static::currentAt();
     }
 }

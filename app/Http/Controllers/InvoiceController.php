@@ -33,6 +33,7 @@ class InvoiceController extends Controller
     public function create(Request $request)
     {
         $this->authorize('invoices.create');
+        abort_unless(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()), 403);
 
         $patient = null;
         $visit = null;
@@ -137,6 +138,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $this->authorize('invoices.create');
+        abort_unless(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()), 403);
 
         Log::info('Invoice store request', [
             'has_patient_id' => $request->has('patient_id'),

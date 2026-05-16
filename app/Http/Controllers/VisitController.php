@@ -608,15 +608,19 @@ class VisitController extends Controller
      */
     public function index(Request $request)
     {
-        Gate::authorize('invoices.view'); // Or visits.view if exists, usually invoices.view is used for reception tasks
+        Gate::authorize('visits.view');
 
         $user = auth()->user();
         $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
         $currentShift = Shift::currentAt();
 
         // For admin/manager: if no filters at all, redirect with today + current shift as defaults
-        if ($isAdmin && !$request->hasAny(['date', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'admission_entry_source', 'page'])) {
-            $defaults = ['date' => today()->toDateString()];
+        if ($isAdmin && !$request->hasAny(['date', 'date_from', 'date_to', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'admission_entry_source', 'page'])) {
+            $today = today()->toDateString();
+            $defaults = [
+                'date_from' => $today,
+                'date_to' => $today,
+            ];
             if ($currentShift) {
                 $defaults['shift_id'] = $currentShift->id;
             }
@@ -644,7 +648,13 @@ class VisitController extends Controller
             if ($request->filled('department_id')) {
                 $query->where('department_id', $request->input('department_id'));
             }
-            if ($request->filled('date')) {
+            if ($request->filled('date_from')) {
+                $query->whereDate('visit_date', '>=', $request->input('date_from'));
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('visit_date', '<=', $request->input('date_to'));
+            }
+            if (! $request->filled('date_from') && ! $request->filled('date_to') && $request->filled('date')) {
                 $query->whereDate('visit_date', $request->input('date'));
             }
             if ($request->filled('admission_entry_source')) {

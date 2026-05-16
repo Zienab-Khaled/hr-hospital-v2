@@ -8,7 +8,7 @@
                 <span class="text-sm font-normal text-slate-600">— {{ app()->getLocale() === 'ar' ? 'شيفت اليوم في قسمك' : 'Today\'s shift in your department' }}</span>
             @endif
         </h2>
-        @can('invoices.create')
+        @can('visits.create')
             <a href="{{ route('visits.create') }}"
                 class="inline-flex text-white items-center gap-2 bg-blue-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,13 +21,13 @@
 
     @if ($isAdmin)
         <x-index-filters :action="route('visits.index')" :searchPlaceholder="app()->getLocale() === 'ar' ? 'اسم المريض، رقم الملف، رقم الهوية...' : 'Patient name, file no, identity...'">
-            <div class="w-36">
+            <div class="min-w-[11.5rem]">
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'المناوبة' : 'Shift' }}</label>
-                <select name="shift_id" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
+                <select name="shift_id" class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800" dir="ltr" lang="en">
                     <option value="">{{ app()->getLocale() === 'ar' ? 'الكل' : 'All' }}</option>
                     @foreach ($shifts as $s)
                         <option value="{{ $s->id }}" {{ request('shift_id') == $s->id ? 'selected' : '' }}>
-                            {{ app()->getLocale() === 'ar' && $s->name_ar ? $s->name_ar : $s->name }}
+                            {{ $s->englishLabelWithTime() }}
                         </option>
                     @endforeach
                 </select>
@@ -43,10 +43,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="w-36">
-                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</label>
-                <input type="date" name="date" value="{{ request('date', date('Y-m-d')) }}"
-                    class="w-full px-2 py-1 text-sm border-2 border-slate-300 rounded focus:ring-2 focus:ring-red-500 bg-white text-slate-800">
+            @php
+                $visitDateFrom = request('date_from', request('date'));
+                $visitDateTo = request('date_to', request('date'));
+            @endphp
+            <div class="min-w-[11rem]">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'من تاريخ' : 'From date' }}</label>
+                <x-date-latin-input name="date_from" :value="$visitDateFrom" />
+            </div>
+            <div class="min-w-[11rem]">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'إلى تاريخ' : 'To date' }}</label>
+                <x-date-latin-input name="date_to" :value="$visitDateTo" />
             </div>
             <div class="w-40">
                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">{{ app()->getLocale() === 'ar' ? 'الجهة / التأمين' : 'Insurance / Entity' }}</label>
@@ -166,7 +173,7 @@
                         @if ($isAdmin)
                             <td class="p-3 text-slate-800">
                                 @if ($v->shift)
-                                    {{ app()->getLocale() === 'ar' && $v->shift->name_ar ? $v->shift->name_ar : $v->shift->name }}
+                                    <span dir="ltr" lang="en">{{ $v->shift->englishLabelWithTime() }}</span>
                                 @else
                                     —
                                 @endif
@@ -184,13 +191,13 @@
                                     <a href="{{ route('patients.show', $v->patient) }}" title="{{ app()->getLocale() === 'ar' ? 'عرض المريض' : 'View patient' }}" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </a>
-                                    @can('invoices.create')
+                                    @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                         @if (!$v->transferred_department_id)
-                                            <a href="{{ route('invoices.create', ['patient_id' => $v->patient->id, 'visit_id' => $v->id]) }}" title="{{ app()->getLocale() === 'ar' ? 'فاتورة' : 'Invoice' }}" class="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50">
+                                            <a href="{{ route('invoices.create', ['patient_id' => $v->patient->id, 'visit_id' => $v->id]) }}" title="{{ app()->getLocale() === 'ar' ? 'تقديم خدمة' : 'Add service' }}" class="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                             </a>
                                         @endif
-                                    @endcan
+                                    @endif
                                     @can('visits.delete') {{-- Or checks for admin --}}
                                         @if (!$v->transferred_department_id)
                                             <a href="{{ route('visits.edit', $v) }}" title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}" class="text-slate-600 hover:text-slate-800 p-1 rounded hover:bg-slate-50">
@@ -211,7 +218,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $isAdmin ? 6 : 5 }}" class="p-8 text-center text-slate-500">
+                        <td colspan="{{ $isAdmin ? 7 : 6 }}" class="p-8 text-center text-slate-500">
                             {{ app()->getLocale() === 'ar' ? 'لا توجد زيارات' : 'No visits yet' }}
                             @if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('manager'))
                                 <span class="block mt-1 text-sm">{{ app()->getLocale() === 'ar' ? 'لشيفت اليوم في قسمك.' : 'For today\'s shift in your department.' }}</span>

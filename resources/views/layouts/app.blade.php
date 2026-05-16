@@ -111,6 +111,18 @@
             unicode-bidi: isolate;
             text-align: left;
         }
+
+        .date-latin-input {
+            direction: ltr;
+            unicode-bidi: isolate;
+            text-align: left;
+            font-variant-numeric: lining-nums tabular-nums;
+        }
+
+        .date-latin-input::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
     </style>
 </head>
 

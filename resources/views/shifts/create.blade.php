@@ -59,9 +59,11 @@
                 </div>
             </div>
 
+            @include('shifts.partials.staff-assign', ['staffUsers' => $staffUsers])
+
             <div class="pt-4 border-t border-slate-100 flex gap-3">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                    {{ app()->getLocale() === 'ar' ? 'حفظ الوردية' : 'Save Shift' }}
+                    {{ app()->getLocale() === 'ar' ? 'حفظ الـ Shift' : 'Save Shift' }}
                 </button>
                 <a href="{{ route('shifts.index') }}" class="bg-slate-100 text-slate-600 px-6 py-2 rounded-lg hover:bg-slate-200 transition-colors font-medium text-center">
                     {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}

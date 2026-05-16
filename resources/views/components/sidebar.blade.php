@@ -1,6 +1,9 @@
 @php
+    use App\Support\RoleNav;
     $user = auth()->user();
-    $isManager = $user->hasRole('admin') || $user->hasRole('manager');
+    $isManager = RoleNav::isAdministration($user);
+    $invoicesOnly = RoleNav::isInvoicesOnly($user);
+    $admissionOnly = RoleNav::isAdmissionOnly($user);
     $isRtl = app()->getLocale() === 'ar';
 @endphp
 
@@ -67,7 +70,7 @@
         @endif
 
         {{-- Patients Section --}}
-        @if ($user->can('patients.view') || $isManager)
+        @if (RoleNav::canSeePatientManagement($user))
             <div class="mt-5 pt-4 border-t border-white/10">
                 <p class="px-3 py-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">
                     {{ app()->getLocale() === 'ar' ? 'إدارة المرضى' : 'Patient Management' }}
@@ -147,7 +150,7 @@
         @endif
 
         {{-- Invoices --}}
-        @if ($user->can('invoices.view') || $isManager)
+        @if ($user->can('invoices.view') || $isManager || $invoicesOnly)
             <a href="{{ route('invoices.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('invoices.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -173,7 +176,7 @@
 @endif -->
 
         {{-- Payments --}}
-        @if ($user->can('payments.view') || $user->can('payments.approve') || $isManager)
+        @if (RoleNav::canSeePaymentsMenu($user))
             <a href="{{ route('payments.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('payments.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -214,8 +217,8 @@
             </a>
         @endif
 
-        {{-- Claims (المطالبات: تأمين + جمعيات) — للموظفين الذين لديهم صلاحية claims.view فقط (المحصل لا يراها) --}}
-        @if ($user->can('claims.view') || $isManager)
+        {{-- Claims (المطالبات) --}}
+        @if (RoleNav::canSeeClaimsMenu($user))
             <a href="{{ route('charity-claims.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('charity-claims.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -228,7 +231,8 @@
             </a>
         @endif
 
-        {{-- Delegations (مفتوح لجميع الموظفين) --}}
+        {{-- Delegations --}}
+        @if (RoleNav::canSeeDelegations($user))
         <a href="{{ route('delegations.index') }}"
             class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
            {{ request()->routeIs('delegations.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -238,6 +242,7 @@
             </svg>
             <span>{{ app()->getLocale() === 'ar' ? 'التفويضات' : 'Delegations' }}</span>
         </a>
+        @endif
 
         {{-- System Admin Section --}}
         @if ($isManager)
@@ -338,8 +343,8 @@
             </div>
         @endif
 
-        {{-- Reports --}}
-        @if ($user->can('reports.view') || $isManager)
+        {{-- Reports (الإدارة فقط) --}}
+        @if (RoleNav::canSeeReportsMenu($user))
             <a href="{{ route('revenue.control-room') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('revenue.control-room') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -385,8 +390,8 @@
             </a>
         @endif
 
-        {{-- Activity Log --}}
-        @if ($user->can('activity.view'))
+        {{-- Activity Log (الإدارة فقط) --}}
+        @if (RoleNav::canSeeActivityLog($user))
             <a href="{{ route('activity.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('activity.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">

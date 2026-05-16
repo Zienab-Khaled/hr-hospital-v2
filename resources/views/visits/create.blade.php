@@ -303,10 +303,12 @@
                                     class="inline-flex items-center text-white gap-2 px-4 py-2.5 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '🔄 تحويل إلى قسم آخر' : '🔄 Transfer to another department' }}
                                 </button>
+                                @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
                                     class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm shadow-sm transition-colors">
                                     {{ app()->getLocale() === 'ar' ? '💰 تقديم خدمات و إنشاء فاتورة' : '💰 Add services & create invoice' }}
                                 </a>
+                                @endif
                                 @endif
                             </div>
 
@@ -418,7 +420,7 @@
                                 @else
                                     <div class="rounded-lg border-2 border-dashed border-emerald-200 bg-white p-8 text-center">
                                         <p class="text-slate-600 font-bold mb-4">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير لهذه الزيارة بعد' : 'No invoices for this visit yet' }}</p>
-                                        @if (!$isTransferred)
+                                        @if (!$isTransferred && \App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                             <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm">
                                                 {{ app()->getLocale() === 'ar' ? '💰 إنشاء فاتورة (تقديم خدمات)' : '💰 Create invoice (add services)' }}

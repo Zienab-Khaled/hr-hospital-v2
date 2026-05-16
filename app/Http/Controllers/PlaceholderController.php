@@ -291,7 +291,7 @@ class PlaceholderController extends Controller
 
         $isAdmin = auth()->user()->hasRole('admin');
         if (!$isAdmin && !$request->has('shift_id')) {
-            $currentShift = Shift::getCurrentShift();
+            $currentShift = Shift::currentAt();
             if ($currentShift) {
                 $request->merge(['shift_id' => $currentShift->id]);
             }

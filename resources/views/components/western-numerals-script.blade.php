@@ -54,6 +54,45 @@
         });
     }
 
+    function bindDateLatinFields() {
+        document.querySelectorAll('input[data-date-latin-picker-for]').forEach(function (picker) {
+            var textId = picker.getAttribute('data-date-latin-picker-for');
+            var text = textId ? document.getElementById(textId) : null;
+            if (!text || picker.dataset.dateLatinBound) return;
+            picker.dataset.dateLatinBound = '1';
+            picker.addEventListener('change', function () {
+                if (picker.value) {
+                    text.value = picker.value;
+                    text.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+            function syncPickerFromText() {
+                var v = (text.value || '').trim();
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                    picker.value = v;
+                }
+            }
+            text.addEventListener('change', syncPickerFromText);
+            text.addEventListener('blur', syncPickerFromText);
+        });
+        document.querySelectorAll('.date-latin-picker-btn').forEach(function (btn) {
+            if (btn.dataset.dateLatinBtnBound) return;
+            btn.dataset.dateLatinBtnBound = '1';
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var wrap = btn.closest('.date-latin-field');
+                if (!wrap) return;
+                var picker = wrap.querySelector('input[data-date-latin-picker-for]');
+                if (!picker) return;
+                if (typeof picker.showPicker === 'function') {
+                    picker.showPicker();
+                } else {
+                    picker.focus();
+                }
+            });
+        });
+    }
+
     function bind() {
         document.body.addEventListener('input', function (e) { normalize(e.target); });
         document.body.addEventListener('blur', function (e) { normalize(e.target); }, true);
@@ -64,6 +103,7 @@
         document.querySelectorAll('input[type="text"][inputmode="decimal"], input[type="text"][inputmode="numeric"]').forEach(normalize);
         document.querySelectorAll('input[type="text"][data-western-numerals="1"]').forEach(normalize);
         fixDateTimeInputsBidi();
+        bindDateLatinFields();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

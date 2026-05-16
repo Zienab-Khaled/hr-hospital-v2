@@ -3,7 +3,7 @@
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h2 class="text-xl font-semibold text-slate-800">{{ __('Invoices') }}</h2>
-        @can('invoices.create')
+        @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
             <a href="{{ route('invoices.create') }}"
                 class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -11,7 +11,7 @@
                 </svg>
                 {{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة جديدة' : 'Create Invoice' }}
             </a>
-        @endcan
+        @endif
     </div>
 
     {{-- Search and Filter using Global Component --}}

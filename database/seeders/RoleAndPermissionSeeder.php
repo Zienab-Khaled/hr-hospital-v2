@@ -58,29 +58,25 @@ class RoleAndPermissionSeeder extends Seeder
             'insurance_companies.manage', 'charity_entities.manage',
         ]);
 
-        // موظف (مكتب الدخول / إدخال بيانات): مرضى، خدمات، إجراءات إدارية
+        // موظف (مكتب الدخول): مرضى وزيارات فقط
         $employee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
         $employee->syncPermissions([
             'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
-            'visits.view', 'visits.create', 'visits.edit', 'visits.print', // No delete for employee
-            'authorizations.view', 'authorizations.create', 'authorizations.print',
+            'visits.view', 'visits.create', 'visits.edit', 'visits.print',
             'attachments.upload', 'attachments.view',
-            'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
+            'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.print',
+        ]);
+
+        // أمين صندوق: الفواتير فقط
+        $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => 'web']);
+        $cashier->syncPermissions([
             'invoices.view',
         ]);
 
-        // أمين صندوق: اعتماد الكاش، إغلاق يومي، رفع تقارير
-        $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => 'web']);
-        $cashier->syncPermissions([
-            'patients.view', 'invoices.view', 'payments.view', 'payments.create', 'payments.approve', 'payments.daily_close',
-            'attachments.view', 'reports.view', 'reports.export',
-        ]);
-
-        // محاسب: مراجعة التحصيل، تقارير مالية، تصدير
+        // محاسب: عرض وتعديل الفواتير فقط
         $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
         $accountant->syncPermissions([
-            'patients.view', 'invoices.view', 'invoices.print', 'payments.view', 'claims.view',
-            'attachments.view', 'reports.view', 'reports.export', 'activity.view',
+            'invoices.view', 'invoices.edit', 'invoices.print',
         ]);
 
         // التأمين (موظف تأمين)
@@ -91,11 +87,14 @@ class RoleAndPermissionSeeder extends Seeder
             'attachments.upload', 'attachments.view',
         ]);
 
-        // التحصيل (يمكن دمجه مع محاسب أو أمين صندوق حسب الهيكل)
+        // التحصيل: مرضى، زيارات، فواتير، مدفوعات (بدون مطالبات أو تقارير إدارية)
         $collection = Role::firstOrCreate(['name' => 'collection', 'guard_name' => 'web']);
         $collection->syncPermissions([
-            'patients.view', 'invoices.view', 'payments.view', 'payments.create', 'claims.view',
-            'reports.view', 'reports.export',
+            'patients.view', 'patients.create', 'patients.edit',
+            'visits.view', 'visits.create', 'visits.edit',
+            'invoices.view', 'invoices.create',
+            'payments.view', 'payments.create',
+            'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment',
         ]);
     }
 }

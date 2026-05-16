@@ -88,14 +88,13 @@ class RolesAndPermissionsSeeder extends Seeder
                 'claims.view', 'authorizations.view',
             ]);
 
-            // استقبال: إدارة المرضى، الزيارات، إنشاء فواتير، الإجراءات
+            // استقبال / مكتب الدخول: مرضى وزيارات فقط (بدون فواتير أو مطالبات أو تقارير)
             $reception = Role::firstOrCreate(['name' => 'reception', 'guard_name' => $guard]);
             $reception->syncPermissions([
-                'patients.view', 'patients.create',
+                'patients.view', 'patients.create', 'patients.edit',
                 'visits.view', 'visits.create', 'visits.edit',
-                'invoices.view', 'invoices.create',
                 'procedures.contact_report', 'procedures.written_commitment',
-                'procedures.non_commitment', 'procedures.debt_inventory',
+                'procedures.non_commitment',
             ]);
 
             // موظف تأمين: مرضى تأمين فقط، فواتير، مطالبات تأمين، تفويضات، شركات تأمين، تقارير تأمين
@@ -117,13 +116,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'procedures.contact_report',
             ]);
 
-            // محاسب: فواتير، مدفوعات، تقارير، سجل النشاط
+            // محاسب: عرض وتعديل الفواتير فقط (بدون تقديم خدمة جديدة)
             $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => $guard]);
             $accountant->syncPermissions([
-                'patients.view', 'invoices.view', 'invoices.edit',
-                'payments.view', 'payments.create', 'payments.approve',
-                'reports.view', 'reports.generate', 'reports.upload_cluster',
-                'claims.view', 'activity.view',
+                'invoices.view', 'invoices.edit',
             ]);
 
             // طبيب: عرض/تعديل مرضى، عرض فواتير
@@ -148,23 +144,20 @@ class RolesAndPermissionsSeeder extends Seeder
                 'procedures.non_commitment',
             ]);
 
-            // أمين صندوق: استلام من المحصل، اعتماد، إغلاق يومي، تقارير
+            // أمين صندوق: الفواتير فقط
             $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => $guard]);
             $cashier->syncPermissions([
-                'patients.view', 'invoices.view',
-                'payments.view', 'payments.create', 'payments.approve',
-                'reports.view', 'reports.generate',
+                'invoices.view',
             ]);
 
-            // رئيس المديونيات: متابعة مديونيات، تقارير، إجراءات
+            // رئيس المديونيات: مديونيات وفواتير ومرضى (بدون تقارير إدارية أو سجل نشاط)
             $debtsHead = Role::firstOrCreate(['name' => 'debts_head', 'guard_name' => $guard]);
             $debtsHead->syncPermissions([
                 'patients.view', 'visits.view',
                 'invoices.view', 'invoices.edit',
-                'payments.view', 'reports.view', 'reports.generate', 'reports.upload_cluster',
+                'payments.view',
                 'procedures.contact_report', 'procedures.written_commitment',
                 'procedures.non_commitment', 'procedures.debt_inventory',
-                'activity.view',
             ]);
 
             // فني متابعة مرضى (قسم التأمين): مرضى، زيارات، فواتير، مطالبات
