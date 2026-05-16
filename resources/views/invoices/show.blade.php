@@ -11,9 +11,9 @@
         $patientPaidOnly = (float) ($invoice->payments ?? collect())->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
         $effectiveRemaining = ($hasInsuranceCoverage || $isInsuranceOrCharity)
             ? max(0, round($totalPatientShare - $patientPaidOnly, 2))
-            : (float) $invoice->remaining_amount;
+            : (float) ($invoice->remaining_amount ?? 0);
         // المتبقي الإجمالي (يدخل فيه جزء التأمين حتى تُدفع المطالبة)
-        $totalRemaining = (float) $invoice->remaining_amount;
+        $totalRemaining = (float) ($invoice->remaining_amount ?? 0);
         $isEntryFeeOnly = $invoice->isEntryFeeOnly();
     @endphp
     <div class="max-w-5xl mx-auto">

@@ -9,20 +9,29 @@ class CurrencyHelper
         return 'ريال';
     }
 
-    public static function format(float|string $amount, bool $withSymbol = true): string
+    private static function normalizeAmount(float|string|null $amount): float
     {
-        $formatted = number_format((float) $amount, 2);
+        if ($amount === null || $amount === '') {
+            return 0.0;
+        }
+
+        return (float) $amount;
+    }
+
+    public static function format(float|string|null $amount, bool $withSymbol = true): string
+    {
+        $formatted = number_format(self::normalizeAmount($amount), 2);
         return $withSymbol ? $formatted . ' ' . self::symbol() : $formatted;
     }
 
     /** أرقام لاتينية (0–9) للعرض في الفواتير ولو كانت واجهة النظام عربية */
-    public static function formatAmountDecimal(float|string $amount, int $decimals = 2): string
+    public static function formatAmountDecimal(float|string|null $amount, int $decimals = 2): string
     {
-        return NumeralHelper::toWesternDigits(number_format((float) $amount, $decimals, '.', ','));
+        return NumeralHelper::toWesternDigits(number_format(self::normalizeAmount($amount), $decimals, '.', ','));
     }
 
     /** مثل format مع أرقام لاتينية — للفواتير والطباعة */
-    public static function formatInvoice(float|string $amount, bool $withSymbol = true): string
+    public static function formatInvoice(float|string|null $amount, bool $withSymbol = true): string
     {
         $core = self::formatAmountDecimal($amount, 2);
         return $withSymbol ? $core . ' ' . self::symbol() : $core;
@@ -32,9 +41,9 @@ class CurrencyHelper
      * Convert amount to Arabic words for official receipts (تفقيط - Saudi Riyal).
      * Returns e.g. "اثنان وأربعون ألف وخمس مائة وثمانون ريال فقط لاغير"
      */
-    public static function amountInArabicWords(float|string $amount): string
+    public static function amountInArabicWords(float|string|null $amount): string
     {
-        $n = (float) $amount;
+        $n = self::normalizeAmount($amount);
         $intPart = (int) floor($n);
         $decPart = (int) round(($n - $intPart) * 100);
 

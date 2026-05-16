@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Shift;
 use App\Models\User;
 use App\Helpers\ActivityLogger;
+use App\Support\ShiftStaff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -27,8 +28,9 @@ class ShiftController extends Controller
     {
         Gate::authorize('settings.manage');
         $staffUsers = User::query()->where('status', 'active')->orderBy('name')->get();
+        $staffPivotReady = ShiftStaff::pivotTableReady();
 
-        return view('shifts.create', compact('staffUsers'));
+        return view('shifts.create', compact('staffUsers', 'staffPivotReady'));
     }
 
     /**
@@ -63,11 +65,16 @@ class ShiftController extends Controller
         }
 
         $shift = Shift::create($validated);
-        $shift->users()->sync($userIds);
+        $staffWarning = $this->syncShiftStaff($shift, $userIds);
 
         ActivityLogger::log('shift_created', Shift::class, $shift->id, __('Shift created') . ': ' . $shift->name, null, $shift->toArray());
 
-        return redirect()->route('shifts.index')->with('success', __('Shift created successfully.'));
+        $redirect = redirect()->route('shifts.index')->with('success', __('Shift created successfully.'));
+        if ($staffWarning) {
+            $redirect->with('warning', $staffWarning);
+        }
+
+        return $redirect;
     }
 
     /**
@@ -76,10 +83,15 @@ class ShiftController extends Controller
     public function edit(Shift $shift)
     {
         Gate::authorize('settings.manage');
-        $shift->load('users');
+        $staffPivotReady = ShiftStaff::pivotTableReady();
+        if ($staffPivotReady) {
+            $shift->load('users');
+        } else {
+            $shift->setRelation('users', collect());
+        }
         $staffUsers = User::query()->where('status', 'active')->orderBy('name')->get();
 
-        return view('shifts.edit', compact('shift', 'staffUsers'));
+        return view('shifts.edit', compact('shift', 'staffUsers', 'staffPivotReady'));
     }
 
     /**
@@ -110,11 +122,34 @@ class ShiftController extends Controller
 
         $old = $shift->toArray();
         $shift->update($validated);
-        $shift->users()->sync($userIds);
+        $staffWarning = $this->syncShiftStaff($shift, $userIds);
 
         ActivityLogger::log('shift_updated', Shift::class, $shift->id, __('Shift updated') . ': ' . $shift->name, $old, $shift->toArray());
 
-        return redirect()->route('shifts.index')->with('success', __('Shift updated successfully.'));
+        $redirect = redirect()->route('shifts.index')->with('success', __('Shift updated successfully.'));
+        if ($staffWarning) {
+            $redirect->with('warning', $staffWarning);
+        }
+
+        return $redirect;
+    }
+
+    /** @return string|null رسالة تحذير إن لم يُحفظ ربط الموظفين */
+    private function syncShiftStaff(Shift $shift, array $userIds): ?string
+    {
+        if (! ShiftStaff::pivotTableReady()) {
+            if ($userIds !== []) {
+                return app()->getLocale() === 'ar'
+                    ? 'تم حفظ الـ Shift، لكن ربط الموظفين يتطلب تشغيل التحديث على السيرفر: php artisan migrate'
+                    : 'Shift saved, but staff assignment requires running: php artisan migrate';
+            }
+
+            return null;
+        }
+
+        $shift->users()->sync($userIds);
+
+        return null;
     }
 
     /**

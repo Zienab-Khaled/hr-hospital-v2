@@ -35,7 +35,7 @@ class InvoiceItem extends Model
     /** Amount covered by insurance for this line (computed from type + value). */
     public function getInsuranceCoveredAmountAttribute(): float
     {
-        $total = (float) $this->total_price;
+        $total = (float) ($this->total_price ?? 0);
         if (!$this->insurance_coverage_type || $total <= 0) {
             return 0.0;
         }
@@ -50,7 +50,7 @@ class InvoiceItem extends Model
     /** Amount remaining for patient to pay for this line. */
     public function getPatientAmountAttribute(): float
     {
-        return round((float) $this->total_price - $this->insurance_covered_amount, 2);
+        return round((float) ($this->total_price ?? 0) - $this->insurance_covered_amount, 2);
     }
 
     public function invoice(): BelongsTo
