@@ -257,7 +257,7 @@
 
         const templates = {
             commitment: "{{ app()->getLocale() === 'ar' ? 'أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية الإضافية التي تكون خارج نطاق التغطية التأمينية وعلى هذا يتم التوقيع .' : 'I pledge that I will pay all additional therapeutic expenses that are outside the scope of insurance coverage, and this is signed.' }}",
-            non_commitment: "{{ app()->getLocale() === 'ar' ? 'أفيدكم بأنني امتنعت عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج نطاق التغطية التأمينية ، وقد أُشعرت بالتبعات المترتبة على ذلك وعلى هذا يتم التوقيع .' : 'I inform you that I refused to sign the written pledge to pay all additional therapeutic expenses that are outside the scope of insurance coverage, and I have been informed of the consequences of that, and this is signed.' }}"
+            non_commitment: "{{ app()->getLocale() === 'ar' ? 'أفيدكم بأنني امتنعت عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج نطاق التغطية التأمينية.' : 'I inform you that I refused to sign the written pledge to pay all additional therapeutic expenses that are outside the scope of insurance coverage.' }}"
         };
 
         function openDashboardModal(type, data = null) {

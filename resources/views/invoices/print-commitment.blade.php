@@ -508,7 +508,6 @@
                 <td class="row-label">التوقيع :-</td>
                 <td class="sig-td">
                     <div class="sig-canvas-wrap no-print" id="sigWrap">
-                        <p class="sig-hint no-print">وقّع هنا بصوابعك أو الماوس ↓</p>
                         <canvas id="sigCanvas"></canvas>
                     </div>
                     <div class="sig-actions no-print">
@@ -518,18 +517,17 @@
                 </td>
             </tr>
             <tr>
-                <td class="row-label">البصمة الإلكترونية :-</td>
+                <td class="row-label">البصمة :-</td>
                 <td class="sig-td">
                     <div class="fingerprint-wrap no-print">
-                        <p class="fingerprint-hint no-print">المريض يبصم على جهاز البصمة ← البصمة تظهر هنا تلقائياً أو بالضغط أدناه</p>
                         <div class="fingerprint-actions no-print">
-                            <button type="button" class="btn btn-dark no-print" id="btnPasteFingerprint">👆 جلب البصمة من الجهاز (الحافظة)</button>
-                            <label class="btn btn-gray no-print" style="margin:0;">رفع صورة بصمة<input type="file" id="fingerprintInput" accept="image/*" class="sr-only"></label>
-                            <button type="button" class="btn btn-gray no-print" onclick="clearFingerprint()">مسح البصمة</button>
+                            <button type="button" class="btn btn-dark no-print" id="btnPasteFingerprint">جلب البصمة</button>
+                            <label class="btn btn-gray no-print" style="margin:0;">رفع<input type="file" id="fingerprintInput" accept="image/*" class="sr-only"></label>
+                            <button type="button" class="btn btn-gray no-print" onclick="clearFingerprint()">مسح</button>
                         </div>
-                        <div id="fingerprintPasteZone" class="fingerprint-paste no-print">أو الصق هنا (Ctrl+V) بعد البصم على الجهاز</div>
+                        <div id="fingerprintPasteZone" class="fingerprint-paste no-print" tabindex="0" aria-label="البصمة"></div>
                     </div>
-                    <img id="fingerprintPreview" class="fingerprint-preview" src="" alt="البصمة الإلكترونية">
+                    <img id="fingerprintPreview" class="fingerprint-preview" src="" alt="البصمة">
                 </td>
             </tr>
         </tbody>
