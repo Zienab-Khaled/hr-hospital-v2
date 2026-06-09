@@ -158,6 +158,8 @@
                         {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
                     <option value="charity" {{ request('payment_type') === 'charity' ? 'selected' : '' }}>
                         {{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
+                    <option value="treatment_eligibility" {{ request('payment_type') === 'treatment_eligibility' ? 'selected' : '' }}>
+                        {{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility' }}</option>
                 </select>
             </div>
         @endif
@@ -312,14 +314,9 @@
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     {{ $p->payment_type === 'cash' ? 'bg-green-100 text-green-800' : '' }}
                                     {{ $p->payment_type === 'insurance' ? 'bg-blue-100 text-blue-800' : '' }}
-                                    {{ $p->payment_type === 'charity' ? 'bg-orange-100 text-orange-800' : '' }}">
-                                    {{ app()->getLocale() === 'ar'
-                                        ? ($p->payment_type === 'cash'
-                                            ? 'كاش'
-                                            : ($p->payment_type === 'insurance'
-                                                ? 'تأمين'
-                                                : 'جمعية'))
-                                        : ucfirst($p->payment_type) }}
+                                    {{ $p->payment_type === 'charity' ? 'bg-orange-100 text-orange-800' : '' }}
+                                    {{ $p->payment_type === 'treatment_eligibility' ? 'bg-teal-100 text-teal-800' : '' }}">
+                                    {{ $p->payment_type_label }}
                                 </span>
                             @endif
                         </td>

@@ -138,7 +138,7 @@
                              </div>
                              <div>
                                 <div class="flex items-center gap-2 mb-1.5">
-                                    <span class="text-[10px] font-black px-3 py-1 rounded-full uppercase {{ $invoice->patient->payment_type === 'cash' ? 'bg-emerald-100 text-emerald-700' : ($invoice->patient->payment_type === 'insurance' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700') }}">
+                                    <span class="text-[10px] font-black px-3 py-1 rounded-full uppercase {{ $invoice->patient->payment_type === 'cash' ? 'bg-emerald-100 text-emerald-700' : ($invoice->patient->payment_type === 'insurance' ? 'bg-amber-100 text-amber-700' : ($invoice->patient->payment_type === 'treatment_eligibility' ? 'bg-teal-100 text-teal-700' : 'bg-purple-100 text-purple-700')) }}">
                                         {{ $invoice->patient->payment_type_label }}
                                     </span>
                                     <span class="text-slate-400 text-[10px] font-black tracking-widest">INV-{{ $invoice->invoice_number }}</span>

@@ -143,7 +143,7 @@ class PatientController extends Controller
             'sponsor_name' => 'nullable|string|max:255',
             'sponsor_phone' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:50',
-            'payment_type' => 'required|in:cash,insurance,charity',
+            'payment_type' => Patient::paymentTypeValidationRule(),
             'insurance_company_id' => 'nullable|exists:insurance_companies,id',
             'charity_entity_id' => 'nullable|exists:charity_entities,id',
             'notes' => 'nullable|string',
@@ -160,9 +160,11 @@ class PatientController extends Controller
 
         if ($valid['payment_type'] === 'insurance') {
             $valid['charity_entity_id'] = null;
-        }
-        if ($valid['payment_type'] === 'charity') {
+        } elseif ($valid['payment_type'] === 'charity') {
             $valid['insurance_company_id'] = null;
+        } else {
+            $valid['insurance_company_id'] = null;
+            $valid['charity_entity_id'] = null;
         }
         $valid['is_active'] = true;
 
@@ -314,7 +316,7 @@ class PatientController extends Controller
             'sponsor_name' => 'nullable|string|max:255',
             'sponsor_phone' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:50',
-            'payment_type' => 'required|in:cash,insurance,charity',
+            'payment_type' => Patient::paymentTypeValidationRule(),
             'insurance_company_id' => 'nullable|exists:insurance_companies,id',
             'charity_entity_id' => 'nullable|exists:charity_entities,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -332,9 +334,11 @@ class PatientController extends Controller
 
         if ($valid['payment_type'] === 'insurance') {
             $valid['charity_entity_id'] = null;
-        }
-        if ($valid['payment_type'] === 'charity') {
+        } elseif ($valid['payment_type'] === 'charity') {
             $valid['insurance_company_id'] = null;
+        } else {
+            $valid['insurance_company_id'] = null;
+            $valid['charity_entity_id'] = null;
         }
 
         $oldValues = $patient->toArray();

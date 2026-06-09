@@ -126,16 +126,36 @@ class Patient extends Model implements HasMedia
         return app()->getLocale() === 'ar' ? $opts[$key]['ar'] : $opts[$key]['en'];
     }
 
-    /** تسمية طريقة الدفع للعرض (كاش / تأمين / جمعية) */
+    /** @return array<string, array{ar: string, en: string}> */
+    public static function paymentTypeOptions(): array
+    {
+        return [
+            'cash' => ['ar' => 'نقدي', 'en' => 'Cash'],
+            'insurance' => ['ar' => 'تأمين', 'en' => 'Insurance'],
+            'charity' => ['ar' => 'جمعية خيرية', 'en' => 'Charity'],
+            'treatment_eligibility' => ['ar' => 'أحقية علاج', 'en' => 'Treatment Eligibility'],
+        ];
+    }
+
+    /** @return list<string> */
+    public static function paymentTypeKeys(): array
+    {
+        return array_keys(static::paymentTypeOptions());
+    }
+
+    public static function paymentTypeValidationRule(): string
+    {
+        return 'required|in:' . implode(',', static::paymentTypeKeys());
+    }
+
+    /** تسمية طريقة الدفع للعرض */
     public function getPaymentTypeLabelAttribute(): string
     {
-        $labels = [
-            'ar' => ['cash' => 'كاش', 'insurance' => 'تأمين', 'charity' => 'جمعية'],
-            'en' => ['cash' => 'Cash', 'insurance' => 'Insurance', 'charity' => 'Charity'],
-        ];
+        $opts = static::paymentTypeOptions();
         $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
         $key = $this->payment_type ?? 'cash';
-        return $labels[$locale][$key] ?? $labels['ar'][$key] ?? $key;
+
+        return $opts[$key][$locale] ?? $opts[$key]['ar'] ?? $key;
     }
 
     public function insuranceCompany(): BelongsTo

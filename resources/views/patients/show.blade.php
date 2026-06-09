@@ -37,7 +37,7 @@
                 <div class="flex items-center gap-3 mt-1 text-slate-500 font-bold">
                     <span>#{{ $patient->file_number }}</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                    <span>{{ ucfirst($patient->payment_type) }}</span>
+                    <span>{{ $patient->payment_type_label }}</span>
                 </div>
             </div>
         </div>
@@ -135,7 +135,7 @@
             </div>
 
             {{-- Insurance / Charity --}}
-            @if($patient->payment_type !== 'cash')
+            @if(in_array($patient->payment_type, ['insurance', 'charity'], true))
             <div class="glass-card rounded-3xl p-6 ring-1 ring-slate-100 border-t-4 border-indigo-500">
                 <h3 class="text-lg font-black text-slate-800 mb-4">
                     {{ $patient->payment_type === 'charity' ? (app()->getLocale() === 'ar' ? 'الجمعية الخيرية' : 'Charity') : (app()->getLocale() === 'ar' ? 'شركة التأمين' : 'Insurance') }}

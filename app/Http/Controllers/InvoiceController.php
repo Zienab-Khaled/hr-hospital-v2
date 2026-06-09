@@ -173,7 +173,7 @@ class InvoiceController extends Controller
             'patient_country_of_origin' => 'nullable|string|max:100',
             'patient_sponsor_name' => 'nullable|string|max:255',
             'patient_sponsor_phone' => 'nullable|string|max:50',
-            'patient_payment_type' => 'nullable|string|in:cash,insurance,charity',
+            'patient_payment_type' => 'nullable|string|in:' . implode(',', Patient::paymentTypeKeys()),
             'patient_insurance_company_id' => 'nullable|exists:insurance_companies,id',
             'patient_charity_entity_id' => 'nullable|exists:charity_entities,id',
             'print_media_ids' => 'nullable|array',
@@ -218,7 +218,7 @@ class InvoiceController extends Controller
                 $patientUpdates['name_ar_father'] = null;
                 $patientUpdates['name_ar_family'] = null;
             }
-            if (in_array($paymentType, ['cash', 'insurance', 'charity'], true)) {
+            if (in_array($paymentType, Patient::paymentTypeKeys(), true)) {
                 $patientUpdates['payment_type'] = $paymentType;
                 $patientUpdates['insurance_company_id'] = $paymentType === 'insurance' ? ($validated['patient_insurance_company_id'] ?? null) : null;
                 $patientUpdates['charity_entity_id'] = $paymentType === 'charity' ? ($validated['patient_charity_entity_id'] ?? null) : null;

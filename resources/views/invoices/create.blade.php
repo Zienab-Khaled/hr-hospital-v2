@@ -86,18 +86,12 @@
                                 <label
                                     class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'نوع الدفع:' : 'Payment type:' }}</label>
                                 <select name="patient_payment_type" id="patient_payment_type" class="{{ $inputClass }}">
-                                    <option value="cash"
-                                        {{ old('patient_payment_type', $patient->payment_type) === 'cash' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'نقدي (كاش)' : 'Cash' }}
-                                    </option>
-                                    <option value="insurance"
-                                        {{ old('patient_payment_type', $patient->payment_type) === 'insurance' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'تأمين (شركة)' : 'Insurance' }}
-                                    </option>
-                                    <option value="charity"
-                                        {{ old('patient_payment_type', $patient->payment_type) === 'charity' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}
-                                    </option>
+                                    @foreach (\App\Models\Patient::paymentTypeOptions() as $value => $labels)
+                                        <option value="{{ $value }}"
+                                            {{ old('patient_payment_type', $patient->payment_type) === $value ? 'selected' : '' }}>
+                                            {{ app()->getLocale() === 'ar' ? $labels['ar'] : $labels['en'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div id="patient_insurance_wrap"

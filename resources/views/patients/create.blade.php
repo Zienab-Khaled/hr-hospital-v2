@@ -291,16 +291,16 @@
                             </label>
                             <select name="payment_type" id="payment_type" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
-                                <option value="cash" {{ old('payment_type', 'cash') === 'cash' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'نقدي' : 'Cash' }}
-                                </option>
-                                <option value="insurance" {{ old('payment_type') === 'insurance' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}
-                                </option>
-                                <option value="charity" {{ old('payment_type') === 'charity' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}
-                                </option>
+                                @foreach (\App\Models\Patient::paymentTypeOptions() as $value => $labels)
+                                    <option value="{{ $value }}"
+                                        {{ old('payment_type', 'cash') === $value ? 'selected' : '' }}>
+                                        {{ app()->getLocale() === 'ar' ? $labels['ar'] : $labels['en'] }}
+                                    </option>
+                                @endforeach
                             </select>
+                            <p class="text-xs text-slate-500 mt-1">
+                                {{ app()->getLocale() === 'ar' ? '«أحقية علاج» للخادم والسائق — تُحفظ مع ملف المريض.' : '«Treatment Eligibility» is for servants and drivers — saved on the patient record.' }}
+                            </p>
                         </div>
                         <div id="insurance_field">
                             <label class="block text-sm font-medium text-slate-700 mb-1">

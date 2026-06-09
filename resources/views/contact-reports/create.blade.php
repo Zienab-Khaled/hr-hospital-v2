@@ -27,10 +27,9 @@
                         <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
                             {{ $patient->payment_type === 'cash' ? 'bg-green-100 text-green-800' : '' }}
                             {{ $patient->payment_type === 'insurance' ? 'bg-blue-100 text-blue-800' : '' }}
-                            {{ $patient->payment_type === 'charity' ? 'bg-orange-100 text-orange-800' : '' }}">
-                            {{ app()->getLocale() === 'ar' ? 
-                                ($patient->payment_type === 'cash' ? 'نقدي' : ($patient->payment_type === 'insurance' ? 'تأمين' : 'جمعية')) : 
-                                ucfirst($patient->payment_type) }}
+                            {{ $patient->payment_type === 'charity' ? 'bg-orange-100 text-orange-800' : '' }}
+                            {{ $patient->payment_type === 'treatment_eligibility' ? 'bg-teal-100 text-teal-800' : '' }}">
+                            {{ $patient->payment_type_label }}
                         </span>
                     </div>
                     @if($patient->payment_type === 'insurance' && $patient->insuranceCompany)

@@ -76,10 +76,7 @@
         <div class="info-item">
             <span class="info-label">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment Type' }}</span>
             <div class="info-value">
-                @if ($visit->patient->payment_type === 'cash') {{ app()->getLocale() === 'ar' ? 'نقد' : 'Cash' }}
-                @elseif ($visit->patient->payment_type === 'insurance') {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}
-                @elseif ($visit->patient->payment_type === 'charity') {{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}
-                @endif
+                {{ $visit->patient->payment_type_label }}
             </div>
             @if ($visit->patient->insuranceCompany)
                 <div style="font-size: 12px;">{{ app()->getLocale() === 'ar' ? ($visit->patient->insuranceCompany->name_ar ?? $visit->patient->insuranceCompany->name) : $visit->patient->insuranceCompany->name }}</div>

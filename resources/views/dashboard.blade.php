@@ -321,7 +321,7 @@
                         <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'رقم الهوية' : 'Identity ID'} *</label><input type="text" name="identity_value" required class="w-full rounded border px-3 py-2"></div>
                         <div class="grid grid-cols-2 gap-2">
                              <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الهوية' : 'Id Type'}</label><select name="identity_type" class="w-full rounded border px-3 py-2"><option value="national_id">National ID</option><option value="iqama">Iqama</option><option value="passport">Passport</option></select></div>
-                             <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الدفع' : 'Payment'}</label><select name="payment_type" class="w-full rounded border px-3 py-2"><option value="cash">Cash</option><option value="insurance">Insurance</option><option value="charity">Charity</option></select></div>
+                             <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الدفع' : 'Payment'}</label><select name="payment_type" class="w-full rounded border px-3 py-2"><option value="cash">${isAr ? 'نقدي' : 'Cash'}</option><option value="insurance">${isAr ? 'تأمين' : 'Insurance'}</option><option value="charity">${isAr ? 'جمعية' : 'Charity'}</option><option value="treatment_eligibility">${isAr ? 'أحقية علاج' : 'Treatment Eligibility'}</option></select></div>
                         </div>
                         <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'الهاتف' : 'Phone'}</label><input type="text" name="phone" class="w-full rounded border px-3 py-2"></div>
                     </div>

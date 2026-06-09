@@ -193,7 +193,7 @@ class DashboardApiController extends Controller
             'identity_value' => 'required|string|max:255|unique:patients,identity_value',
             'identity_type' => 'required|string',
             'phone' => 'nullable|string',
-            'payment_type' => 'required|in:cash,insurance,charity',
+            'payment_type' => Patient::paymentTypeValidationRule(),
         ]);
 
         $valid['file_number'] = 'F-' . date('Ymd') . '-' . rand(1000, 9999);

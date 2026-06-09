@@ -295,18 +295,12 @@
                             </label>
                             <select name="payment_type" id="payment_type" required
                                 class="w-full rounded border border-slate-300 px-3 py-2">
-                                <option value="cash"
-                                    {{ old('payment_type', $patient->payment_type) === 'cash' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'نقدي' : 'Cash' }}
-                                </option>
-                                <option value="insurance"
-                                    {{ old('payment_type', $patient->payment_type) === 'insurance' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}
-                                </option>
-                                <option value="charity"
-                                    {{ old('payment_type', $patient->payment_type) === 'charity' ? 'selected' : '' }}>
-                                    {{ app()->getLocale() === 'ar' ? 'جمعية خيرية' : 'Charity' }}
-                                </option>
+                                @foreach (\App\Models\Patient::paymentTypeOptions() as $value => $labels)
+                                    <option value="{{ $value }}"
+                                        {{ old('payment_type', $patient->payment_type) === $value ? 'selected' : '' }}>
+                                        {{ app()->getLocale() === 'ar' ? $labels['ar'] : $labels['en'] }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div id="insurance_field">
