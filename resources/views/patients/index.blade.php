@@ -159,7 +159,7 @@
                     <option value="charity" {{ request('payment_type') === 'charity' ? 'selected' : '' }}>
                         {{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
                     <option value="treatment_eligibility" {{ request('payment_type') === 'treatment_eligibility' ? 'selected' : '' }}>
-                        {{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility' }}</option>
+                        {{ \App\Models\Patient::paymentTypeLabel('treatment_eligibility') }}</option>
                 </select>
             </div>
         @endif

@@ -151,6 +151,27 @@
                             </p>
                         </div>
                     @endif
+
+                    @if ($visit->eligibility_notes)
+                        <div class="mt-4 p-6 bg-amber-50/40 rounded-2xl border border-amber-100/60">
+                            <span class="text-xs text-amber-600 font-bold uppercase tracking-wider block mb-2">
+                                {{ app()->getLocale() === 'ar' ? 'ملاحظة الأحقية' : 'Eligibility Note' }}
+                            </span>
+                            <p class="text-slate-700 leading-relaxed font-medium">
+                                {{ $visit->eligibility_notes }}
+                            </p>
+                            @if ($visit->eligibility_without_department)
+                                <p class="text-xs text-amber-700 mt-2 font-semibold">
+                                    {{ app()->getLocale() === 'ar' ? 'القسم: بدون قسم' : 'Department: No department' }}
+                                </p>
+                            @elseif ($visit->eligibilityPrintDepartment)
+                                <p class="text-xs text-amber-700 mt-2 font-semibold">
+                                    {{ app()->getLocale() === 'ar' ? 'قسم الأحقية:' : 'Eligibility department:' }}
+                                    {{ app()->getLocale() === 'ar' && $visit->eligibilityPrintDepartment->name_ar ? $visit->eligibilityPrintDepartment->name_ar : $visit->eligibilityPrintDepartment->name }}
+                                </p>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Associated Invoices --}}
@@ -291,7 +312,7 @@
                                 class="text-slate-400 font-bold">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment' }}</span>
                             <span
                                 class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black uppercase text-[10px]">
-                                {{ $visit->patient?->payment_type ?? '—' }}
+                                {{ $visit->patient?->payment_type_label ?? '—' }}
                             </span>
                         </div>
                         <div class="flex items-center justify-between text-sm">

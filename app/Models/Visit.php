@@ -19,8 +19,10 @@ class Visit extends Model implements HasMedia
 
     protected $fillable = [
         'patient_id', 'department_id', 'admission_entry_source', 'visit_date', 'shift_id', 'case_type', 'notes',
+        'eligibility_notes', 'eligibility_print_department_id', 'eligibility_without_department',
         'referral_number', 'transferred_department_id', 'registered_by',
-        'printed_eligibility_at', 'printed_price_inquiry_at'
+        'printed_eligibility_at', 'printed_price_inquiry_at',
+        'last_eligibility_services', 'last_price_inquiry_services',
     ];
 
     protected function casts(): array
@@ -29,7 +31,15 @@ class Visit extends Model implements HasMedia
             'visit_date' => 'date',
             'printed_eligibility_at' => 'datetime',
             'printed_price_inquiry_at' => 'datetime',
+            'eligibility_without_department' => 'boolean',
+            'last_eligibility_services' => 'array',
+            'last_price_inquiry_services' => 'array',
         ];
+    }
+
+    public function eligibilityPrintDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'eligibility_print_department_id');
     }
 
     public function registerMediaCollections(): void

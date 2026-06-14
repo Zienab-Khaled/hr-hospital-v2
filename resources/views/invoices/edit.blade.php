@@ -49,7 +49,7 @@
                         </div>
                         <div>
                             <span class="block text-blue-700 font-semibold mb-1">{{ app()->getLocale() === 'ar' ? 'نوع الدفع:' : 'Payment Type:' }}</span>
-                            <span class="font-medium text-slate-800">{{ $invoice->patient?->payment_type ?? '—' }}</span>
+                            <span class="font-medium text-slate-800">{{ $invoice->patient?->payment_type_label ?? '—' }}</span>
                         </div>
                     </div>
                 </div>

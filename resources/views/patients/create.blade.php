@@ -322,7 +322,7 @@
                                 @endforeach
                             </select>
                             <p class="text-xs text-slate-500 mt-1">
-                                {{ app()->getLocale() === 'ar' ? '«أحقية علاج» للخادم والسائق — تُحفظ مع ملف المريض.' : '«Treatment Eligibility» is for servants and drivers — saved on the patient record.' }}
+                                {{ app()->getLocale() === 'ar' ? '«' . \App\Models\Patient::paymentTypeLabel('treatment_eligibility') . '» للخادم والسائق — تُحفظ مع ملف المريض.' : '«' . \App\Models\Patient::paymentTypeLabel('treatment_eligibility', 'en') . '» is for servants and drivers — saved on the patient record.' }}
                             </p>
                         </div>
                         <div id="insurance_field">

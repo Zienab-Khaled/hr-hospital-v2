@@ -63,7 +63,7 @@
                         <option value="">{{ app()->getLocale() === 'ar' ? '-- اختر المريض --' : '-- Select Patient --' }}</option>
                         @foreach($patients as $p)
                             <option value="{{ $p->id }}" {{ old('patient_id') == $p->id ? 'selected' : '' }}>
-                                {{ $p->name }} ({{ $p->file_number }}) - {{ ucfirst($p->payment_type) }}
+                                {{ $p->name }} ({{ $p->file_number }}) - {{ $p->payment_type_label }}
                             </option>
                         @endforeach
                     </select>

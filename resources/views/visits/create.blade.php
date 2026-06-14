@@ -7,7 +7,7 @@
 
         // Define common variables here to be available throughout the view
         $isTransferred = $visitForPrint && $visitForPrint->transferred_department_id;
-        $showEligibilitySection = !$isTransferred && ($visit || $registered ?? false) && ($visitForPrint ?? null) && isset($departments);
+        $showEligibilitySection = !$isTransferred && ($visitForPrint ?? null) && isset($departments);
         $patientIsInsurance = $patient && $patient->payment_type === 'insurance';
         $patientIsTreatmentEligibility = $patient && $patient->payment_type === 'treatment_eligibility';
     @endphp
@@ -161,7 +161,13 @@
             @else
                 {{-- بطاقة المريض — نفس شكل إنشاء فاتورة --}}
                 <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-5 mb-6 shadow-sm">
-                    <h3 class="font-bold text-blue-900 text-lg mb-3">{{ app()->getLocale() === 'ar' ? '👤 المريض' : '👤 Patient' }}</h3>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h3 class="font-bold text-blue-900 text-lg">{{ app()->getLocale() === 'ar' ? '👤 المريض' : '👤 Patient' }}</h3>
+                        <a href="{{ route('patients.show', $patient) }}" target="_blank"
+                            class="text-sm font-semibold text-blue-700 hover:text-blue-900 underline underline-offset-2">
+                            {{ app()->getLocale() === 'ar' ? 'ملف المريض ↗' : 'Patient profile ↗' }}
+                        </a>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'الاسم:' : 'Name:' }}</label>
@@ -269,9 +275,7 @@
                         </div>
                     @endif
 
-                    {{-- Actions Buttons --}}
-
-                        {{-- مسار الدخول + حفظ (بدون تعديل نوع الحالة / ملاحظات المتابعة من هذه الصفحة) --}}
+                    {{-- مسار الدخول + حفظ --}}
                         <div class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                             <form action="{{ route('visits.update', $visitForPrint ?? $visit) }}" method="POST">
                                 @csrf
@@ -284,305 +288,240 @@
                                 @endphp
                                 <input type="hidden" name="case_type" value="{{ old('case_type', $vAdmission->case_type ?? '') }}">
                                 @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $admDefault])
-                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
+                                <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
                                 </button>
                             </form>
                         </div>
 
-                        <div id="visit_actions_container" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-slate-50">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</h3>
+                @endif
 
-                            {{-- صف الأزرار الأساسية: ملف المريض، تحويل، تقديم خدمات --}}
-                            <div class="flex flex-wrap gap-3 mb-4">
-                                <a href="{{ route('patients.show', $patient) }}" target="_blank"
-                                    class="inline-flex items-center text-white gap-2 px-4 py-2.5 rounded-lg bg-slate-600 font-semibold hover:bg-slate-700 text-sm shadow-sm transition-colors">
-                                    {{ app()->getLocale() === 'ar' ? '👤 ملف المريض' : '👤 Patient Profile' }}
-                                </a>
-                                @if (!$isTransferred)
-                                <button type="button" id="btn_show_transfer"
-                                    class="inline-flex items-center text-white gap-2 px-4 py-2.5 rounded-lg bg-purple-600 font-semibold hover:bg-purple-700 text-sm shadow-sm transition-colors">
-                                    {{ app()->getLocale() === 'ar' ? '🔄 تحويل إلى قسم آخر' : '🔄 Transfer to another department' }}
-                                </button>
-                                @if(\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
-                                <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
-                                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm shadow-sm transition-colors">
-                                    {{ app()->getLocale() === 'ar' ? '💰 تقديم خدمات و إنشاء فاتورة' : '💰 Add services & create invoice' }}
-                                </a>
-                                @endif
-                                @endif
-                            </div>
+                    @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
+                    {{-- عمودان: طباعة الأحقية | تقديم خدمات --}}
+                    <div id="visit_main_actions" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="border-2 border-amber-300 rounded-lg p-5 bg-gradient-to-br from-amber-50 to-white shadow-sm">
+                            <h3 class="text-lg font-bold text-amber-900 mb-3">
+                                {{ app()->getLocale() === 'ar' ? 'طباعة الأحقية' : 'Print Eligibility' }}
+                            </h3>
 
-                            {{-- كشفية دخول القسم: زر واحد ينشئ الفاتورة ويفتح طباعة الأحقية (بدون تكرار عنوان/زر) --}}
-                            @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
-                                <div class="rounded-xl border-2 {{ $patientIsInsurance ? 'border-emerald-300 bg-emerald-50/80' : 'border-slate-200 bg-white' }} p-4 shadow-sm">
-                                    <h4 class="text-base font-bold {{ $patientIsInsurance ? 'text-emerald-800' : 'text-slate-700' }} mb-3 flex items-center gap-2">
-                                        <span>📋</span>
-                                        {{ app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee' }}
-                                    </h4>
-                                    <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) لهذا القسم وطباعة الأحقية؟ الدفع اختياري ويمكن تسجيله لاحقاً من صفحة الفاتورة.' : 'Create entry fee invoice and print eligibility? Payment is optional and can be recorded later from invoice page.' }}');">
-                                        @csrf
-                                        <div class="flex flex-wrap items-end gap-4">
-                                            <div class="min-w-[200px]">
-                                                <label class="block text-sm font-bold text-slate-700 mb-1">{{ app()->getLocale() === 'ar' ? 'قسم الدخول (كشفية)' : 'Entry department' }}</label>
-                                                <select name="department_id" required class="{{ $inputClass }} w-full max-w-[280px]">
-                                                    <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
-                                                    @foreach ($entryFeeDepartments as $d)
-                                                        <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            @if ($patientIsInsurance)
-                                                <div class="rounded-lg bg-white/90 border border-emerald-200 px-4 py-3 shadow-inner">
-                                                    <label class="block text-sm font-bold text-emerald-900 mb-2">{{ app()->getLocale() === 'ar' ? 'تغطية التأمين (كشفية)' : 'Insurance coverage (entry fee)' }}</label>
-                                                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                                                        <select name="insurance_coverage_type" class="{{ $inputClass }} w-36 text-sm">
-                                                            <option value="">{{ app()->getLocale() === 'ar' ? '— نوع التغطية —' : '— Type —' }}</option>
-                                                            <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : 'Percentage %' }}</option>
-                                                            <option value="fixed">{{ app()->getLocale() === 'ar' ? 'قيمة ثابتة' : 'Fixed amount' }}</option>
-                                                        </select>
-                                                        <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-28 text-sm">
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-sm shadow-md transition-colors shrink-0">
-                                                {{ app()->getLocale() === 'ar' ? 'إنشاء الفاتورة وطباعة الأحقية' : 'Create invoice & print eligibility' }}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- ليستينج الفواتير الخاصة بالزيارة — يظهر دائماً عند وجود زيارة --}}
-                        @php
-                            $visitInvoices = ($visitForPrint ?? $visit)?->invoices ?? collect();
-                        @endphp
-
-                        @if ($visitForPrint || $visit)
-                            <div class="border-2 border-emerald-300 rounded-lg p-5 mb-6 bg-emerald-50 shadow-sm">
-                                <h3 class="text-lg font-bold text-emerald-800 mb-3 flex items-center gap-2">
-                                    <span>💰</span>
-                                    {{ app()->getLocale() === 'ar' ? 'الفواتير المرتبطة بهذه الزيارة' : 'Invoices for this visit' }}
-                                </h3>
-                                @if ($visitInvoices->isNotEmpty())
-                                    <div class="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
-                                        <table class="w-full text-sm text-right">
-                                            <thead>
-                                                <tr class="bg-emerald-100/50 border-b border-emerald-200 text-emerald-900">
-                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
-                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
-                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'نوع الفاتورة' : 'Type' }}</th>
-                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
-                                                    <th class="p-3 font-bold">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
-                                                    <th class="p-3 font-bold text-center">{{ app()->getLocale() === 'ar' ? 'إجراءات' : 'Actions' }}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-emerald-50">
-                                                @foreach ($visitInvoices as $inv)
-                                                    <tr class="hover:bg-emerald-50/50 transition-colors">
-                                                        <td class="p-3 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
-                                                        <td class="p-3 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
-                                                        <td class="p-3">
-                                                            @if(in_array($inv->invoice_type, ['eligibility', 'charity_treatment_free'], true))
-                                                                <span class="{{ $inv->invoice_type === 'eligibility' ? 'bg-purple-100 text-purple-700' : 'bg-teal-100 text-teal-800' }} px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
-                                                            @else
-                                                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="p-3 font-bold text-slate-900">@currencyInvoice($inv->total_amount)</td>
-                                                        <td class="p-3">
-                                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold
-                                                                {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-                                                                {{ $inv->status_label }}
-                                                            </span>
-                                                        </td>
-                                                        <td class="p-3">
-                                                            <div class="flex justify-center gap-2 flex-wrap">
-                                                                <a href="{{ route('invoices.show', $inv) }}" target="_blank"
-                                                                   class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'عرض الفاتورة' : 'View Invoice' }}">
-                                                                    👁️ {{ app()->getLocale() === 'ar' ? 'عرض التفاصيل' : 'View Details' }}
-                                                                </a>
-                                                                <a href="{{ route('invoices.print-non-commitment', $inv) }}" target="_blank"
-                                                                   class="text-blue-600 hover:text-blue-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة محضر إقرار' : 'Print Non-Commitment' }}">
-                                                                    🖨️ {{ app()->getLocale() === 'ar' ? 'إقرار' : 'Non-Commitment' }}
-                                                                </a>
-                                                                <a href="{{ route('invoices.print-commitment', $inv) }}" target="_blank"
-                                                                   class="text-indigo-600 hover:text-indigo-800 font-bold transition-colors" title="{{ app()->getLocale() === 'ar' ? 'طباعة التعهد الخطي' : 'Print Written Pledge' }}">
-                                                                    📄 {{ app()->getLocale() === 'ar' ? 'التعهد الخطي' : 'Written Pledge' }}
-                                                                </a>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @else
-                                    <div class="rounded-lg border-2 border-dashed border-emerald-200 bg-white p-8 text-center">
-                                        <p class="text-slate-600 font-bold mb-4">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير لهذه الزيارة بعد' : 'No invoices for this visit yet' }}</p>
-                                        @if (!$isTransferred && \App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
-                                            <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
-                                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm">
-                                                {{ app()->getLocale() === 'ar' ? '💰 إنشاء فاتورة (تقديم خدمات)' : '💰 Create invoice (add services)' }}
-                                            </a>
-                                        @endif
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-
-                        {{-- Transfer Form (Hidden by default) --}}
-                        @if (!$isTransferred)
-                        <div id="visit_transfer_form" class="hidden border-2 border-purple-300 rounded-lg p-5 mb-6 bg-purple-50">
-                            <h3 class="text-lg font-bold text-purple-900 mb-3">{{ app()->getLocale() === 'ar' ? 'تحويل الزيارة إلى قسم آخر' : 'Transfer Visit to Another Department' }}</h3>
-                            <form action="{{ route('visits.transfer', $visitForPrint ?? $visit) }}" method="POST">
-                                @csrf
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold text-purple-800 mb-2">{{ app()->getLocale() === 'ar' ? 'إلى قسم' : 'To Department' }}</label>
-                                    <select name="to_department_id" required class="{{ $inputClass }}">
-                                        <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select Department —' }}</option>
-                                        @foreach ($departments ?? [] as $d)
-                                            @if (($d->id ?? 0) != ($visitForPrint->department_id ?? 0))
-                                                <option value="{{ $d->id }}">{{ app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name }}</option>
-                                            @endif
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-800 mb-1">{{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}</label>
+                                    <select id="eligibility_department_id" class="{{ $inputClass }}">
+                                        <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
+                                        <option value="none" @selected(old('department_id', $visitForPrint->eligibility_without_department ? 'none' : '') === 'none')>
+                                            {{ app()->getLocale() === 'ar' ? 'بدون قسم' : 'No department' }}
+                                        </option>
+                                        @foreach ($eligibilityDepartments as $d)
+                                            <option value="{{ $d->id }}" @selected((string) old('department_id', $visitForPrint->eligibility_print_department_id ?? '') === (string) $d->id)>
+                                                {{ app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-bold text-purple-800 mb-2">{{ app()->getLocale() === 'ar' ? 'ملاحظات التحويل' : 'Transfer Notes' }}</label>
-                                    <textarea name="notes" rows="2" class="{{ $inputClass }}"></textarea>
+                                <div>
+                                    <label id="eligibility_notes_label" class="block text-sm font-bold text-slate-800 mb-1">
+                                        {{ app()->getLocale() === 'ar' ? 'ملاحظة الأحقية' : 'Eligibility note' }}
+                                    </label>
+                                    <textarea id="eligibility_notes" rows="2" class="{{ $inputClass }} text-sm">{{ old('eligibility_notes', $visitForPrint->eligibility_notes ?? '') }}</textarea>
+                                    <p id="eligibility_notes_hint" class="text-xs text-slate-500 mt-1 hidden">
+                                        {{ app()->getLocale() === 'ar' ? 'إلزامي عند اختيار «بدون قسم»' : 'Required when «No department» is selected' }}
+                                    </p>
                                 </div>
-                                <div class="flex gap-3">
-                                    <button type="submit" onclick="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد التحويل؟ لن يمكنك التراجع.' : 'Confirm transfer? This cannot be undone.' }}')"
-                                        class="bg-purple-600  px-5 py-2 rounded-lg font-bold hover:bg-purple-700 shadow">
-                                        {{ app()->getLocale() === 'ar' ? 'تأكيد التحويل' : 'Confirm Transfer' }}
+                                <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="pt-1">
+                                    @csrf
+                                    <button type="button" id="eligibility_print_btn" class="w-full sm:w-auto bg-amber-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-amber-700 shadow text-sm">
+                                        {{ app()->getLocale() === 'ar' ? 'طباعة الأحقية' : 'Print eligibility' }}
                                     </button>
-                                    <button type="button" id="btn_cancel_transfer" class="bg-gray-300 text-gray-800 px-5 py-2 rounded-lg font-bold hover:bg-gray-400">
-                                        {{ app()->getLocale() === 'ar' ? 'إلغاء' : 'Cancel' }}
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
+
+                            @if($visitForPrint->printed_eligibility_at)
+                                <p class="text-[11px] text-slate-500 mt-3">
+                                    {{ app()->getLocale() === 'ar' ? 'آخر أحقية: ' : 'Last eligibility: ' }}{{ $visitForPrint->printed_eligibility_at->format('Y-m-d H:i') }}
+                                </p>
+                            @endif
                         </div>
+
+                        <div class="border-2 border-blue-300 rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white shadow-sm flex flex-col">
+                            <h3 class="text-lg font-bold text-blue-900 mb-2">
+                                {{ app()->getLocale() === 'ar' ? 'تقديم خدمات وإنشاء فاتورة' : 'Add services & create invoice' }}
+                            </h3>
+                            <p class="text-sm text-slate-600 flex-1">
+                                {{ app()->getLocale() === 'ar' ? 'إضافة الخدمات والأكواد وإنشاء فاتورة بإيراد — من صفحة الفاتورة.' : 'Add services, codes, and create a revenue invoice on the invoice page.' }}
+                            </p>
+                            @if (\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
+                                <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
+                                   class="mt-4 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md transition-colors">
+                                    {{ app()->getLocale() === 'ar' ? 'متابعة ← تقديم الخدمات' : 'Continue → Add services' }}
+                                </a>
+                            @else
+                                <p class="mt-4 text-sm text-slate-500">{{ app()->getLocale() === 'ar' ? 'لا تملك صلاحية إنشاء فاتورة.' : 'You cannot create invoices.' }}</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- مساحة العمل: خدمات + طباعة --}}
+                    <div id="eligibility_workspace" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
+                        @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
+                            <div id="entry_fee_block" class="mb-5 pb-5 border-b border-slate-200">
+                                <h4 class="text-sm font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee' }}</h4>
+                                <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) وطباعة الأحقية؟' : 'Create entry fee invoice and print eligibility?' }}');">
+                                    @csrf
+                                    <div class="flex flex-wrap items-end gap-3">
+                                        <div class="min-w-[180px] flex-1">
+                                            <select name="department_id" required class="{{ $inputClass }} text-sm">
+                                                <option value="">{{ app()->getLocale() === 'ar' ? '— قسم الكشفية —' : '— Entry department —' }}</option>
+                                                @foreach ($entryFeeDepartments as $d)
+                                                    <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @if ($patientIsInsurance)
+                                            <select name="insurance_coverage_type" class="{{ $inputClass }} w-32 text-sm">
+                                                <option value="">{{ app()->getLocale() === 'ar' ? 'تغطية' : 'Coverage' }}</option>
+                                                <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : '%' }}</option>
+                                                <option value="fixed">{{ app()->getLocale() === 'ar' ? 'ثابت' : 'Fixed' }}</option>
+                                            </select>
+                                            <input type="number" name="insurance_coverage_value" min="0" step="0.01" placeholder="0" class="{{ $inputClass }} w-24 text-sm">
+                                        @endif
+                                        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-sm shrink-0">
+                                            {{ app()->getLocale() === 'ar' ? 'كشفية + طباعة' : 'Entry fee + print' }}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         @endif
 
-                @endif
-
-                    {{-- أحقية العلاج: حسب القسم (عيادة / مختبر / أشعة / تنويم / طوارئ) + بحث وإضافة خدمات ثم طباعة --}}
-                    @if ($visitForPrint && isset($departments) && !($visitForPrint->transferred_department_id))
-                    <div class="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-gradient-to-br from-blue-50 to-slate-50">
-                        <h3 class="text-xl font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility' }}</h3>
-
                         <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'نوع الأحقية (القسم) - اختياري' : 'Eligibility type (Department) - Optional' }}</label>
-                            <select id="eligibility_department_id" class="{{ $inputClass }} max-w-xs">
-                                <option value="">{{ app()->getLocale() === 'ar' ? '— كل الأقسام —' : '— All departments —' }}</option>
-                                @foreach ($eligibilityDepartments as $d)
-                                    <option value="{{ $d->id }}">{{ app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'بحث عن خدمة (بالاسم أو الكود)' : 'Search for a service (by name or code)' }}</label>
+                            <label class="block text-sm font-bold text-slate-800 mb-2">{{ app()->getLocale() === 'ar' ? 'بحث عن خدمة' : 'Search service' }}</label>
                             <div class="flex flex-wrap gap-2">
-                                <input type="text" id="eligibility_service_search" placeholder="{{ app()->getLocale() === 'ar' ? 'اكتب اسم الخدمة أو الكود ثم اضغط بحث' : 'Type service name or code then Search' }}"
+                                <input type="text" id="eligibility_service_search" placeholder="{{ app()->getLocale() === 'ar' ? 'اسم الخدمة أو الكود...' : 'Service name or code...' }}"
                                     class="flex-1 min-w-[200px] {{ $inputClass }}">
-                                <button type="button" id="eligibility_service_btn" class="bg-blue-600 px-5 text-white text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
+                                <button type="button" id="eligibility_service_btn" class="bg-blue-600 px-4 text-white py-2 rounded-lg font-bold text-sm hover:bg-blue-700 shadow">
                                     {{ app()->getLocale() === 'ar' ? 'بحث' : 'Search' }}
                                 </button>
-                                @if ($visitForPrint && $visitForPrint->last_eligibility_services)
-                                    <button type="button" id="btn_reload_eligibility" class="bg-slate-500 px-4 text-slate-50 py-3 rounded-lg font-bold text-sm hover:bg-slate-600 shadow">
-                                        {{ app()->getLocale() === 'ar' ? '🔄 استعادة آخر خدمات مطبوعة' : '🔄 Reload last printed services' }}
+                                @if ($visitForPrint->last_eligibility_services)
+                                    <button type="button" id="btn_reload_eligibility" class="bg-slate-500 px-3 text-white py-2 rounded-lg font-bold text-sm hover:bg-slate-600">
+                                        {{ app()->getLocale() === 'ar' ? 'استعادة آخر خدمات' : 'Reload last' }}
                                     </button>
                                 @endif
                             </div>
-                            <div id="eligibility_service_results" class="mt-2 hidden border-2 border-slate-300 rounded-lg bg-white max-h-52 overflow-y-auto"></div>
+                            <div id="eligibility_service_results" class="mt-2 hidden border border-slate-300 rounded-lg bg-white max-h-48 overflow-y-auto"></div>
                         </div>
 
-                        <div class="overflow-x-auto border-2 border-slate-400 rounded-lg bg-white mb-4">
+                        <div class="overflow-x-auto border border-slate-300 rounded-lg bg-white mb-4">
                             <table class="w-full border-collapse text-sm">
                                 <thead>
-                                <tr class="bg-slate-200 border-b-2 border-slate-500">
-                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'الرمز' : 'Code' }}</th>
-                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 min-w-[200px]">{{ app()->getLocale() === 'ar' ? 'البيان' : 'Description' }}</th>
-                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-20">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
-                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'السعر الافرادي' : 'Unit Price' }}</th>
-                                    <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                <tr class="bg-slate-100 border-b border-slate-300">
+                                    <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-20">{{ app()->getLocale() === 'ar' ? 'الرمز' : 'Code' }}</th>
+                                    <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'البيان' : 'Description' }}</th>
+                                    <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-16">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
+                                    <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'السعر' : 'Price' }}</th>
+                                    <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
                                     @if ($patientIsInsurance)
-                                        <th class="border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-32">{{ app()->getLocale() === 'ar' ? 'نوع التغطية' : 'Coverage type' }}</th>
-                                        <th class="border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-36">{{ app()->getLocale() === 'ar' ? 'قيمة التغطية / الخصم' : 'Coverage / discount' }}</th>
+                                        <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
+                                        <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'قيمة التغطية' : 'Value' }}</th>
                                     @endif
-                                    <th class="border border-slate-500 px-2 py-2 text-center w-14"></th>
+                                    <th class="border border-slate-300 px-2 py-2 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody id="eligibility_services_tbody"></tbody>
                             <tfoot>
-                                <tr class="bg-slate-100 font-bold text-slate-800">
-                                    <td colspan="{{ $patientIsInsurance ? 5 : 4 }}" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'المجموع الإجمالي:' : 'Grand Total:' }}</td>
-                                    <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_grand_total">0.00</td>
+                                <tr class="bg-slate-50 font-bold text-slate-800">
+                                    <td colspan="{{ $patientIsInsurance ? 5 : 4 }}" class="border border-slate-300 px-2 py-2 text-end text-sm">{{ app()->getLocale() === 'ar' ? 'المجموع:' : 'Total:' }}</td>
+                                    <td class="border border-slate-300 px-2 py-2 text-center" id="eligibility_grand_total">0.00</td>
                                     @if ($patientIsInsurance)
-                                        <td colspan="3" class="border border-slate-400 bg-slate-50"></td>
+                                        <td colspan="3" class="border border-slate-300"></td>
                                     @else
-                                        <td class="border border-slate-400 bg-slate-50"></td>
+                                        <td class="border border-slate-300"></td>
                                     @endif
                                 </tr>
                                 @if ($patientIsInsurance)
-                                    <tr class="bg-emerald-50 font-bold text-emerald-900">
-                                        <td colspan="5" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance Share:' }}</td>
-                                        <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_insurance_total">0.00</td>
-                                        <td colspan="3" class="border border-slate-400"></td>
+                                    <tr class="bg-emerald-50 font-bold text-emerald-900 text-sm">
+                                        <td colspan="5" class="border border-slate-300 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance:' }}</td>
+                                        <td class="border border-slate-300 px-2 py-2 text-center" id="eligibility_insurance_total">0.00</td>
+                                        <td colspan="3" class="border border-slate-300"></td>
                                     </tr>
-                                    <tr class="bg-amber-50 font-bold text-amber-900">
-                                        <td colspan="5" class="border border-slate-400 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل المريض:' : 'Patient Share:' }}</td>
-                                        <td class="border border-slate-400 px-2 py-2 text-center text-lg" id="eligibility_patient_share">0.00</td>
-                                        <td colspan="3" class="border border-slate-400"></td>
+                                    <tr class="bg-amber-50 font-bold text-amber-900 text-sm">
+                                        <td colspan="5" class="border border-slate-300 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل المريض:' : 'Patient:' }}</td>
+                                        <td class="border border-slate-300 px-2 py-2 text-center" id="eligibility_patient_share">0.00</td>
+                                        <td colspan="3" class="border border-slate-300"></td>
                                     </tr>
                                 @endif
                             </tfoot>
                             </table>
                         </div>
-                        <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="inline">
-                            @csrf
-                            <div class="inline-flex flex-col items-start gap-1">
-                                <button type="button" id="eligibility_print_btn" class="bg-amber-600 text-white text-slate-50 px-4 py-2 rounded-lg font-bold hover:bg-amber-700 shadow-md">
-                                    {{ app()->getLocale() === 'ar' ? '✅ اعتماد الخدمات وطباعة الأحقية' : '✅ Submit Services & Print Eligibility' }}
+
+                        <div class="flex flex-wrap gap-3 items-center pt-2 border-t border-slate-200">
+                            <form id="revenue_invoice_form" method="POST" action="{{ route('visits.services-revenue-invoice', $visitForPrint) }}">
+                                @csrf
+                                <button type="button" id="revenue_invoice_btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow text-sm">
+                                    {{ app()->getLocale() === 'ar' ? 'فاتورة بإيراد' : 'Revenue invoice' }}
                                 </button>
-                                @if($visitForPrint->printed_eligibility_at)
-                                    <span class="text-[10px] text-slate-500 italic">
-                                        {{ app()->getLocale() === 'ar' ? 'آخر طباعة: ' : 'Last print: ' }} {{ $visitForPrint->printed_eligibility_at->format('Y-m-d H:i') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </form>
-
-                        <form id="price_inquiry_print_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline ms-2">
-                            @csrf
-                            <input type="hidden" name="print_title" id="print_title_hidden" value="price_quotation">
-                            <div class="inline-flex flex-col items-start gap-1">
-                                <div class="flex items-center gap-3 mb-1 p-1 px-2 bg-purple-50 rounded border border-purple-200">
-                                    <label class="inline-flex items-center gap-1 cursor-pointer">
-                                        <input type="radio" name="title_choice" value="price_quotation" checked onchange="document.getElementById('print_title_hidden').value=this.value" class="text-purple-600 focus:ring-purple-500">
-                                        <span class="text-xs font-bold text-purple-900">{{ app()->getLocale() === 'ar' ? 'عرض سعر' : 'Price Quotation' }}</span>
-                                    </label>
-                                    <label class="inline-flex items-center gap-1 cursor-pointer">
-                                        <input type="radio" name="title_choice" value="detailed_invoice" onchange="document.getElementById('print_title_hidden').value=this.value" class="text-purple-600 focus:ring-purple-500">
-                                        <span class="text-xs font-bold text-purple-900">{{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed Invoice' }}</span>
-                                    </label>
-                                </div>
-                                <button type="button" id="price_inquiry_print_btn" class="bg-purple-600 text-slate-50 px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow">
-                                    {{ app()->getLocale() === 'ar' ? '📋 طباعة' : '📋 Print' }}
+                            </form>
+                            <form id="inquiry_invoice_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline">
+                                @csrf
+                                <input type="hidden" name="print_title" value="price_quotation">
+                                <button type="button" id="inquiry_invoice_btn" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 shadow text-sm">
+                                    {{ app()->getLocale() === 'ar' ? 'فاتورة استعلامية' : 'Inquiry invoice' }}
                                 </button>
-                                @if($visitForPrint->printed_price_inquiry_at)
-                                    <span class="text-[10px] text-slate-500 italic">
-                                        {{ app()->getLocale() === 'ar' ? 'آخر طباعة: ' : 'Last print: ' }} {{ $visitForPrint->printed_price_inquiry_at->format('Y-m-d H:i') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </form>
-
-
+                            </form>
+                            <p class="text-xs text-slate-500 w-full sm:w-auto">
+                                {{ app()->getLocale() === 'ar' ? 'بإيراد: تُسجَّل في النظام — استعلامية: للعرض فقط بدون إيراد' : 'Revenue: recorded in system — Inquiry: display only' }}
+                            </p>
+                        </div>
                     </div>
+                    @endif
+
+                    @php
+                        $visitInvoices = ($visitForPrint ?? $visit)?->invoices ?? collect();
+                    @endphp
+                    @if (($visitForPrint || $visit) && $visitInvoices->isNotEmpty())
+                        <div class="border border-slate-300 rounded-lg p-4 mb-6 bg-slate-50">
+                            <h3 class="text-base font-bold text-slate-800 mb-3">
+                                {{ app()->getLocale() === 'ar' ? 'فواتير هذه الزيارة' : 'Visit invoices' }}
+                                <span class="text-sm font-normal text-slate-500">({{ $visitInvoices->count() }})</span>
+                            </h3>
+                            <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                                <table class="w-full text-sm text-right">
+                                    <thead>
+                                        <tr class="bg-slate-100 border-b border-slate-200 text-slate-800">
+                                            <th class="p-2 font-bold">{{ app()->getLocale() === 'ar' ? 'رقم الفاتورة' : 'Invoice No' }}</th>
+                                            <th class="p-2 font-bold">{{ app()->getLocale() === 'ar' ? 'التاريخ' : 'Date' }}</th>
+                                            <th class="p-2 font-bold">{{ app()->getLocale() === 'ar' ? 'النوع' : 'Type' }}</th>
+                                            <th class="p-2 font-bold">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                            <th class="p-2 font-bold">{{ app()->getLocale() === 'ar' ? 'الحالة' : 'Status' }}</th>
+                                            <th class="p-2 font-bold text-center">{{ app()->getLocale() === 'ar' ? 'فتح' : 'Open' }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach ($visitInvoices as $inv)
+                                            <tr class="hover:bg-slate-50 transition-colors">
+                                                <td class="p-2 font-semibold text-slate-900">{{ $inv->invoice_number }}</td>
+                                                <td class="p-2 text-slate-600">{{ $inv->invoice_date?->format('Y-m-d') }}</td>
+                                                <td class="p-2">
+                                                    <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $inv->invoice_type_label }}</span>
+                                                </td>
+                                                <td class="p-2 font-bold text-slate-900">@currencyInvoice($inv->total_amount)</td>
+                                                <td class="p-2">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                                        {{ $inv->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                                                        {{ $inv->status_label }}
+                                                    </span>
+                                                </td>
+                                                <td class="p-2 text-center">
+                                                    <a href="{{ route('invoices.show', $inv) }}" target="_blank"
+                                                       class="text-blue-600 hover:text-blue-800 font-semibold text-xs">
+                                                        {{ app()->getLocale() === 'ar' ? 'عرض' : 'View' }}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     @endif
 
 
@@ -691,10 +630,14 @@
             var patientShareEl = document.getElementById('eligibility_patient_share');
             var printForm = document.getElementById('eligibility_print_form');
             var printBtn = document.getElementById('eligibility_print_btn');
+            var revenueForm = document.getElementById('revenue_invoice_form');
+            var revenueBtn = document.getElementById('revenue_invoice_btn');
+            var inquiryForm = document.getElementById('inquiry_invoice_form');
+            var inquiryBtn = document.getElementById('inquiry_invoice_btn');
             var searchUrl = '{{ route('visits.eligibility-services-search') }}';
             var rows = [];
 
-            if (!deptSelect || !tbody) return;
+            if (!tbody) return;
 
             function clearResults() {
                 if (resultsDiv) { resultsDiv.innerHTML = ''; resultsDiv.classList.add('hidden'); }
@@ -837,24 +780,30 @@
                 });
             }
             function doEligibilitySearch() {
-                var deptId = deptSelect.value;
+                var deptId = deptSelect ? deptSelect.value : '';
                 var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
 
-                // Require at least 2 characters to search
-                if (q.length < 2) {
+                if (q.length < 1) {
                     clearResults();
+                    if (resultsDiv) {
+                        resultsDiv.innerHTML = '<div class="p-3 text-slate-600 text-sm">' + (document.documentElement.lang === 'ar' ? 'اكتب اسم الخدمة أو الكود للبحث' : 'Type service name or code to search') + '</div>';
+                        resultsDiv.classList.remove('hidden');
+                    }
                     return;
                 }
 
-                var url = searchUrl + '?';
-                if (deptId) {
-                    url += 'department_id=' + encodeURIComponent(deptId);
-                }
-                if (q) {
-                    url += (deptId ? '&' : '') + 'q=' + encodeURIComponent(q);
+                var url = searchUrl + '?q=' + encodeURIComponent(q);
+                if (deptId && deptId !== 'none') {
+                    url += '&department_id=' + encodeURIComponent(deptId);
                 }
 
-                fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+                fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) {
+                        if (!r.ok) throw new Error('search failed');
+                        return r.json();
+                    })
+                    .then(function(data) {
+                    if (!resultsDiv) return;
                     var list = Array.isArray(data) ? data : (data.services || data.data || []);
                     resultsDiv.innerHTML = '';
                     resultsDiv.classList.remove('hidden');
@@ -879,20 +828,41 @@
                                 code: this.dataset.code,
                                 name: this.dataset.name,
                                 name_ar: this.dataset.name_ar,
-                                default_price: this.dataset.default_price // Pass default_price
+                                default_price: this.dataset.default_price
                             });
+                            clearResults();
+                            if (searchInput) searchInput.value = '';
                         });
                         resultsDiv.appendChild(div);
                     });
                 }).catch(function() { resultsDiv.innerHTML = '<div class="p-3 text-red-600 text-sm">' + (document.documentElement.lang === 'ar' ? 'خطأ في البحث' : 'Search error') + '</div>'; resultsDiv.classList.remove('hidden'); });
             }
-            deptSelect.addEventListener('change', function() {
-                clearResults();
-                var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
-                if (q.length >= 2) {
-                    doEligibilitySearch();
-                }
-            });
+
+            function appendServicesToForm(form, fieldMap) {
+                var existing = form.querySelectorAll('input[name^="services"]');
+                existing.forEach(function(el) { el.remove(); });
+                var isAr = document.documentElement.lang === 'ar';
+                rows.forEach(function(r, i) {
+                    var nameDisplay = (isAr && r.name_ar) ? r.name_ar : r.name;
+                    fieldMap.forEach(function(entry) {
+                        var inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'services[' + i + '][' + entry.key + ']';
+                        inp.value = entry.value(r, nameDisplay);
+                        form.appendChild(inp);
+                    });
+                });
+            }
+
+            if (deptSelect) {
+                deptSelect.addEventListener('change', function() {
+                    clearResults();
+                    var q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+                    if (q.length >= 1) {
+                        doEligibilitySearch();
+                    }
+                });
+            }
             if (searchBtn) searchBtn.addEventListener('click', doEligibilitySearch);
 
             // Live search: trigger automatically while typing (debounced 300ms)
@@ -909,72 +879,131 @@
                 });
             }
 
-            // Handle Print Button
-            if (printBtn && printForm) {
-                printBtn.addEventListener('click', function() {
-                    var existing = printForm.querySelectorAll('input[name^="services"]');
-                    existing.forEach(function(el) { el.remove(); });
-                    rows.forEach(function(r, i) {
-                        var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
-                        // Add insurance fields to hidden inputs
-                                var map = {
-                                    'service_id': r.id || '',
-                                    'code': r.code || '',
-                                    'name': nameDisplay,
-                                    'quantity': r.qty || 1,
-                                    'price': r.unit_price || 0, // Map unit_price to price
-                                    'total': r.total.toFixed(2),
-                                    'insurance_coverage_type': r.insurance_coverage_type || '',
-                                    'insurance_coverage_value': r.insurance_coverage_value || 0
-                                };
-                            for (var k in map) {
-                                var inp = document.createElement('input');
-                                inp.type = 'hidden';
-                                inp.name = 'services[' + i + '][' + k + ']';
-                                inp.value = map[k];
-                                printForm.appendChild(inp);
-                            }
-                        });
-
-                        // Add Department ID
-                        if(deptSelect && deptSelect.value) {
-                            var inpDept = document.createElement('input');
-                            inpDept.type = 'hidden';
-                            inpDept.name = 'department_id';
-                            inpDept.value = deptSelect.value;
-                            printForm.appendChild(inpDept);
-                        }
-
-                        printForm.submit();
-                    });
-            }
-
-
-            // Handle Price Inquiry Print Button
-            var priceInquiryBtn = document.getElementById('price_inquiry_print_btn');
-            var priceInquiryForm = document.getElementById('price_inquiry_print_form');
-            if (priceInquiryBtn && priceInquiryForm) {
-                priceInquiryBtn.addEventListener('click', function() {
+            // Handle Revenue Invoice Button
+            if (revenueBtn && revenueForm) {
+                revenueBtn.addEventListener('click', function() {
                     if (rows.length === 0) {
                         alert(document.documentElement.lang === 'ar' ? 'يرجى إضافة خدمات أولاً' : 'Please add services first');
                         return;
                     }
-                    var existing = priceInquiryForm.querySelectorAll('input[name^="services"]');
+                    appendServicesToForm(revenueForm, [
+                        { key: 'service_id', value: function(r) { return r.id || ''; } },
+                        { key: 'code', value: function(r) { return r.code || ''; } },
+                        { key: 'name', value: function(r, n) { return n; } },
+                        { key: 'quantity', value: function(r) { return r.qty || 1; } },
+                        { key: 'unit_price', value: function(r) { return r.unit_price || 0; } },
+                        { key: 'total', value: function(r) { return r.total.toFixed(2); } },
+                        { key: 'insurance_coverage_type', value: function(r) { return r.insurance_coverage_type || ''; } },
+                        { key: 'insurance_coverage_value', value: function(r) { return r.insurance_coverage_value || 0; } }
+                    ]);
+                    revenueForm.submit();
+                });
+            }
+
+            // Handle Inquiry Invoice Button (print only — no revenue)
+            if (inquiryBtn && inquiryForm) {
+                inquiryBtn.addEventListener('click', function() {
+                    if (rows.length === 0) {
+                        alert(document.documentElement.lang === 'ar' ? 'يرجى إضافة خدمات أولاً' : 'Please add services first');
+                        return;
+                    }
+                    appendServicesToForm(inquiryForm, [
+                        { key: 'service_id', value: function(r) { return r.id || ''; } },
+                        { key: 'code', value: function(r) { return r.code || ''; } },
+                        { key: 'name', value: function(r, n) { return n; } },
+                        { key: 'qty', value: function(r) { return r.qty || 1; } },
+                        { key: 'unit_price', value: function(r) { return r.unit_price || 0; } },
+                        { key: 'total', value: function(r) { return r.total.toFixed(2); } },
+                        { key: 'insurance_coverage_type', value: function(r) { return r.insurance_coverage_type || ''; } },
+                        { key: 'insurance_coverage_value', value: function(r) { return r.insurance_coverage_value || 0; } }
+                    ]);
+                    inquiryForm.submit();
+                });
+            }
+
+            // Handle Print Button
+            if (printBtn && printForm) {
+                printBtn.addEventListener('click', function() {
+                    var notesEl = document.getElementById('eligibility_notes');
+                    var deptValue = deptSelect ? deptSelect.value : '';
+                    var isAr = document.documentElement.lang === 'ar';
+
+                    if (!deptValue) {
+                        alert(isAr ? 'يرجى اختيار القسم أو «بدون قسم».' : 'Please select a department or «No department».');
+                        return;
+                    }
+                    if (deptValue === 'none' && notesEl && !notesEl.value.trim()) {
+                        alert(isAr ? 'ملاحظة الأحقية إلزامية عند اختيار «بدون قسم».' : 'Eligibility note is required for «No department».');
+                        if (notesEl) notesEl.focus();
+                        return;
+                    }
+
+                    var existing = printForm.querySelectorAll('input[name^="services"], input[name="department_id"], input[name="eligibility_notes"]');
                     existing.forEach(function(el) { el.remove(); });
+
                     rows.forEach(function(r, i) {
-                        var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
-                        // Add same fields as treatment eligibility print
-                        ['service_id', 'code','name','qty','unit_price','total', 'insurance_coverage_type', 'insurance_coverage_value'].forEach(function(k) {
+                        var nameDisplay = (isAr && r.name_ar) ? r.name_ar : r.name;
+                        var map = {
+                            'service_id': r.id || '',
+                            'code': r.code || '',
+                            'name': nameDisplay,
+                            'quantity': r.qty || 1,
+                            'price': r.unit_price || 0,
+                            'total': r.total.toFixed(2),
+                            'insurance_coverage_type': r.insurance_coverage_type || '',
+                            'insurance_coverage_value': r.insurance_coverage_value || 0
+                        };
+                        for (var k in map) {
                             var inp = document.createElement('input');
                             inp.type = 'hidden';
                             inp.name = 'services[' + i + '][' + k + ']';
-                            inp.value = k === 'name' ? nameDisplay : (k === 'total' ? r.total.toFixed(2) : (r[k] !== undefined ? r[k] : ''));
-                            priceInquiryForm.appendChild(inp);
-                        });
+                            inp.value = map[k];
+                            printForm.appendChild(inp);
+                        }
                     });
-                    priceInquiryForm.submit();
+
+                    if (deptSelect && deptSelect.value) {
+                        var inpDept = document.createElement('input');
+                        inpDept.type = 'hidden';
+                        inpDept.name = 'department_id';
+                        inpDept.value = deptSelect.value;
+                        printForm.appendChild(inpDept);
+                    }
+
+                    if (notesEl) {
+                        var inpNotes = document.createElement('input');
+                        inpNotes.type = 'hidden';
+                        inpNotes.name = 'eligibility_notes';
+                        inpNotes.value = notesEl.value.trim();
+                        printForm.appendChild(inpNotes);
+                    }
+
+                    printForm.submit();
                 });
             }
+
+            // ملاحظات الأحقية: إلزامية عند «بدون قسم»
+            (function() {
+                var notesEl = document.getElementById('eligibility_notes');
+                var notesLabel = document.getElementById('eligibility_notes_label');
+                var notesHint = document.getElementById('eligibility_notes_hint');
+                var isAr = document.documentElement.lang === 'ar';
+
+                function syncNotesRequired() {
+                    if (!deptSelect || !notesEl) return;
+                    var withoutDept = deptSelect.value === 'none';
+                    notesEl.required = withoutDept;
+                    if (notesLabel) {
+                        notesLabel.textContent = withoutDept
+                            ? (isAr ? 'ملاحظة الأحقية *' : 'Eligibility note *')
+                            : (isAr ? 'ملاحظة الأحقية' : 'Eligibility note');
+                    }
+                    if (notesHint) notesHint.classList.toggle('hidden', !withoutDept);
+                }
+
+                if (deptSelect) deptSelect.addEventListener('change', syncNotesRequired);
+                syncNotesRequired();
+            })();
 
             // Handle Reload Last Eligibility Services
             var reloadBtn = document.getElementById('btn_reload_eligibility');
@@ -1004,31 +1033,6 @@
             }
         })();
 
-    </script>
-    <script>
-        // Transfer Toggle Logic
-        (function() {
-            var btnShow = document.getElementById('btn_show_transfer');
-            var btnCancel = document.getElementById('btn_cancel_transfer');
-            var boxActions = document.getElementById('visit_actions_container');
-            var boxForm = document.getElementById('visit_transfer_form');
-            var eligibilityBox = document.querySelector('.border-blue-300.bg-gradient-to-br'); // Eligibility section
-
-            if (btnShow && boxActions && boxForm) {
-                btnShow.addEventListener('click', function() {
-                    boxActions.classList.add('hidden');
-                    if(eligibilityBox) eligibilityBox.classList.add('hidden');
-                    boxForm.classList.remove('hidden');
-                });
-            }
-            if (btnCancel && boxActions && boxForm) {
-                btnCancel.addEventListener('click', function() {
-                    boxForm.classList.add('hidden');
-                    boxActions.classList.remove('hidden');
-                    if(eligibilityBox) eligibilityBox.classList.remove('hidden');
-                });
-            }
-        })();
     </script>
     @endif
 @endsection

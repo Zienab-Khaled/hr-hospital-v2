@@ -196,8 +196,8 @@ class VisitController extends Controller
         // Start with all active services
         $query = Service::where('is_active', true);
 
-        // Filter by department if provided
-        if ($departmentId) {
+        // Filter by department if provided (skip «بدون قسم» sentinel)
+        if ($departmentId && $departmentId !== 'none') {
             $query->where('department_id', $departmentId);
         }
 
@@ -368,23 +368,65 @@ class VisitController extends Controller
             $services = is_array($request->input('services')) ? $request->input('services') : [];
         }
 
+        $deptInput = $request->input('department_id');
+        $withoutDepartment = $deptInput === 'none';
+        $eligibilityNotes = trim((string) $request->input('eligibility_notes', ''));
+
+        if ($request->isMethod('post')) {
+            if ($withoutDepartment) {
+                $request->validate([
+                    'eligibility_notes' => 'required|string|min:2|max:2000',
+                ]);
+            } elseif ($request->filled('department_id') && $deptInput !== 'none') {
+                $request->validate([
+                    'department_id' => 'exists:departments,id',
+                ]);
+            }
+        }
+
+        $printDepartmentId = null;
+        if (! $withoutDepartment && $request->filled('department_id') && $deptInput !== 'none') {
+            $printDepartmentId = (int) $deptInput;
+        }
+
         // Default manager: System Manager or Revenue Manager
         $manager = User::getManagerForSignature();
 
         // إذا مُختار قسم الأحقية نستخدمه، وإلا نعتمد على "حالة الزيارة (نوع الحالة)" أو قسم المريض
         $targetDepartment = null;
         $targetDepartmentName = null;
+
+        if ($withoutDepartment && $eligibilityNotes !== '') {
+            $targetDepartmentName = $eligibilityNotes;
+        } elseif ($printDepartmentId) {
+            $targetDepartment = Department::with('manager')->find($printDepartmentId);
+            if ($targetDepartment) {
+                $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+            }
+        }
+
         if (!empty($services) && !empty($services[0]['department_id'])) {
             $targetDepartment = Department::with('manager')->find($services[0]['department_id']);
             if ($targetDepartment) {
                 $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
             }
         }
-        if (!$targetDepartmentName && $request->filled('department_id')) {
+        if (!$targetDepartmentName && $request->filled('department_id') && $deptInput !== 'none') {
             $targetDepartment = Department::with('manager')->find($request->input('department_id'));
             if ($targetDepartment) {
                 $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
             }
+        }
+
+        if (!$targetDepartmentName && ! $withoutDepartment && $visit->eligibility_print_department_id) {
+            $targetDepartment = Department::with('manager')->find($visit->eligibility_print_department_id);
+            if ($targetDepartment) {
+                $targetDepartmentName = $targetDepartment->name_ar ?? $targetDepartment->name;
+            }
+        }
+
+        if (!$targetDepartmentName && $visit->eligibility_without_department && $visit->eligibility_notes) {
+            $targetDepartmentName = $visit->eligibility_notes;
         }
 
         if (!$targetDepartmentName) {
@@ -425,10 +467,21 @@ class VisitController extends Controller
         }
 
         // Update tracking flag and save services (skip auto-invoice when we already have entry_invoice_id)
-        $visit->update([
+        $visitUpdate = [
             'printed_eligibility_at' => now(),
             'last_eligibility_services' => $services,
-        ]);
+        ];
+        if ($request->isMethod('post')) {
+            $visitUpdate['eligibility_notes'] = $eligibilityNotes !== '' ? $eligibilityNotes : null;
+            $visitUpdate['eligibility_print_department_id'] = $printDepartmentId;
+            $visitUpdate['eligibility_without_department'] = $withoutDepartment;
+        }
+        $visit->update($visitUpdate);
+        $visit->refresh();
+
+        if ($eligibilityNotes === '' && $visit->eligibility_notes) {
+            $eligibilityNotes = $visit->eligibility_notes;
+        }
 
         // Auto-create Invoice if services are provided (not when entry fee invoice already created)
         if (!empty($services) && !$entryInvoiceId) {
@@ -456,6 +509,13 @@ class VisitController extends Controller
                 $isTreatmentEligibility = Patient::isTreatmentEligibility($finalPaymentType);
                 $invoiceTotal = $isTreatmentEligibility ? 0.0 : $totalAmount;
 
+                $invoiceNotes = app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility';
+                if ($eligibilityNotes !== '') {
+                    $invoiceNotes = $eligibilityNotes.' — '.$invoiceNotes;
+                } elseif ($visit->eligibility_notes) {
+                    $invoiceNotes = $visit->eligibility_notes.' — '.$invoiceNotes;
+                }
+
                 // ربط الفاتورة بالزيارة (visit_id) حتى تظهر في ليستينج فواتير الزيارة
                 $invoice = Invoice::create([
                     'patient_id' => $patient->id,
@@ -467,7 +527,7 @@ class VisitController extends Controller
                     'remaining_amount' => $invoiceTotal,
                     'deposit_amount' => 0,
                     'status' => $isTreatmentEligibility ? 'paid' : 'pending',
-                    'notes' => app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility',
+                    'notes' => $invoiceNotes,
                     'payment_type' => $finalPaymentType,
                     'invoice_type' => 'eligibility',
                     'audit_status' => 'under_review',
@@ -538,7 +598,7 @@ class VisitController extends Controller
         // Log the action
         ActivityLogger::log('Print Eligibility', 'Visit', $visit->id, 'Treatment eligibility form printed for patient: ' . $visit->patient->fullArabicName(), null, null);
 
-        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName'));
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName', 'eligibilityNotes'));
     }
 
     /**
@@ -581,8 +641,9 @@ class VisitController extends Controller
         $manager = User::getManagerForSignature();
         $targetDepartment = $service->department;
         $targetDepartmentName = $targetDepartment ? ($targetDepartment->name_ar ?? $targetDepartment->name) : ($visit->department->name_ar ?? $visit->department->name ?? '—');
+        $eligibilityNotes = $visit->eligibility_notes ?? '';
 
-        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName'));
+        return view('visits.treatment-eligibility-print', compact('visit', 'services', 'manager', 'targetDepartment', 'targetDepartmentName', 'eligibilityNotes'));
     }
 
     /**
@@ -620,6 +681,137 @@ class VisitController extends Controller
     public function priceInquiryPrintSubmit(Request $request, Visit $visit)
     {
         return $this->priceInquiryPrint($request, $visit);
+    }
+
+    /**
+     * إنشاء فاتورة بإيراد من خدمات جدول الزيارة — تُسجَّل في النظام
+     */
+    public function storeServicesRevenueInvoice(Request $request, Visit $visit)
+    {
+        $this->authorize('invoices.create');
+        $visit->load(['patient']);
+
+        $services = is_array($request->input('services')) ? $request->input('services') : [];
+        if (empty($services)) {
+            return redirect()->route('visits.create', [
+                'patient_id' => $visit->patient_id,
+                'visit_id' => $visit->id,
+                'registered' => 1,
+            ])->withErrors(['error' => app()->getLocale() === 'ar' ? 'يرجى إضافة خدمة واحدة على الأقل.' : 'Please add at least one service.']);
+        }
+
+        $patient = $visit->patient;
+        if (! $patient) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'الزيارة غير مرتبطة بمريض.' : 'Visit has no patient.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            $totalAmount = 0.0;
+            foreach ($services as $s) {
+                $totalAmount += (float) ($s['total'] ?? $s['total_price'] ?? 0);
+            }
+
+            $finalPaymentType = $patient->payment_type;
+            if ($patient->payment_type === 'charity') {
+                $hasApprovalOnVisit = $visit->hasMedia('charity_approval');
+                $hasApprovalOnPatient = $patient->hasMedia('charity-approvals');
+                if (! $hasApprovalOnVisit && ! $hasApprovalOnPatient) {
+                    $finalPaymentType = 'cash';
+                }
+            }
+
+            $isTreatmentEligibility = Patient::isTreatmentEligibility($finalPaymentType);
+            $invoiceTotal = $isTreatmentEligibility ? 0.0 : $totalAmount;
+            $invoiceType = $isTreatmentEligibility ? 'eligibility' : 'regular';
+
+            $invoiceNumber = 'INV-'.date('Ymd').'-'.str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+
+            $invoice = Invoice::create([
+                'patient_id' => $patient->id,
+                'visit_id' => $visit->id,
+                'invoice_number' => $invoiceNumber,
+                'invoice_date' => now(),
+                'total_amount' => $invoiceTotal,
+                'paid_amount' => 0,
+                'remaining_amount' => $invoiceTotal,
+                'deposit_amount' => 0,
+                'status' => $isTreatmentEligibility ? 'paid' : 'pending',
+                'notes' => app()->getLocale() === 'ar' ? 'فاتورة خدمات من الزيارة' : 'Visit services invoice',
+                'payment_type' => $finalPaymentType,
+                'invoice_type' => $invoiceType,
+                'audit_status' => 'under_review',
+            ]);
+
+            foreach ($services as $s) {
+                $lineTotal = $isTreatmentEligibility ? 0.0 : (float) ($s['total'] ?? $s['total_price'] ?? 0);
+                $lineUnit = $isTreatmentEligibility ? 0.0 : (float) ($s['unit_price'] ?? $s['price'] ?? 0);
+                $coverageType = $isTreatmentEligibility
+                    ? 'percentage'
+                    : (isset($s['insurance_coverage_type']) && in_array($s['insurance_coverage_type'], ['percentage', 'fixed'], true) ? $s['insurance_coverage_type'] : null);
+                $coverageValue = $isTreatmentEligibility
+                    ? 100.0
+                    : (isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null);
+
+                $invoice->items()->create([
+                    'service_id' => $s['service_id'] ?? null,
+                    'quantity' => (int) round((float) ($s['qty'] ?? $s['quantity'] ?? 1)),
+                    'unit_price' => $lineUnit,
+                    'total_price' => $lineTotal,
+                    'insurance_coverage_type' => $coverageType,
+                    'insurance_coverage_value' => $coverageValue,
+                    'description' => $s['name'] ?? null,
+                ]);
+            }
+
+            InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+            if ($isTreatmentEligibility) {
+                InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
+            }
+
+            if (in_array($patient->payment_type, ['insurance', 'charity'])) {
+                $approval = Approval::create([
+                    'invoice_id' => $invoice->id,
+                    'patient_id' => $patient->id,
+                    'approval_type' => $patient->payment_type,
+                    'insurance_company_id' => $patient->insurance_company_id,
+                    'charity_entity_id' => $patient->charity_entity_id,
+                    'requested_amount' => (float) $invoice->total_amount,
+                    'status' => 'pending',
+                    'requested_by' => auth()->user()?->getKey(),
+                ]);
+
+                $recipientEmail = null;
+                if ($patient->payment_type === 'insurance' && $patient->insuranceCompany) {
+                    $recipientEmail = $patient->insuranceCompany->email;
+                } elseif ($patient->payment_type === 'charity' && $patient->charityEntity) {
+                    $recipientEmail = $patient->charityEntity->email;
+                }
+
+                if ($recipientEmail) {
+                    try {
+                        Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send approval email: '.$e->getMessage());
+                    }
+                }
+            }
+
+            DB::commit();
+            ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Revenue invoice from visit services', null, $invoice->toArray());
+
+            return redirect()->route('invoices.show', $invoice)
+                ->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء فاتورة بإيراد.' : 'Revenue invoice created.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Visit services revenue invoice failed: '.$e->getMessage());
+
+            return redirect()->route('visits.create', [
+                'patient_id' => $visit->patient_id,
+                'visit_id' => $visit->id,
+                'registered' => 1,
+            ])->withErrors(['error' => app()->getLocale() === 'ar' ? 'تعذّر إنشاء الفاتورة.' : 'Could not create invoice.']);
+        }
     }
 
 
@@ -706,7 +898,7 @@ class VisitController extends Controller
     public function show(Visit $visit)
     {
         $this->authorize('invoices.view');
-        $visit->load(['patient', 'department', 'shift', 'registeredBy', 'invoices.items.service', 'invoices.payments']);
+        $visit->load(['patient', 'department', 'shift', 'registeredBy', 'eligibilityPrintDepartment', 'invoices.items.service', 'invoices.payments']);
 
         return view('visits.show', compact('visit'));
     }

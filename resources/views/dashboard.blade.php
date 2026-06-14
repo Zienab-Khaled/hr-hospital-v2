@@ -198,7 +198,7 @@
                         @forelse($recentPatients as $p)
                             <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="window.location.href='{{ route('patients.show', $p) }}'">
                                 <td class="py-2 text-blue-600 font-medium">{{ $p->name_ar ?? $p->name }}</td>
-                                <td class="py-2">{{ $p->payment_type }}</td>
+                                <td class="py-2">{{ $p->payment_type_label }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="2" class="py-4 text-slate-400">{{ app()->getLocale() === 'ar' ? 'لا يوجد مرضى' : 'No patients yet' }}</td></tr>
@@ -321,7 +321,7 @@
                         <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'رقم الهوية' : 'Identity ID'} *</label><input type="text" name="identity_value" required class="w-full rounded border px-3 py-2"></div>
                         <div class="grid grid-cols-2 gap-2">
                              <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الهوية' : 'Id Type'}</label><select name="identity_type" class="w-full rounded border px-3 py-2"><option value="national_id">National ID</option><option value="iqama">Iqama</option><option value="passport">Passport</option></select></div>
-                             <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الدفع' : 'Payment'}</label><select name="payment_type" class="w-full rounded border px-3 py-2"><option value="cash">${isAr ? 'نقدي' : 'Cash'}</option><option value="insurance">${isAr ? 'تأمين' : 'Insurance'}</option><option value="charity">${isAr ? 'جمعية' : 'Charity'}</option><option value="treatment_eligibility">${isAr ? 'أحقية علاج' : 'Treatment Eligibility'}</option></select></div>
+                             <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'نوع الدفع' : 'Payment'}</label><select name="payment_type" class="w-full rounded border px-3 py-2"><option value="cash">${isAr ? 'نقدي' : 'Cash'}</option><option value="insurance">${isAr ? 'تأمين' : 'Insurance'}</option><option value="charity">${isAr ? 'جمعية' : 'Charity'}</option><option value="treatment_eligibility">${isAr ? 'مؤهل للعلاج (مجانى)' : 'Treatment Eligible (Free)'}</option></select></div>
                         </div>
                         <div><label class="block text-sm font-bold text-slate-700">${isAr ? 'الهاتف' : 'Phone'}</label><input type="text" name="phone" class="w-full rounded border px-3 py-2"></div>
                     </div>

@@ -5,148 +5,85 @@
     <meta charset="UTF-8">
     <title>أحقية العلاج - {{ $visit->patient->name }}</title>
     <style>
-        @font-face {
-            font-family: 'Cairo';
-            src: url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f8fafc;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
         }
 
         .print-container {
-            width: 500px;
+            width: 210mm;
             max-width: 100%;
+            margin: 16px auto;
             background: white;
-            padding: 0 28px 0 28px;
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-top: 40px;
-            margin-bottom: 40px;
-            border-radius: 8px;
+            padding: 0 16px 12px;
             border: 1px solid #e2e8f0;
-        }
-
-        /* Wave Backdrop */
-        .wave-backdrop {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 400px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(219, 234, 254, 0.4) 100%);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .wave-svg {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            opacity: 0.3;
-        }
-
-        .header-card {
-            background-color: #ffffff;
-            padding: 20px 0;
-            text-align: center;
-            border-bottom: 2px dashed #cbd5e1;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-top {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .hospital-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f1f5f9;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: 700;
-            color: #1e293b;
-            font-size: 14px;
-        }
-
-        .hospital-logo {
-            width: 30px;
-            height: 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
         }
 
         .title-banner {
             background: #eff6ff;
             color: #1e40af;
-            padding: 10px 0;
+            padding: 8px 0;
             border-radius: 4px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
-            margin: 10px 0;
+            text-align: center;
+            margin: 8px 0 0;
             border: 1px solid #bfdbfe;
         }
 
         .content-body {
-            padding: 30px;
-            position: relative;
-            z-index: 1;
+            padding: 12px 4px 0;
         }
 
         .info-row {
             display: flex;
             flex-direction: row;
             align-items: baseline;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
         }
 
         .info-label {
             flex-shrink: 0;
-            width: 130px;
+            width: 115px;
             font-weight: 700;
             color: #475569;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .info-value {
             flex: 1;
             min-width: 0;
             color: #1e293b;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
+            line-height: 1.4;
         }
 
         .status-section {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-top: 30px;
-            padding: 15px;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 10px 12px;
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             border-radius: 8px;
             width: fit-content;
+            max-width: 100%;
         }
 
         .check-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             background: #22c55e;
             color: white;
             border-radius: 50%;
@@ -154,60 +91,67 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 13px;
+            flex-shrink: 0;
         }
 
         .status-text {
             font-weight: 800;
             color: #166534;
-            font-size: 18px;
+            font-size: 15px;
+            line-height: 1.3;
         }
 
         .signatures {
-            margin-top: 50px;
+            margin-top: 18px;
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 20px;
-            padding-bottom: 20px;
+            gap: 12px;
         }
 
         .sig-box {
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
+            min-width: 140px;
         }
 
         .sig-label {
-            font-size: 14px;
+            font-size: 12px;
             color: #64748b;
             margin: 0;
             font-weight: 600;
-            flex-shrink: 0;
         }
 
         .sig-name {
             font-weight: 700;
             color: #1e293b;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .sig-img {
-            max-width: 120px;
-            max-height: 50px;
-            margin-top: 4px;
+            max-width: 100px;
+            max-height: 40px;
+            margin-top: 2px;
             flex-basis: 100%;
             height: auto;
         }
 
         .timestamp {
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             color: #94a3b8;
-            margin-top: 40px;
+            margin-top: 12px;
+            padding-top: 8px;
             border-top: 1px solid #f1f5f9;
-            padding-top: 10px;
+        }
+
+        .report-footer-wrap {
+            margin-top: 10px !important;
+            padding-top: 8px !important;
         }
 
         .no-print-actions {
@@ -227,35 +171,17 @@
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            transition: all 0.2s;
             border: none;
         }
 
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2563eb;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-secondary { background: #64748b; color: white; }
 
         @media print {
             body {
                 background: white !important;
-                padding: 0;
                 margin: 0;
-                display: block !important;
-                justify-content: unset !important;
+                padding: 0;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -263,27 +189,56 @@
             .print-container {
                 width: 100% !important;
                 max-width: none !important;
-                margin: 0;
-                padding: 0 28px 0 28px;
-                box-sizing: border-box;
+                margin: 0 !important;
+                padding: 0 10mm 0 !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                page-break-inside: avoid;
             }
 
-            .no-print-actions {
-                display: none !important;
+            .no-print-actions { display: none !important; }
+
+            .report-header-wrap {
+                margin-top: 0 !important;
+                margin-bottom: 6px !important;
+                padding: 10px 12px 8px !important;
             }
 
-            .wave-backdrop {
-                opacity: 1;
+            .report-header-text .line-ar { font-size: 13px !important; }
+            .report-header-text .line-hospital-ar { font-size: 17px !important; margin-top: 3px !important; }
+            .report-header-text .line-hospital-en { font-size: 12px !important; margin-top: 3px !important; }
+            .report-header-logo img { max-height: 42px !important; }
+
+            .title-banner {
+                font-size: 16px;
+                padding: 6px 0;
+                margin-top: 4px;
             }
+
+            .content-body { padding: 8px 0 0; }
+
+            .info-row { margin-bottom: 7px; padding-bottom: 4px; }
+            .info-label, .info-value { font-size: 13px; }
+
+            .status-section { margin-top: 8px; padding: 8px 10px; }
+            .status-text { font-size: 14px; }
+
+            .signatures { margin-top: 14px; gap: 8px; }
+            .sig-img { max-height: 36px; max-width: 90px; }
+
+            .timestamp { margin-top: 8px; padding-top: 6px; }
+
+            .report-footer-wrap {
+                margin-top: 8px !important;
+                padding-top: 6px !important;
+            }
+            .report-footer-dept { font-size: 13px !important; }
+            .report-footer-hospital { font-size: 10px !important; }
 
             @page {
-                size: A4;
-                margin: 20mm;
+                size: A4 portrait;
+                margin: 8mm 10mm;
             }
         }
     </style>
@@ -298,33 +253,9 @@
     </div>
 
     <div class="print-container">
-        <!-- Wave Background -->
         @include('components.report-header')
 
-        <div class="wave-backdrop">
-            <svg class="wave-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                <path fill="#3b82f6" fill-opacity="0.1"
-                    d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,112C672,107,768,149,864,165.3C960,181,1056,171,1152,149.3C1248,128,1344,96,1392,80L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
-                </path>
-            </svg>
-        </div>
-
-        <div class="header-card">
-            <div class="header-top">
-                <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">وحدة ERP / HIS</div>
-                <div class="hospital-badge">
-                    <svg class="hospital-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="45" stroke="#3b82f6" stroke-width="5" />
-                        <path d="M50 25V75M25 50H75" stroke="#3b82f6" stroke-width="10" stroke-linecap="round" />
-                    </svg>
-                    المستشفى
-                </div>
-            </div>
-
-            <div class="title-banner">
-                أحقية العلاج
-            </div>
-        </div>
+        <div class="title-banner">أحقية العلاج</div>
 
         <div class="content-body">
             <div class="info-row">
@@ -343,7 +274,11 @@
                     @forelse($services as $s)
                         {{ $s['name_ar'] ?? $s['name'] ?? '—' }}{{ !$loop->last ? ' ، ' : '' }}
                     @empty
-                        {{ isset($targetDepartment) ? $targetDepartment->name_ar ?? $targetDepartment->name : $visit->department->name_ar ?? $visit->department->name }}
+                        @if (!empty($eligibilityNotes))
+                            {{ $eligibilityNotes }}
+                        @else
+                            {{ isset($targetDepartment) ? $targetDepartment->name_ar ?? $targetDepartment->name : ($visit->department->name_ar ?? $visit->department->name ?? '—') }}
+                        @endif
                     @endforelse
                 </div>
             </div>
@@ -359,6 +294,8 @@
                     @elseif($visit->patient->payment_type == 'charity')
                         جمعية خيرية
                         ({{ $visit->patient->charityEntity->name_ar ?? ($visit->patient->charityEntity->name ?? '—') }})
+                    @elseif($visit->patient->payment_type == 'treatment_eligibility')
+                        {{ $visit->patient->payment_type_label }}
                     @else
                         شخصي (نقدي)
                     @endif
@@ -369,6 +306,13 @@
                 <div class="check-icon">✓</div>
                 <div class="status-text">أهلية لدخول {{ $targetDepartmentName ?? 'المستشفى' }}</div>
             </div>
+
+            @if (!empty($eligibilityNotes) && !empty($services))
+                <div class="info-row" style="margin-top: 10px;">
+                    <div class="info-label">ملاحظة الأحقية :</div>
+                    <div class="info-value">{{ $eligibilityNotes }}</div>
+                </div>
+            @endif
 
             <div class="signatures">
                 <div class="sig-box">
@@ -383,8 +327,7 @@
                     <div class="sig-label">مدير الايرادات :</div>
                     <div class="sig-name">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</div>
                     @if ($manager && $manager->signature)
-                        <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" class="sig-img"
-                            alt="Manager Signature">
+                        <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" class="sig-img" alt="Manager Signature">
                     @endif
                 </div>
             </div>
@@ -393,10 +336,10 @@
                 {{ app()->getLocale() === 'ar' ? 'مساءً' : 'PM' }} {{ date('h:i') }} | {{ date('d-m-Y') }}
             </div>
         </div>
+
+        @include('components.report-footer')
     </div>
 
-
-    @include('components.report-footer')
 </body>
 
 </html>

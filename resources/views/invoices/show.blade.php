@@ -268,7 +268,7 @@
                                 class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
                         @elseif($invoice->payment_type === 'treatment_eligibility')
                             <span
-                                class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility' }}</span>
+                                class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded text-sm">{{ \App\Models\Patient::paymentTypeLabel('treatment_eligibility') }}</span>
                         @else
                             <span
                                 class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</span>
