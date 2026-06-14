@@ -126,9 +126,41 @@ class PatientController extends Controller
         return view('patients.create', compact('insuranceCompanies', 'charityEntities'));
     }
 
+    /**
+     * يجمّع حقول اليوم/الشهر/السنة في تاريخ ميلاد واحد بصيغة Y-m-d.
+     * - لو الثلاثة فاضيين: يترك التاريخ فارغاً (null).
+     * - لو ناقص جزء أو التاريخ غير صحيح (مثل 31 فبراير): يضع قيمة غير صالحة ليفشل التحقق.
+     */
+    private function mergeBirthDate(Request $request): void
+    {
+        $day = trim((string) $request->input('dob_day'));
+        $month = trim((string) $request->input('dob_month'));
+        $year = trim((string) $request->input('dob_year'));
+
+        $filledCount = count(array_filter([$day, $month, $year], fn ($v) => $v !== ''));
+
+        if ($filledCount === 0) {
+            $request->merge(['date_of_birth' => null]);
+
+            return;
+        }
+
+        if ($filledCount === 3 && checkdate((int) $month, (int) $day, (int) $year)) {
+            $request->merge([
+                'date_of_birth' => sprintf('%04d-%02d-%02d', (int) $year, (int) $month, (int) $day),
+            ]);
+
+            return;
+        }
+
+        // جزء ناقص أو تركيب تاريخ غير صحيح → افشل التحقق برسالة تاريخ غير صالح
+        $request->merge(['date_of_birth' => 'invalid-date']);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('patients.create');
+        $this->mergeBirthDate($request);
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients',
             'name' => 'required|string|max:255',
@@ -302,6 +334,7 @@ class PatientController extends Controller
             abort(403);
         }
 
+        $this->mergeBirthDate($request);
         $valid = $request->validate([
             'file_number' => 'required|string|max:50|unique:patients,file_number,' . $patient->id,
             'name' => 'required|string|max:255',

@@ -611,10 +611,11 @@ class VisitController extends Controller
         Gate::authorize('visits.view');
 
         $user = auth()->user();
-        $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
+        // يرى الكل ويقدر يفلتر: الإدارة + فني متابعة المرضى (بدل التقييد على قسمه وشيفته فقط)
+        $isAdmin = \App\Support\RoleNav::canSeeAllVisits($user);
         $currentShift = Shift::currentAt();
 
-        // For admin/manager: if no filters at all, redirect with today + current shift as defaults
+        // For full-view roles: if no filters at all, redirect with today + current shift as defaults
         if ($isAdmin && !$request->hasAny(['date', 'date_from', 'date_to', 'shift_id', 'department_id', 'search', 'insurance_company_id', 'registered_by', 'admission_entry_source', 'page'])) {
             $today = today()->toDateString();
             $defaults = [

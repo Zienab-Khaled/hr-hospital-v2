@@ -212,10 +212,35 @@
                             <label class="block text-sm font-medium text-slate-700 mb-1">
                                 {{ app()->getLocale() === 'ar' ? 'تاريخ الميلاد' : 'Date of birth' }}
                             </label>
-                            <input type="date" name="date_of_birth"
-                                value="{{ old('date_of_birth', $patient->date_of_birth?->format('Y-m-d')) }}"
-                                max="{{ now()->format('Y-m-d') }}"
-                                class="w-full rounded border border-slate-300 px-3 py-2 @error('date_of_birth') border-red-500 @enderror">
+                            @php
+                                $monthNames = app()->getLocale() === 'ar'
+                                    ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+                                    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                $dobSelectClass = 'w-full rounded border border-slate-300 px-2 py-2 ' . ($errors->has('date_of_birth') ? 'border-red-500' : '');
+                                $dobDay = old('dob_day', $patient->date_of_birth?->day);
+                                $dobMonth = old('dob_month', $patient->date_of_birth?->month);
+                                $dobYear = old('dob_year', $patient->date_of_birth?->year);
+                            @endphp
+                            <div class="grid grid-cols-3 gap-2">
+                                <select name="dob_day" class="{{ $dobSelectClass }}">
+                                    <option value="">{{ app()->getLocale() === 'ar' ? 'يوم' : 'Day' }}</option>
+                                    @for ($d = 1; $d <= 31; $d++)
+                                        <option value="{{ $d }}" {{ (string) $dobDay === (string) $d ? 'selected' : '' }}>{{ $d }}</option>
+                                    @endfor
+                                </select>
+                                <select name="dob_month" class="{{ $dobSelectClass }}">
+                                    <option value="">{{ app()->getLocale() === 'ar' ? 'شهر' : 'Month' }}</option>
+                                    @foreach ($monthNames as $i => $monthName)
+                                        <option value="{{ $i + 1 }}" {{ (string) $dobMonth === (string) ($i + 1) ? 'selected' : '' }}>{{ $monthName }}</option>
+                                    @endforeach
+                                </select>
+                                <select name="dob_year" class="{{ $dobSelectClass }}">
+                                    <option value="">{{ app()->getLocale() === 'ar' ? 'سنة' : 'Year' }}</option>
+                                    @for ($y = now()->year; $y >= 1900; $y--)
+                                        <option value="{{ $y }}" {{ (string) $dobYear === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+                                    @endfor
+                                </select>
+                            </div>
                             @error('date_of_birth')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror

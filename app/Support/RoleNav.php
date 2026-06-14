@@ -94,7 +94,17 @@ final class RoleNav
         return true;
     }
 
-    /** تقديم خدمة / إنشاء فاتورة — للجميع ما عدا المحاسب وأمين الصندوق والمديونيات */
+    /**
+     * يرى كل الزيارات (وليس زيارات شيفت قسمه فقط):
+     * الإدارة + فني متابعة المرضى (وظيفته متابعة المرضى عبر كل الأقسام).
+     */
+    public static function canSeeAllVisits(?User $user): bool
+    {
+        return $user !== null
+            && ($user->hasAnyRole(['admin', 'manager', 'patient_follow_up']));
+    }
+
+    /** تقديم خدمة / إنشاء فاتورة — للجميع ما عدا المحاسب وأمين الصندوق */
     public static function canCreateInvoiceWithServices(?User $user): bool
     {
         if (! $user || ! $user->can('invoices.create')) {
@@ -102,10 +112,6 @@ final class RoleNav
         }
 
         if (self::isInvoicesOnly($user)) {
-            return false;
-        }
-
-        if ($user->hasRole('debts_head') && ! self::isAdministration($user)) {
             return false;
         }
 

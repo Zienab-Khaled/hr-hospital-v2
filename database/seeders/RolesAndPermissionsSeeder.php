@@ -100,7 +100,7 @@ class RolesAndPermissionsSeeder extends Seeder
             // موظف تأمين: مرضى تأمين فقط، فواتير، مطالبات تأمين، تفويضات، شركات تأمين، تقارير تأمين
             $insuranceClerk = Role::firstOrCreate(['name' => 'insurance_clerk', 'guard_name' => $guard]);
             $insuranceClerk->syncPermissions([
-                'patients.view', 'visits.view',
+                'patients.view', 'patients.create', 'visits.view',
                 'invoices.view', 'invoices.create',
                 'claims.view', 'authorizations.view',
                 'insurance_reports.view', 'insurance_companies.manage',
@@ -110,7 +110,7 @@ class RolesAndPermissionsSeeder extends Seeder
             // موظف جمعيات: مرضى، فواتير، مطالبات، إجراءات
             $charityClerk = Role::firstOrCreate(['name' => 'charity_clerk', 'guard_name' => $guard]);
             $charityClerk->syncPermissions([
-                'patients.view', 'visits.view',
+                'patients.view', 'patients.create', 'visits.view',
                 'invoices.view', 'invoices.create',
                 'claims.view', 'authorizations.view',
                 'procedures.contact_report',
@@ -153,8 +153,8 @@ class RolesAndPermissionsSeeder extends Seeder
             // رئيس المديونيات: مديونيات وفواتير ومرضى (بدون تقارير إدارية أو سجل نشاط)
             $debtsHead = Role::firstOrCreate(['name' => 'debts_head', 'guard_name' => $guard]);
             $debtsHead->syncPermissions([
-                'patients.view', 'visits.view',
-                'invoices.view', 'invoices.edit',
+                'patients.view', 'patients.create', 'visits.view',
+                'invoices.view', 'invoices.create', 'invoices.edit',
                 'payments.view',
                 'procedures.contact_report', 'procedures.written_commitment',
                 'procedures.non_commitment', 'procedures.debt_inventory',

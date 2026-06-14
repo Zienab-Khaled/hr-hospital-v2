@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             // UsersSeeder::class,
             ProductionUsersSeeder::class,
             RevenueStaffSeeder::class,
-            PatientsSeeder::class,
+            // PatientsSeeder::class,
         ]);
 
         echo "\n";
