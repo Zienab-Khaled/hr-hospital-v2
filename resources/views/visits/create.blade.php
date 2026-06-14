@@ -348,7 +348,7 @@
                                 {{ app()->getLocale() === 'ar' ? 'تقديم خدمات وإنشاء فاتورة' : 'Add services & create invoice' }}
                             </h3>
                             <p class="text-sm text-slate-600 flex-1">
-                                {{ app()->getLocale() === 'ar' ? 'إضافة الخدمات والأكواد وإنشاء فاتورة بإيراد — من صفحة الفاتورة.' : 'Add services, codes, and create a revenue invoice on the invoice page.' }}
+                                {{ app()->getLocale() === 'ar' ? 'إضافة الخدمات ثم: فاتورة تفصيلية (إيراد) أو عرض سعر استعلامي (بدون إيراد).' : 'Add services then: detailed invoice (revenue) or price inquiry (no revenue).' }}
                             </p>
                             @if (\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
@@ -457,18 +457,18 @@
                             <form id="revenue_invoice_form" method="POST" action="{{ route('visits.services-revenue-invoice', $visitForPrint) }}">
                                 @csrf
                                 <button type="button" id="revenue_invoice_btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'فاتورة بإيراد' : 'Revenue invoice' }}
+                                    {{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed invoice' }}
                                 </button>
                             </form>
                             <form id="inquiry_invoice_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                                 @csrf
                                 <input type="hidden" name="print_title" value="price_quotation">
                                 <button type="button" id="inquiry_invoice_btn" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 shadow text-sm">
-                                    {{ app()->getLocale() === 'ar' ? 'فاتورة استعلامية' : 'Inquiry invoice' }}
+                                    {{ app()->getLocale() === 'ar' ? 'عرض سعر استعلامي' : 'Price inquiry' }}
                                 </button>
                             </form>
                             <p class="text-xs text-slate-500 w-full sm:w-auto">
-                                {{ app()->getLocale() === 'ar' ? 'بإيراد: تُسجَّل في النظام — استعلامية: للعرض فقط بدون إيراد' : 'Revenue: recorded in system — Inquiry: display only' }}
+                                {{ app()->getLocale() === 'ar' ? 'تفصيلية: تُسجَّل في الإيرادات — استعلامي: للعرض فقط بدون إيراد' : 'Detailed: recorded in revenue — Inquiry: display only' }}
                             </p>
                         </div>
                     </div>
@@ -879,7 +879,7 @@
                 });
             }
 
-            // Handle Revenue Invoice Button
+            // Handle Detailed Invoice Button (revenue — recorded in system)
             if (revenueBtn && revenueForm) {
                 revenueBtn.addEventListener('click', function() {
                     if (rows.length === 0) {
@@ -900,7 +900,7 @@
                 });
             }
 
-            // Handle Inquiry Invoice Button (print only — no revenue)
+            // Handle Price Inquiry Button (print only — no revenue)
             if (inquiryBtn && inquiryForm) {
                 inquiryBtn.addEventListener('click', function() {
                     if (rows.length === 0) {

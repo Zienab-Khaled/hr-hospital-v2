@@ -684,7 +684,7 @@ class VisitController extends Controller
     }
 
     /**
-     * إنشاء فاتورة بإيراد من خدمات جدول الزيارة — تُسجَّل في النظام
+     * إنشاء فاتورة تفصيلية من خدمات جدول الزيارة — تُسجَّل في الإيرادات
      */
     public function storeServicesRevenueInvoice(Request $request, Visit $visit)
     {
@@ -737,7 +737,7 @@ class VisitController extends Controller
                 'remaining_amount' => $invoiceTotal,
                 'deposit_amount' => 0,
                 'status' => $isTreatmentEligibility ? 'paid' : 'pending',
-                'notes' => app()->getLocale() === 'ar' ? 'فاتورة خدمات من الزيارة' : 'Visit services invoice',
+                'notes' => app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed invoice',
                 'payment_type' => $finalPaymentType,
                 'invoice_type' => $invoiceType,
                 'audit_status' => 'under_review',
@@ -798,10 +798,10 @@ class VisitController extends Controller
             }
 
             DB::commit();
-            ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Revenue invoice from visit services', null, $invoice->toArray());
+            ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Detailed invoice from visit services', null, $invoice->toArray());
 
             return redirect()->route('invoices.show', $invoice)
-                ->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء فاتورة بإيراد.' : 'Revenue invoice created.');
+                ->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء فاتورة تفصيلية وتسجيلها في الإيرادات.' : 'Detailed invoice created and recorded in revenue.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Visit services revenue invoice failed: '.$e->getMessage());
