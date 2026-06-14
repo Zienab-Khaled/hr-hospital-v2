@@ -143,6 +143,12 @@ class Patient extends Model implements HasMedia
         return array_keys(static::paymentTypeOptions());
     }
 
+    /** أحقية علاج (خادم / سائق) — المريض لا يدفع. */
+    public static function isTreatmentEligibility(?string $paymentType): bool
+    {
+        return ($paymentType ?? '') === 'treatment_eligibility';
+    }
+
     public static function paymentTypeValidationRule(): string
     {
         return 'required|in:' . implode(',', static::paymentTypeKeys());

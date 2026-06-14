@@ -92,6 +92,9 @@
                                 @elseif($inv->payment_type === 'insurance')
                                     <span
                                         class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
+                                @elseif($inv->payment_type === 'treatment_eligibility')
+                                    <span
+                                        class="bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility' }}</span>
                                 @else
                                     <span
                                         class="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-[10px] font-bold w-fit">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</span>

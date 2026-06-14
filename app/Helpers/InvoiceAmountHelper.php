@@ -93,4 +93,39 @@ final class InvoiceAmountHelper
             'remaining_amount' => max(0, round($sum - $paid, 2)),
         ]);
     }
+
+    /**
+     * فواتير أحقية العلاج (خادم / سائق): إجمالي 0، نوع الفاتورة أحقية، لا تحصيل نقدي.
+     */
+    public static function applyTreatmentEligibilityZeroInvoice(Invoice $invoice): void
+    {
+        if (! \App\Models\Patient::isTreatmentEligibility($invoice->payment_type ?? null)) {
+            return;
+        }
+
+        $invoice->unsetRelation('items');
+        foreach ($invoice->items()->orderBy('id')->get() as $item) {
+            $item->update([
+                'total_price' => 0,
+                'unit_price' => 0,
+                'insurance_coverage_type' => 'percentage',
+                'insurance_coverage_value' => 100,
+            ]);
+        }
+
+        $notes = trim((string) ($invoice->notes ?? ''));
+        if ($notes === '') {
+            $notes = app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility';
+        }
+
+        $invoice->update([
+            'total_amount' => 0,
+            'paid_amount' => 0,
+            'remaining_amount' => 0,
+            'status' => 'paid',
+            'invoice_type' => 'eligibility',
+            'payment_type' => 'treatment_eligibility',
+            'notes' => $notes,
+        ]);
+    }
 }

@@ -9,6 +9,7 @@
         $isTransferred = $visitForPrint && $visitForPrint->transferred_department_id;
         $showEligibilitySection = !$isTransferred && ($visit || $registered ?? false) && ($visitForPrint ?? null) && isset($departments);
         $patientIsInsurance = $patient && $patient->payment_type === 'insurance';
+        $patientIsTreatmentEligibility = $patient && $patient->payment_type === 'treatment_eligibility';
     @endphp
     <div class="max-w-6xl mx-auto">
         <div class="rounded-lg shadow-lg p-6">
@@ -676,6 +677,7 @@
     @if ($patient && $showEligibilitySection)
     <script>
         window.visitPatientIsInsurance = @json($patientIsInsurance);
+        window.visitPatientIsTreatmentEligibility = @json($patientIsTreatmentEligibility);
         window.lastEligibilityServices = @json($visitForPrint->last_eligibility_services ?? []);
         window.lastPriceInquiryServices = @json($visitForPrint->last_price_inquiry_services ?? []);
         (function() {
@@ -765,7 +767,9 @@
 
                 if (grandTotalEl) grandTotalEl.textContent = grand.toFixed(2);
 
-                if (isIns && insuranceTotalEl && patientShareEl) {
+                if (window.visitPatientIsTreatmentEligibility && patientShareEl) {
+                    patientShareEl.textContent = '0.00';
+                } else if (isIns && insuranceTotalEl && patientShareEl) {
                     var patientShare = Math.max(0, grand - insuranceTotal);
                     insuranceTotalEl.textContent = insuranceTotal.toFixed(2);
                     patientShareEl.textContent = patientShare.toFixed(2);

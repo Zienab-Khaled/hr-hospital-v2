@@ -268,6 +268,8 @@ class VisitController extends Controller
                 $finalPaymentType = 'cash';
             }
         }
+        $isTreatmentEligibility = Patient::isTreatmentEligibility($finalPaymentType);
+        $entryAmount = $isTreatmentEligibility ? 0.0 : $entryFee;
 
         DB::beginTransaction();
         try {
@@ -276,12 +278,14 @@ class VisitController extends Controller
                 'visit_id' => $visit->id,
                 'invoice_number' => $invoiceNumber,
                 'invoice_date' => now(),
-                'total_amount' => $entryFee,
+                'total_amount' => $entryAmount,
                 'paid_amount' => 0,
-                'remaining_amount' => $entryFee,
+                'remaining_amount' => $entryAmount,
                 'deposit_amount' => 0,
-                'status' => 'pending',
-                'notes' => app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee',
+                'status' => $isTreatmentEligibility ? 'paid' : 'pending',
+                'notes' => $isTreatmentEligibility
+                    ? (app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility')
+                    : (app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee'),
                 'payment_type' => $finalPaymentType,
                 'invoice_type' => 'eligibility',
                 'audit_status' => 'under_review',
@@ -294,17 +298,20 @@ class VisitController extends Controller
                 'service_id' => null,
                 'department_id' => $department->id,
                 'quantity' => 1,
-                'unit_price' => $entryFee,
-                'total_price' => $entryFee,
+                'unit_price' => $entryAmount,
+                'total_price' => $entryAmount,
                 'description' => $description,
-                'insurance_coverage_type' => $insuranceCoverageType,
-                'insurance_coverage_value' => $insuranceCoverageValue,
+                'insurance_coverage_type' => $isTreatmentEligibility ? 'percentage' : $insuranceCoverageType,
+                'insurance_coverage_value' => $isTreatmentEligibility ? 100.0 : $insuranceCoverageValue,
                 'status' => 'completed',
                 'completed_at' => now(),
                 'completed_by' => auth()->id(),
             ]);
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+            if ($isTreatmentEligibility) {
+                InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
+            }
 
             if (in_array($patient->payment_type, ['insurance', 'charity'])) {
                 Approval::create([
@@ -446,6 +453,8 @@ class VisitController extends Controller
                         $finalPaymentType = 'cash';
                     }
                 }
+                $isTreatmentEligibility = Patient::isTreatmentEligibility($finalPaymentType);
+                $invoiceTotal = $isTreatmentEligibility ? 0.0 : $totalAmount;
 
                 // ربط الفاتورة بالزيارة (visit_id) حتى تظهر في ليستينج فواتير الزيارة
                 $invoice = Invoice::create([
@@ -453,11 +462,11 @@ class VisitController extends Controller
                     'visit_id' => $visit->id,
                     'invoice_number' => $invoiceNumber,
                     'invoice_date' => now(),
-                    'total_amount' => $totalAmount,
+                    'total_amount' => $invoiceTotal,
                     'paid_amount' => 0,
-                    'remaining_amount' => $totalAmount,
+                    'remaining_amount' => $invoiceTotal,
                     'deposit_amount' => 0,
-                    'status' => 'pending',
+                    'status' => $isTreatmentEligibility ? 'paid' : 'pending',
                     'notes' => app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility',
                     'payment_type' => $finalPaymentType,
                     'invoice_type' => 'eligibility',
@@ -465,18 +474,29 @@ class VisitController extends Controller
                 ]);
 
                 foreach ($services as $s) {
+                    $lineTotal = $isTreatmentEligibility ? 0.0 : (float) ($s['total'] ?? $s['total_price'] ?? 0);
+                    $lineUnit = $isTreatmentEligibility ? 0.0 : (float) ($s['unit_price'] ?? $s['price'] ?? 0);
+                    $coverageType = $isTreatmentEligibility
+                        ? 'percentage'
+                        : (isset($s['insurance_coverage_type']) && in_array($s['insurance_coverage_type'], ['percentage', 'fixed']) ? $s['insurance_coverage_type'] : null);
+                    $coverageValue = $isTreatmentEligibility
+                        ? 100.0
+                        : (isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null);
                     $invoice->items()->create([
                         'service_id' => $s['service_id'] ?? null,
                         'quantity' => (int) round((float) ($s['qty'] ?? $s['quantity'] ?? 1)),
-                        'unit_price' => (float) ($s['unit_price'] ?? $s['price'] ?? 0),
-                        'total_price' => (float) ($s['total'] ?? $s['total_price'] ?? 0),
-                        'insurance_coverage_type' => isset($s['insurance_coverage_type']) && in_array($s['insurance_coverage_type'], ['percentage', 'fixed']) ? $s['insurance_coverage_type'] : null,
-                        'insurance_coverage_value' => isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null,
+                        'unit_price' => $lineUnit,
+                        'total_price' => $lineTotal,
+                        'insurance_coverage_type' => $coverageType,
+                        'insurance_coverage_value' => $coverageValue,
                         'description' => $s['name'] ?? null,
                     ]);
                 }
 
                 InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+                if ($isTreatmentEligibility) {
+                    InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
+                }
 
                 // Approval request
                 if (in_array($patient->payment_type, ['insurance', 'charity'])) {

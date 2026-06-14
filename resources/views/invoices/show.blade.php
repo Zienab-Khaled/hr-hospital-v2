@@ -4,7 +4,9 @@
 @section('content')
     @php
         $hasInsuranceCoverage = $invoice->items->contains(fn($i) => !empty($i->insurance_coverage_type));
-        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
+        $isTreatmentEligibility = \App\Models\Patient::isTreatmentEligibility($invoice->payment_type ?? $invoice->patient?->payment_type ?? null);
+        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity'])
+            || $isTreatmentEligibility;
         $totalInsuranceCovered = $invoice->items->sum(fn($i) => (float) $i->insurance_covered_amount);
         $totalPatientShare = $invoice->items->sum(fn($i) => (float) $i->patient_amount);
         // المتبقي للمريض = حصة المريض − ما دفعه المريض فقط (لا نحتسب دفعات التأمين/الجمعية)
@@ -264,6 +266,9 @@
                         @elseif($invoice->payment_type === 'insurance')
                             <span
                                 class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</span>
+                        @elseif($invoice->payment_type === 'treatment_eligibility')
+                            <span
+                                class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'أحقية علاج' : 'Treatment Eligibility' }}</span>
                         @else
                             <span
                                 class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-sm">{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</span>
@@ -307,7 +312,7 @@
                         {{ $invoice->patient->file_number }}</p>
                     <p><span
                             class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'نوع الدفع:' : 'Payment:' }}</span>
-                        {{ $invoice->patient->payment_type ?? '—' }}</p>
+                        {{ $invoice->patient->payment_type_label ?? ($invoice->patient->payment_type ?? '—') }}</p>
                     @if ($invoice->patient->payment_type === 'insurance' && $invoice->patient->insuranceCompany)
                         <p><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance company:' }}</span>

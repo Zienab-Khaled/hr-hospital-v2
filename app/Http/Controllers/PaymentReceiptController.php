@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\PaymentReceipt;
 use App\Models\PaymentReceiptSplit;
@@ -43,6 +44,12 @@ class PaymentReceiptController extends Controller
 
         $invoice = Invoice::with(['patient', 'items.service', 'payments.receipt'])->findOrFail($validated['invoice_id']);
 
+        if (Patient::isTreatmentEligibility($invoice->payment_type ?? $invoice->patient?->payment_type ?? null)) {
+            return back()->withErrors(['amount' => app()->getLocale() === 'ar'
+                ? 'مرضى أحقية العلاج لا يدفعون — لا يمكن تسجيل دفعة على هذه الفاتورة.'
+                : 'Treatment eligibility patients do not pay — cannot record payment on this invoice.'])->withInput();
+        }
+
         $normalizedSplits = $this->normalizePaymentSplits($request, $validated);
 
         if ($normalizedSplits->isEmpty()) {
@@ -69,7 +76,8 @@ class PaymentReceiptController extends Controller
         }
 
         $hasCoverage = $invoice->items->contains(fn ($i) => ! empty($i->insurance_coverage_type));
-        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity']);
+        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity'])
+            || Patient::isTreatmentEligibility($invoice->payment_type ?? $invoice->patient?->payment_type ?? null);
         $totalPatientShare = ($hasCoverage || $isInsuranceOrCharity)
             ? (float) $invoice->items->sum(fn ($i) => (float) $i->patient_amount)
             : (float) $invoice->total_amount;

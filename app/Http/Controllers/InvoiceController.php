@@ -238,9 +238,12 @@ class InvoiceController extends Controller
                 ]);
             }
             $forceCharityPatientFree = $finalPaymentType === 'charity' && in_array($charityMode, ['eligibility', 'no_eligibility'], true);
+            $isTreatmentEligibilityFree = Patient::isTreatmentEligibility($finalPaymentType);
             $invoiceType = 'regular';
             if ($forceCharityPatientFree) {
                 $invoiceType = $charityMode === 'eligibility' ? 'eligibility' : 'charity_treatment_free';
+            } elseif ($isTreatmentEligibilityFree) {
+                $invoiceType = 'eligibility';
             }
 
             // Use existing visit (e.g. from "create visit" flow) or create one
@@ -263,7 +266,9 @@ class InvoiceController extends Controller
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . str_pad(Invoice::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
 
             // Calculate total amount
-            $totalAmount = collect($validated['services'])->sum('total_price');
+            $totalAmount = $isTreatmentEligibilityFree
+                ? 0.0
+                : collect($validated['services'])->sum('total_price');
 
             // Only allow print_media_ids that belong to this patient's documents/medical-reports
             $patientMediaIds = $patient->getMedia('documents')->merge($patient->getMedia('medical-reports'))->pluck('id')->all();
@@ -279,8 +284,10 @@ class InvoiceController extends Controller
                 'paid_amount' => 0,
                 'remaining_amount' => $totalAmount,
                 'deposit_amount' => 0,
-                'status' => 'pending',
-                'notes' => $validated['notes'],
+                'status' => $isTreatmentEligibilityFree ? 'paid' : 'pending',
+                'notes' => $validated['notes'] ?: ($isTreatmentEligibilityFree
+                    ? (app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility')
+                    : null),
                 'print_media_ids' => $printMediaIds ?: null,
                 'payment_type' => $finalPaymentType,
                 'invoice_type' => $invoiceType,
@@ -289,7 +296,7 @@ class InvoiceController extends Controller
 
             // Create invoice items (quantity: ensure integer for DB; optional insurance coverage per line)
             foreach ($validated['services'] as $serviceData) {
-                if ($forceCharityPatientFree) {
+                if ($forceCharityPatientFree || $isTreatmentEligibilityFree) {
                     $coverageType = 'percentage';
                     $coverageValue = 100.0;
                 } else {
@@ -298,11 +305,13 @@ class InvoiceController extends Controller
                     $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
                         ? (float) $serviceData['insurance_coverage_value'] : null;
                 }
+                $lineTotal = $isTreatmentEligibilityFree ? 0.0 : (float) $serviceData['total_price'];
+                $lineUnit = $isTreatmentEligibilityFree ? 0.0 : (float) $serviceData['unit_price'];
                 $invoice->items()->create([
                     'service_id' => (int) $serviceData['service_id'],
                     'quantity' => (int) round((float) $serviceData['quantity']),
-                    'unit_price' => (float) $serviceData['unit_price'],
-                    'total_price' => (float) $serviceData['total_price'],
+                    'unit_price' => $lineUnit,
+                    'total_price' => $lineTotal,
                     'description' => isset($serviceData['description']) && $serviceData['description'] !== '' ? (string) $serviceData['description'] : null,
                     'insurance_coverage_type' => $coverageType,
                     'insurance_coverage_value' => $coverageValue,
@@ -310,6 +319,9 @@ class InvoiceController extends Controller
             }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice);
+            if ($isTreatmentEligibilityFree) {
+                InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
+            }
             $invoice->refresh();
 
             // Attach medical report(s) if uploaded
@@ -328,6 +340,13 @@ class InvoiceController extends Controller
             }
 
             // NEW: Handle Financial Collection & Digital q-1 Documents
+            if ($isTreatmentEligibilityFree && ! empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
+                throw ValidationException::withMessages([
+                    'collection_amount' => app()->getLocale() === 'ar'
+                        ? 'مرضى أحقية العلاج لا يدفعون — لا يمكن تسجيل تحصيل نقدي.'
+                        : 'Treatment eligibility patients do not pay — cash collection is not allowed.',
+                ]);
+            }
             if (!empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
                 $collectionAmt = (float) $validated['collection_amount'];
                 if (($validated['collection_method'] ?? '') === 'cash' && ($invoice->payment_type ?? '') === 'cash') {
@@ -1045,6 +1064,9 @@ class InvoiceController extends Controller
             }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
+            if (Patient::isTreatmentEligibility($invoice->payment_type ?? null)) {
+                InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
+            }
 
             $newValues = $invoice->toArray();
             ActivityLogger::log('Invoice Updated', 'Invoice', $invoice->id, 'Invoice details updated', $oldValues, $newValues);
