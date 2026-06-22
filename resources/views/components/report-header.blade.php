@@ -23,6 +23,7 @@
         margin-bottom: 12px;
         font-family: 'Cairo', 'Tajawal', 'Segoe UI', sans-serif;
     }
+
     .report-header {
         display: flex;
         flex-direction: row-reverse;
@@ -34,6 +35,7 @@
         margin: 0;
         font-family: inherit;
     }
+
     .report-header-text {
         flex: 1;
         text-align: center;
@@ -44,22 +46,26 @@
         align-items: center;
         gap: 2px;
     }
+
     .report-header-text .line-ar,
     .report-header-text .line-hospital-ar,
     .report-header-text .line-hospital-en {
         width: 100%;
         text-align: center;
     }
+
     .report-header-text .line-ar {
         font-size: 18px;
         font-weight: 700;
     }
+
     .report-header-text .line-hospital-ar {
         font-size: 24px;
         font-weight: 900;
         margin-top: 6px;
         color: #000;
     }
+
     .report-header-text .line-hospital-en {
         font-size: 16px;
         font-weight: 700;
@@ -70,15 +76,19 @@
         text-align: right;
         min-width: 120px;
     }
+
     .report-header-logo img {
-        max-height: 52px;
-        max-width: 120px;
+        max-height: 70px;
+        max-width: 140px;
         object-fit: contain;
         display: block;
         margin-bottom: 4px;
         margin-inline-end: 0;
         margin-inline-start: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
+
     .report-header-logo .logo-placeholder {
         width: 80px;
         height: 40px;
@@ -93,11 +103,13 @@
         margin-inline-start: auto;
         margin-inline-end: 0;
     }
+
     .report-header-logo .cluster-en {
         font-size: 11px;
         font-weight: 600;
         color: #0f766e;
     }
+
     @media print {
         .report-header-wrap {
             margin-top: 12px;
@@ -109,26 +121,32 @@
             box-sizing: border-box;
             break-inside: avoid;
         }
+
+        .report-header-logo img {
+            max-height: 58px !important;
+            max-width: 130px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
     }
 </style>
 
 <div class="report-header-wrap">
-<div class="report-header">
-    <div class="report-header-text">
-        <div class="line-ar">{{ $countryAr }}</div>
-        <div class="line-ar">{{ $ministryAr }}</div>
-        <div class="line-ar">{{ $clusterAr }}</div>
-        <div class="line-hospital-ar">{{ $hospitalNameAr }}</div>
-        <div class="line-hospital-en">{{ $hospitalNameEn }}</div>
-    </div>
-    <div class="report-header-logo">
-        @if($logo)
-            <img src="{{ asset('storage/' . $logo) }}" alt="Logo">
-        @else
-            <div class="logo-placeholder">Logo</div>
-        @endif
-        <div class="cluster-en">{{ $clusterNameEn }}</div>
+    <div class="report-header">
+        <div class="report-header-text">
+            <div class="line-ar">{{ $countryAr }}</div>
+            <div class="line-ar">{{ $ministryAr }}</div>
+            <div class="line-ar">{{ $clusterAr }}</div>
+            <div class="line-hospital-ar">{{ $hospitalNameAr }}</div>
+            <div class="line-hospital-en">{{ $hospitalNameEn }}</div>
+        </div>
+        <div class="report-header-logo">
+            @if ($logo)
+                <img src="{{ asset('storage/' . ltrim($logo, '/')) }}" alt="{{ app()->getLocale() === 'ar' ? 'شعار المستشفى' : 'Hospital logo' }}">
+            @else
+                <div class="logo-placeholder">Logo</div>
+            @endif
+            <div class="cluster-en">{{ $clusterNameEn }}</div>
+        </div>
     </div>
 </div>
-</div>
-

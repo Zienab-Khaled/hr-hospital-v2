@@ -43,8 +43,9 @@
                     <p class="text-slate-500 font-medium">
                         {{ $visit->visit_date?->format('Y-m-d') ?? ($visit->created_at?->format('Y-m-d') ?? '—') }} |
                         {{ app()->getLocale() === 'ar' ? 'مسار الدخول:' : 'Admission:' }}
-                        @if($visit->admission_entry_source)
-                            <span class="inline-flex align-middle px-2 py-0.5 rounded-md text-xs font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
+                        @if ($visit->admission_entry_source)
+                            <span
+                                class="inline-flex align-middle px-2 py-0.5 rounded-md text-xs font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
                         @else
                             <span class="text-slate-400">—</span>
                         @endif
@@ -93,8 +94,9 @@
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">
                                     {{ app()->getLocale() === 'ar' ? 'مسار الدخول (مكتب الدخول)' : 'Admission desk route' }}
                                 </span>
-                                @if($visit->admission_entry_source)
-                                    <span class="inline-flex px-3 py-1 rounded-lg text-sm font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
+                                @if ($visit->admission_entry_source)
+                                    <span
+                                        class="inline-flex px-3 py-1 rounded-lg text-sm font-black {{ $visit->admissionEntrySourceBadgeClass() }}">{{ $visit->admission_entry_source_label }}</span>
                                 @else
                                     <p class="text-lg font-bold text-slate-400">—</p>
                                 @endif
@@ -237,7 +239,7 @@
                                                     <tr>
                                                         <td class="py-3 font-bold text-slate-700">
                                                             @if ($item->service_id)
-                                                                {{ app()->getLocale() === 'ar' ? ($item->service?->name_ar ?? $item->service?->name) : $item->service?->name }}
+                                                                {{ app()->getLocale() === 'ar' ? $item->service?->name_ar ?? $item->service?->name : $item->service?->name }}
                                                             @else
                                                                 {{ $item->description ?? (app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee') }}
                                                             @endif
@@ -297,7 +299,7 @@
                             </svg>
                         </div>
                         <h4 class="text-xl font-black text-slate-900 text-center">
-                            {{ $visit->patient?->fullArabicName() ?: ($visit->patient?->name ?? '—') }}</h4>
+                            {{ $visit->patient?->fullArabicName() ?: $visit->patient?->name ?? '—' }}</h4>
                         <span class="text-sm text-slate-400 font-bold mt-1">#{{ $visit->patient->file_number }}</span>
                     </div>
 

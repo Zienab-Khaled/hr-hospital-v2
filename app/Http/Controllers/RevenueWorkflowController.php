@@ -9,6 +9,7 @@ use App\Models\PaymentReceipt;
 use App\Models\Shift;
 use App\Models\User;
 use App\Notifications\SystemNotification;
+use App\Support\RoleNav;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,9 +18,33 @@ use Illuminate\Support\Facades\Notification;
 
 class RevenueWorkflowController extends Controller
 {
+    protected function authorizeControlRoom(): void
+    {
+        if (RoleNav::canSeeControlRoom(auth()->user()) || auth()->user()?->can('reports.view')) {
+            return;
+        }
+        abort(403);
+    }
+
+    protected function authorizeTreasury(): void
+    {
+        if (RoleNav::canSeeTreasury(auth()->user()) || auth()->user()?->can('reports.view')) {
+            return;
+        }
+        abort(403);
+    }
+
+    protected function authorizeRevenueAdmin(): void
+    {
+        if (RoleNav::isAdministration(auth()->user()) || auth()->user()?->can('reports.view')) {
+            return;
+        }
+        abort(403);
+    }
+
     public function controlRoom(Request $request)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeControlRoom();
 
         $date = $request->input('date', Carbon::today()->toDateString());
         $shiftId = $request->input('shift_id');
@@ -65,7 +90,7 @@ class RevenueWorkflowController extends Controller
 
     public function match(Invoice $invoice)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeControlRoom();
 
         DB::transaction(function() use ($invoice) {
             $invoice->update([
@@ -89,7 +114,7 @@ class RevenueWorkflowController extends Controller
 
     public function reject(Request $request, Invoice $invoice)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeControlRoom();
 
         $request->validate([
             'rejection_reason' => 'required|string|max:500'
@@ -108,7 +133,7 @@ class RevenueWorkflowController extends Controller
      */
     public function markReadyForDeposit(Invoice $invoice)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeControlRoom();
 
         if ($invoice->audit_status !== 'matched') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'الحالة الحالية لا تسمح بهذا الإجراء.' : 'Current status does not allow this action.']);
@@ -131,7 +156,7 @@ class RevenueWorkflowController extends Controller
      */
     public function markManagerConfirmed(Invoice $invoice)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeRevenueAdmin();
 
         if ($invoice->audit_status !== 'ready_for_deposit') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'يجب أن تكون الفاتورة في حالة "جاهز للإيداع" لتأكيد المدير.' : 'Invoice must be ready for deposit to confirm.']);
@@ -151,10 +176,7 @@ class RevenueWorkflowController extends Controller
      */
     public function treasuryIndex(Request $request)
     {
-        Gate::authorize('reports.view');
-        if (auth()->user()->hasRole('accountant')) {
-            abort(403);
-        }
+        $this->authorizeTreasury();
 
         $date = $request->input('date', Carbon::today()->toDateString());
 
@@ -201,10 +223,7 @@ class RevenueWorkflowController extends Controller
      */
     public function markDeposited(Request $request, Invoice $invoice)
     {
-        Gate::authorize('reports.view');
-        if (auth()->user()->hasRole('accountant')) {
-            abort(403);
-        }
+        $this->authorizeTreasury();
 
         if ($invoice->audit_status !== 'manager_confirmed') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar'
@@ -281,7 +300,7 @@ class RevenueWorkflowController extends Controller
      */
     public function dailyRevenueSummary(Request $request)
     {
-        Gate::authorize('reports.view');
+        $this->authorizeRevenueAdmin();
 
         $date = $request->input('date', Carbon::today()->toDateString());
         $carbonDate = Carbon::parse($date);

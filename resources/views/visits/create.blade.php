@@ -454,7 +454,7 @@
                         </div>
 
                         <div class="flex flex-wrap gap-3 items-center pt-2 border-t border-slate-200">
-                            <form id="revenue_invoice_form" method="POST" action="{{ route('visits.services-revenue-invoice', $visitForPrint) }}">
+                            <form id="revenue_invoice_form" method="POST" action="{{ route('visits.services-revenue-invoice', $visitForPrint) }}" target="_blank">
                                 @csrf
                                 <button type="button" id="revenue_invoice_btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed invoice' }}
@@ -468,7 +468,7 @@
                                 </button>
                             </form>
                             <p class="text-xs text-slate-500 w-full sm:w-auto">
-                                {{ app()->getLocale() === 'ar' ? 'تفصيلية: تُسجَّل في الإيرادات — استعلامي: للعرض فقط بدون إيراد' : 'Detailed: recorded in revenue — Inquiry: display only' }}
+                                {{ app()->getLocale() === 'ar' ? 'تفصيلية: تُنشئ وتطبع وتُسجَّل في الإيرادات — استعلامي: للعرض فقط بدون إيراد' : 'Detailed: create, print & record — Inquiry: display only' }}
                             </p>
                         </div>
                     </div>

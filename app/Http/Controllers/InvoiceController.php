@@ -580,6 +580,50 @@ class InvoiceController extends Controller
         return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
+    /** طباعة الفاتورة التفصيلية */
+    public function printInvoice(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service', 'visit.department']);
+
+        $visit = $invoice->visit;
+        if ($visit) {
+            $visit->load(['patient.insuranceCompany', 'department', 'shift']);
+        } else {
+            $invoice->patient?->load(['insuranceCompany', 'department']);
+            $visit = new Visit([
+                'patient_id' => $invoice->patient_id,
+                'department_id' => $invoice->patient?->department_id,
+                'visit_date' => $invoice->invoice_date ?? now(),
+            ]);
+            $visit->setRelation('patient', $invoice->patient);
+            $visit->setRelation('department', $invoice->patient?->department);
+        }
+
+        $services = $invoice->items->map(function ($item) {
+            $name = $item->description
+                ?: (app()->getLocale() === 'ar' ? ($item->service?->name_ar ?? $item->service?->name) : ($item->service?->name ?? $item->service?->name_ar))
+                ?: '—';
+
+            return [
+                'code' => $item->service?->code ?? '',
+                'name' => $name,
+                'qty' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'total' => $item->total_price,
+                'insurance_coverage_type' => $item->insurance_coverage_type ?? '',
+                'insurance_coverage_value' => $item->insurance_coverage_value ?? 0,
+            ];
+        })->values()->all();
+
+        $manager = User::getManagerForSignature();
+        $printTitle = 'detailed_invoice';
+
+        ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Detailed invoice printed: '.$invoice->invoice_number, null, null);
+
+        return view('visits.price-inquiry-print', compact('visit', 'services', 'manager', 'printTitle', 'invoice'));
+    }
+
     /** إرسال الفاتورة لشركة التأمين / الجمعية الخيرية */
     public function sendToParty(Invoice $invoice)
     {

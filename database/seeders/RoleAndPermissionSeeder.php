@@ -67,16 +67,16 @@ class RoleAndPermissionSeeder extends Seeder
             'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.print',
         ]);
 
-        // أمين صندوق: الفواتير فقط
+        // أمين صندوق: الفواتير + الخزينة
         $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => 'web']);
         $cashier->syncPermissions([
-            'invoices.view',
+            'invoices.view', 'reports.view',
         ]);
 
-        // محاسب: عرض وتعديل الفواتير فقط
+        // محاسب: عرض وتعديل الفواتير + غرفة التحكم
         $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
         $accountant->syncPermissions([
-            'invoices.view', 'invoices.edit', 'invoices.print',
+            'invoices.view', 'invoices.edit', 'invoices.print', 'reports.view', 'payments.view',
         ]);
 
         // التأمين (موظف تأمين)

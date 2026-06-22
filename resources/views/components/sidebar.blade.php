@@ -343,6 +343,43 @@
             </div>
         @endif
 
+        {{-- إيرادات: المحاسب — غرفة التحكم --}}
+        @if (RoleNav::canSeeControlRoom($user))
+            <a href="{{ route('revenue.control-room') }}"
+                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
+                   {{ request()->routeIs('revenue.control-room') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'غرفة التحكم (المحاسب)' : 'Control Room (Accountant)' }}</span>
+            </a>
+        @endif
+
+        {{-- إيرادات: أمين الصندوق — الخزينة --}}
+        @if (RoleNav::canSeeTreasury($user))
+            <a href="{{ route('revenue.treasury.index') }}"
+                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
+                   {{ request()->routeIs('revenue.treasury.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v2m9 4H10m4 0v2a2 2 0 01-2 2h-2m-4 0H5a2 2 0 01-2-2v-2m4 4h4m-4 0h4m-4 0H9" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
+            </a>
+            <a href="{{ route('cashier.index') }}"
+                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
+                   {{ request()->routeIs('cashier.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'استلام الإيداع' : 'Receive deposit' }}</span>
+            </a>
+        @endif
+
         {{-- Reports (الإدارة فقط) --}}
         @if (RoleNav::canSeeReportsMenu($user))
             <a href="{{ route('revenue.control-room') }}"

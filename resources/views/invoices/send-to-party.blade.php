@@ -3,10 +3,11 @@
 
 @section('content')
     <div class="max-w-2xl mx-auto">
-        <div class="mb-6">
+        <div class="mb-6 flex flex-wrap items-center gap-3">
             <a href="{{ route('invoices.show', $invoice) }}" class="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1">
                 {{ app()->getLocale() === 'ar' ? '← العودة لتفاصيل الفاتورة' : '← Back to invoice' }}
             </a>
+            <x-invoice-print-button :invoice="$invoice" variant="link" />
         </div>
 
         <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-slate-200">

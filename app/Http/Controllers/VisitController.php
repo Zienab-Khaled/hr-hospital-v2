@@ -800,8 +800,28 @@ class VisitController extends Controller
             DB::commit();
             ActivityLogger::log('Invoice Created', 'Invoice', $invoice->id, 'Detailed invoice from visit services', null, $invoice->toArray());
 
-            return redirect()->route('invoices.show', $invoice)
-                ->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء فاتورة تفصيلية وتسجيلها في الإيرادات.' : 'Detailed invoice created and recorded in revenue.');
+            $visit->load(['patient', 'department', 'shift']);
+            $manager = User::getManagerForSignature();
+            $printTitle = 'detailed_invoice';
+            $printServices = array_map(function ($s) {
+                return [
+                    'code' => $s['code'] ?? '',
+                    'name' => $s['name'] ?? '',
+                    'qty' => $s['qty'] ?? $s['quantity'] ?? 1,
+                    'unit_price' => $s['unit_price'] ?? 0,
+                    'total' => $s['total'] ?? $s['total_price'] ?? 0,
+                    'insurance_coverage_type' => $s['insurance_coverage_type'] ?? '',
+                    'insurance_coverage_value' => $s['insurance_coverage_value'] ?? 0,
+                ];
+            }, $services);
+
+            return view('visits.price-inquiry-print', [
+                'visit' => $visit,
+                'services' => $printServices,
+                'manager' => $manager,
+                'printTitle' => $printTitle,
+                'invoice' => $invoice->fresh(['items']),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Visit services revenue invoice failed: '.$e->getMessage());

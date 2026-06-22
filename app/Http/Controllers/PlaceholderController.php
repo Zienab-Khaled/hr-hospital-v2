@@ -278,19 +278,22 @@ class PlaceholderController extends Controller
     {
         Gate::authorize('invoices.view');
 
+        $user = auth()->user();
+        $canSeeAllInvoices = \App\Support\RoleNav::canSeeAllInvoices($user);
+        $isAdmin = $user->hasAnyRole(['admin', 'manager']);
+
         $query = Invoice::with(['patient', 'visit.shift', 'visit.department']);
 
-        if (auth()->user()->hasRole('insurance_clerk')) {
+        if ($user->hasRole('insurance_clerk')) {
             $query->whereHas('patient', fn ($q) => $q->where('payment_type', 'insurance'));
         }
 
-        // Default filters
-        if (!$request->has('date')) {
+        // تقييد تاريخ اليوم للموظفين العاديين فقط — المحاسب/أمين الصندوق/الإدارة يرون الكل
+        if (! $canSeeAllInvoices && ! $request->has('date')) {
             $request->merge(['date' => date('Y-m-d')]);
         }
 
-        $isAdmin = auth()->user()->hasRole('admin');
-        if (!$isAdmin && !$request->has('shift_id')) {
+        if (! $isAdmin && ! $canSeeAllInvoices && ! $request->has('shift_id')) {
             $currentShift = Shift::currentAt();
             if ($currentShift) {
                 $request->merge(['shift_id' => $currentShift->id]);
@@ -345,7 +348,7 @@ class PlaceholderController extends Controller
         $registrars = User::all(); // Simplified for now
         $insuranceCompanies = InsuranceCompany::all();
 
-        return view('invoices.index', compact('invoices', 'shifts', 'departments', 'registrars', 'insuranceCompanies', 'isAdmin'));
+        return view('invoices.index', compact('invoices', 'shifts', 'departments', 'registrars', 'insuranceCompanies', 'isAdmin', 'canSeeAllInvoices'));
     }
 
     public function authorizationsIndex()

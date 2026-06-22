@@ -151,6 +151,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('invoices/create/services-search', [InvoiceController::class, 'searchServices'])->name('invoices.services-search');
     Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('invoices/{invoice}/print', [InvoiceController::class, 'printInvoice'])->name('invoices.print');
     Route::get('invoices/{invoice}/print-commitment', [InvoiceController::class, 'printCommitmentForm'])->name('invoices.print-commitment');
     Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
     Route::get('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'showExecuteService'])->name('invoices.execute-service.show');

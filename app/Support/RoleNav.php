@@ -41,6 +41,39 @@ final class RoleNav
         ]);
     }
 
+    /** محاسب: غرفة التحكم + الفواتير */
+    public static function canSeeControlRoom(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return self::isAdministration($user)
+            || ($user->hasRole('accountant') && $user->can('invoices.view'));
+    }
+
+    /** أمين الصندوق: الخزينة + استلام الإيداع */
+    public static function canSeeTreasury(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return self::isAdministration($user)
+            || ($user->hasRole('cashier') && $user->can('invoices.view'));
+    }
+
+    /** يرى كل الفواتير بدون تقييد شيفت/قسم (محاسب، أمين صندوق، إدارة) */
+    public static function canSeeAllInvoices(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return self::isAdministration($user)
+            || $user->hasAnyRole(['accountant', 'cashier']);
+    }
+
     public static function canSeeFinancialSummary(?User $user): bool
     {
         return self::isAdministration($user);

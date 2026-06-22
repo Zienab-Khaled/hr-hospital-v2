@@ -24,6 +24,10 @@
                 {{ app()->getLocale() === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details' }}
             </h2>
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow-md">
+                    🖨️ {{ app()->getLocale() === 'ar' ? 'طباعة الفاتورة' : 'Print invoice' }}
+                </a>
                 <a href="{{ route('invoices.index') }}"
                     class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300">
                     {{ app()->getLocale() === 'ar' ? '← قائمة الفواتير' : '← Invoices List' }}

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Support\RoleNav;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -14,8 +15,9 @@ class CashierWorkflowController extends Controller
      */
     public function index(Request $request)
     {
-        // For simplicity, using reports.view permission or we can define a new one
-        Gate::authorize('reports.view');
+        if (! RoleNav::canSeeTreasury(auth()->user()) && ! auth()->user()?->can('reports.view')) {
+            abort(403);
+        }
 
         $date = $request->input('date', Carbon::today()->toDateString());
 
@@ -33,7 +35,9 @@ class CashierWorkflowController extends Controller
      */
     public function receive(Request $request, Invoice $invoice)
     {
-        Gate::authorize('reports.view');
+        if (! RoleNav::canSeeTreasury(auth()->user()) && ! auth()->user()?->can('reports.view')) {
+            abort(403);
+        }
 
         $request->validate([
             'otp' => 'required|string|size:6'
