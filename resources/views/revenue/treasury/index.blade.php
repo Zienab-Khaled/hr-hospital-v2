@@ -214,14 +214,16 @@
                                     class="px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs font-black">
                                     {{ app()->getLocale() === 'ar' ? '⏳ بانتظار تأكيد المدير (لا يمكن تسجيل الإيداع في البنك إلا بعد التأكيد)' : 'Awaiting manager confirmation (deposit can only be recorded after confirmation)' }}
                                 </div>
-                                <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" style="background: #047857"
-                                        class="text-white inline-flex items-center justify-center px-6 py-3 bg-violet-600 text-xs font-black rounded-2xl gap-2 hover:bg-violet-700 shadow-lg">
-                                        <span>✓</span>
-                                        {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير' : 'Manager Confirm' }}
-                                    </button>
-                                </form>
+                                @if (\App\Support\RoleNav::canConfirmAsManager(auth()->user()))
+                                    <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" style="background: #047857"
+                                            class="text-white inline-flex items-center justify-center px-6 py-3 bg-violet-600 text-xs font-black rounded-2xl gap-2 hover:bg-violet-700 shadow-lg">
+                                            <span>✓</span>
+                                            {{ app()->getLocale() === 'ar' ? 'تم التأكيد من المدير' : 'Manager Confirm' }}
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
                     </div>

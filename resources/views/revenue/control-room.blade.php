@@ -281,13 +281,15 @@
                             </div>
                         @elseif($invoice->audit_status === 'ready_for_deposit')
                             <div class="w-full flex flex-col gap-3">
-                                <p class="text-amber-700 text-xs font-black text-center">{{ app()->getLocale() === 'ar' ? 'أمين الصندوق سجّل جاهزية الإيداع. يرجى التأكيد أن الاستلام تم.' : 'Cashier marked ready for deposit. Please confirm receipt.' }}</p>
-                                <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST" class="w-full">
-                                    @csrf
-                                    <button type="submit" class="w-full py-4 bg-violet-600 text-white text-xs font-black rounded-2xl shadow-xl hover:bg-violet-700 flex items-center justify-center gap-2">
-                                        <span>✓</span> {{ app()->getLocale() === 'ar' ? 'تأكيد من المدير (أمين الصندوق استلم)' : 'Manager Confirm (Cashier Received)' }}
-                                    </button>
-                                </form>
+                                <p class="text-amber-700 text-xs font-black text-center">{{ app()->getLocale() === 'ar' ? 'أمين الصندوق سجّل جاهزية الإيداع. بانتظار تأكيد المدير.' : 'Cashier marked ready for deposit. Awaiting manager confirmation.' }}</p>
+                                @if (\App\Support\RoleNav::canConfirmAsManager(auth()->user()))
+                                    <form action="{{ route('revenue.invoices.manager-confirmed', $invoice) }}" method="POST" class="w-full">
+                                        @csrf
+                                        <button type="submit" class="w-full py-4 bg-violet-600 text-white text-xs font-black rounded-2xl shadow-xl hover:bg-violet-700 flex items-center justify-center gap-2">
+                                            <span>✓</span> {{ app()->getLocale() === 'ar' ? 'تأكيد من المدير (أمين الصندوق استلم)' : 'Manager Confirm (Cashier Received)' }}
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         @elseif($invoice->audit_status === 'manager_confirmed')
                             <div class="w-full py-4 bg-violet-50 text-violet-700 text-xs font-black rounded-2xl text-center border-2 border-violet-100 shadow-inner flex flex-col items-center justify-center gap-3">

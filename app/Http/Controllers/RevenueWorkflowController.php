@@ -36,10 +36,11 @@ class RevenueWorkflowController extends Controller
 
     protected function authorizeRevenueAdmin(): void
     {
-        if (RoleNav::isAdministration(auth()->user()) || auth()->user()?->can('reports.view')) {
-            return;
+        if (! RoleNav::canConfirmAsManager(auth()->user())) {
+            abort(403, app()->getLocale() === 'ar'
+                ? 'هذا الإجراء للمدير فقط.'
+                : 'This action is for managers only.');
         }
-        abort(403);
     }
 
     public function controlRoom(Request $request)

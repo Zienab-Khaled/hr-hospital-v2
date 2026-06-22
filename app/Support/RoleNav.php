@@ -14,6 +14,12 @@ final class RoleNav
         return $user !== null && $user->hasAnyRole(['admin', 'manager']);
     }
 
+    /** تأكيد المدير على الإيداع — للإدارة فقط */
+    public static function canConfirmAsManager(?User $user): bool
+    {
+        return self::isAdministration($user);
+    }
+
     /** محاسب / أمين صندوق: الفواتير فقط */
     public static function isInvoicesOnly(?User $user): bool
     {
