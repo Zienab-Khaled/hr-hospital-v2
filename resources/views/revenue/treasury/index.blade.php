@@ -147,6 +147,7 @@
                                     @endforeach
                                 </div>
                             @endif
+                            @if (\App\Support\RoleNav::canOperateTreasury(auth()->user()))
                             <form action="{{ route('revenue.invoices.ready', $invoice) }}" method="POST">
                                 @csrf
                                 <button type="submit"
@@ -155,6 +156,7 @@
                                     {{ app()->getLocale() === 'ar' ? 'جاهز للإيداع للبنك' : 'Ready for Bank Deposit' }}
                                 </button>
                             </form>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -279,6 +281,7 @@
                                     @endforeach
                                 </div>
                             @endif
+                            @if (\App\Support\RoleNav::canOperateTreasury(auth()->user()))
                             <form action="{{ route('revenue.invoices.deposited', $invoice) }}" method="POST"
                                 enctype="multipart/form-data" class="flex flex-col gap-2 items-end"
                                 onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد تسجيل الإيداع في البنك وإقفال المعاملة؟' : 'Confirm bank deposit and close transaction?' }}');">
@@ -294,6 +297,7 @@
                                     {{ app()->getLocale() === 'ar' ? 'تم الإيداع في البنك (إقفال)' : 'Deposited at Bank (Close)' }}
                                 </button>
                             </form>
+                            @endif
                         </div>
                     </div>
                 </div>

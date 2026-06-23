@@ -73,10 +73,16 @@ class RoleAndPermissionSeeder extends Seeder
             'invoices.view', 'reports.view',
         ]);
 
-        // محاسب: عرض وتعديل الفواتير + غرفة التحكم
+        // محاسب: عرض الفواتير + غرفة التحكم (بدون تعديل)
         $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
         $accountant->syncPermissions([
-            'invoices.view', 'invoices.edit', 'invoices.print', 'reports.view', 'payments.view',
+            'invoices.view', 'invoices.print', 'reports.view', 'payments.view',
+        ]);
+
+        // مساعد المدير: إشراف على دورة الإيراد (عرض فقط)
+        $assistantManager = Role::firstOrCreate(['name' => 'assistant_manager', 'guard_name' => 'web']);
+        $assistantManager->syncPermissions([
+            'invoices.view', 'invoices.print', 'reports.view', 'payments.view',
         ]);
 
         // التأمين (موظف تأمين)

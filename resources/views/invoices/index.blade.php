@@ -132,7 +132,7 @@
                                         </svg>
                                     </a>
                                 @endcan
-                                @can('invoices.edit')
+                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
                                     <a href="{{ route('invoices.edit', $inv) }}"
                                         title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}"
                                         class="text-amber-600 hover:text-amber-800 p-1 rounded hover:bg-amber-50">
@@ -141,7 +141,7 @@
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </a>
-                                @endcan
+                                @endif
                                 @can('invoices.delete')
                                     <form action="{{ route('invoices.destroy', $inv) }}" method="POST" class="inline"
                                         onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من حذف هذه الفاتورة؟' : 'Are you sure you want to delete this invoice?' }}');">

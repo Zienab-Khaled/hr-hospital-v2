@@ -43,6 +43,24 @@ class RevenueWorkflowController extends Controller
         }
     }
 
+    protected function authorizeAuditAction(): void
+    {
+        if (! RoleNav::canAuditInControlRoom(auth()->user())) {
+            abort(403, app()->getLocale() === 'ar'
+                ? 'المطابقة والرفض للمحاسب فقط.'
+                : 'Match and reject are for the accountant only.');
+        }
+    }
+
+    protected function authorizeTreasuryAction(): void
+    {
+        if (! RoleNav::canOperateTreasury(auth()->user())) {
+            abort(403, app()->getLocale() === 'ar'
+                ? 'عمليات الخزينة لأمين الصندوق فقط.'
+                : 'Treasury operations are for the cashier only.');
+        }
+    }
+
     public function controlRoom(Request $request)
     {
         $this->authorizeControlRoom();
@@ -91,7 +109,7 @@ class RevenueWorkflowController extends Controller
 
     public function match(Invoice $invoice)
     {
-        $this->authorizeControlRoom();
+        $this->authorizeAuditAction();
 
         DB::transaction(function() use ($invoice) {
             $invoice->update([
@@ -115,7 +133,7 @@ class RevenueWorkflowController extends Controller
 
     public function reject(Request $request, Invoice $invoice)
     {
-        $this->authorizeControlRoom();
+        $this->authorizeAuditAction();
 
         $request->validate([
             'rejection_reason' => 'required|string|max:500'
@@ -134,7 +152,7 @@ class RevenueWorkflowController extends Controller
      */
     public function markReadyForDeposit(Invoice $invoice)
     {
-        $this->authorizeControlRoom();
+        $this->authorizeTreasuryAction();
 
         if ($invoice->audit_status !== 'matched') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar' ? 'الحالة الحالية لا تسمح بهذا الإجراء.' : 'Current status does not allow this action.']);
@@ -224,7 +242,7 @@ class RevenueWorkflowController extends Controller
      */
     public function markDeposited(Request $request, Invoice $invoice)
     {
-        $this->authorizeTreasury();
+        $this->authorizeTreasuryAction();
 
         if ($invoice->audit_status !== 'manager_confirmed') {
             return back()->withErrors(['audit_status' => app()->getLocale() === 'ar'
@@ -301,7 +319,9 @@ class RevenueWorkflowController extends Controller
      */
     public function dailyRevenueSummary(Request $request)
     {
-        $this->authorizeRevenueAdmin();
+        if (! RoleNav::canSeeRevenueSummary(auth()->user())) {
+            abort(403);
+        }
 
         $date = $request->input('date', Carbon::today()->toDateString());
         $carbonDate = Carbon::parse($date);

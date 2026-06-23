@@ -237,6 +237,7 @@
                     @endif
 
                     {{-- Local Rejection Form (Inline) --}}
+                    @if(\App\Support\RoleNav::canAuditInControlRoom(auth()->user()))
                     <div id="rejection-form-{{ $invoice->id }}" class="hidden mb-6 p-6 bg-red-50 rounded-3xl border-2 border-red-200 animate-in fade-in slide-in-from-top-4 duration-300">
                         <form action="{{ route('revenue.invoices.reject', $invoice) }}" method="POST">
                             @csrf
@@ -257,10 +258,12 @@
                             </div>
                         </form>
                     </div>
+                    @endif
 
                     {{-- Main Actions --}}
                     <div class="flex items-center gap-4 pt-6 border-t border-slate-100" id="actions-{{ $invoice->id }}">
                         @if($invoice->audit_status === 'under_review' || $invoice->audit_status === 'rejected')
+                            @if(\App\Support\RoleNav::canAuditInControlRoom(auth()->user()))
                             <form action="{{ route('revenue.invoices.match', $invoice) }}" method="POST" class="flex-[2]">
                                 @csrf
                                 <button type="submit" class="btn-match w-full inline-flex items-center justify-center px-6 py-4 text-white text-xs font-black rounded-2xl shadow-xl gap-3">
@@ -271,6 +274,11 @@
                             <button type="button" onclick="toggleRejectionForm('{{ $invoice->id }}')" class="btn-reject flex-1 inline-flex items-center justify-center px-6 py-4 text-xs font-black rounded-2xl gap-3">
                                 <span>❌</span> {{ app()->getLocale() === 'ar' ? 'رفض' : 'Reject' }}
                             </button>
+                            @else
+                            <div class="w-full py-4 bg-slate-50 text-slate-500 text-xs font-bold rounded-2xl text-center border-2 border-slate-100">
+                                {{ app()->getLocale() === 'ar' ? 'عرض فقط — المطابقة والرفض للمحاسب' : 'View only — match/reject is for the accountant' }}
+                            </div>
+                            @endif
                         @elseif($invoice->audit_status === 'matched')
                             <div class="w-full py-4 bg-blue-50 text-blue-700 text-xs font-black rounded-2xl text-center border-2 border-blue-100 shadow-inner flex flex-col items-center justify-center gap-3">
                                 <span>📤</span>

@@ -32,13 +32,11 @@
                     class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300">
                     {{ app()->getLocale() === 'ar' ? '← قائمة الفواتير' : '← Invoices List' }}
                 </a>
-                @if (!$isEntryFeeOnly)
-                    @can('invoices.edit')
-                        <a href="{{ route('invoices.edit', $invoice) }}"
-                            class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                            {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
-                        </a>
-                    @endcan
+                @if (!$isEntryFeeOnly && \App\Support\RoleNav::canEditInvoices(auth()->user()))
+                    <a href="{{ route('invoices.edit', $invoice) }}"
+                        class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                        {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
+                    </a>
                 @endif
             </div>
         </div>
@@ -113,7 +111,7 @@
                     ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
                         $invoice->isFullyCompleted() &&
                         $invoice->patient?->charityEntity?->email)
-                    @can('invoices.edit')
+                    @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
                         <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
                             onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
                             @csrf
@@ -123,7 +121,7 @@
                                 {{ app()->getLocale() === 'ar' ? 'إشعار الجمعية باكتمال الخدمات' : 'Notify charity of completion' }}
                             </button>
                         </form>
-                    @endcan
+                    @endif
                 @elseif(
                     ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
                         !$invoice->isFullyCompleted())
@@ -374,7 +372,7 @@
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
                             @endif
-                            @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
+                            @if(\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'التنفيذ' : 'Execution' }}</th>
                             @endif
@@ -421,7 +419,7 @@
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">
                                         @currencyInvoice($item->patient_amount)</td>
                                 @endif
-                                @if(auth()->user()->can('invoices.edit') || auth()->user()->can('invoices.execute_services'))
+                                @if(\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
                                         <div class="flex flex-col items-center gap-1">
                                             @if ($item->isCompleted())
@@ -673,6 +671,7 @@
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {{-- Upload Form --}}
+                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
                 <div>
                     <h4 class="text-sm font-bold text-slate-700 mb-4">
                         {{ app()->getLocale() === 'ar' ? 'رفع مستند جديد:' : 'Upload new document:' }}</h4>
@@ -706,6 +705,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
 
                 {{-- List of Documents --}}
                 <div class="space-y-4">
@@ -748,6 +748,7 @@
                                             class="text-[10px] text-slate-400 block">{{ $media->created_at->format('Y-m-d H:i') }}</span>
                                     </div>
                                 </div>
+                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
                                 <form action="{{ route('invoices.delete-signed-document', [$invoice, $media]) }}"
                                     method="POST"
                                     onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete?' }}')">
@@ -758,6 +759,7 @@
                                         🗑️
                                     </button>
                                 </form>
+                                @endif
                             </div>
                         @endforeach
                     @endforeach

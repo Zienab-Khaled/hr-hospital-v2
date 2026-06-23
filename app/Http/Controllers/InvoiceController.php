@@ -18,6 +18,7 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\CurrencyHelper;
 use App\Helpers\InvoiceAmountHelper;
 use App\Models\User;
+use App\Support\RoleNav;
 use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Notification;
 use Mpdf\Mpdf;
@@ -30,6 +31,15 @@ use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
+    protected function authorizeInvoiceEdit(): void
+    {
+        if (! RoleNav::canEditInvoices(auth()->user())) {
+            abort(403, app()->getLocale() === 'ar'
+                ? 'المحاسب وأمين الصندوق لا يمكنهم تعديل الفاتورة.'
+                : 'Accountants and cashiers cannot edit invoices.');
+        }
+    }
+
     public function create(Request $request)
     {
         $this->authorize('invoices.create');
@@ -991,7 +1001,7 @@ class InvoiceController extends Controller
     /** إرسال إيميل للجمعية بعد اكتمال تنفيذ جميع الخدمات */
     public function notifyCharityCompleted(Invoice $invoice)
     {
-        $this->authorize('invoices.edit');
+        $this->authorizeInvoiceEdit();
 
         $invoice->load(['patient.charityEntity', 'items.service', 'items.completedByUser']);
 
@@ -1053,7 +1063,7 @@ class InvoiceController extends Controller
     public function edit(Invoice $invoice)
 
     {
-        $this->authorize('invoices.edit');
+        $this->authorizeInvoiceEdit();
         if (auth()->user()->hasRole('insurance_clerk') && $invoice->patient && $invoice->patient->payment_type !== 'insurance') {
             abort(403);
         }
@@ -1071,7 +1081,7 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-        $this->authorize('invoices.edit');
+        $this->authorizeInvoiceEdit();
 
         $oldValues = $invoice->toArray();
 
@@ -1137,7 +1147,7 @@ class InvoiceController extends Controller
 
     public function uploadSignedDocument(Request $request, Invoice $invoice)
     {
-        $this->authorize('invoices.edit');
+        $this->authorizeInvoiceEdit();
 
         $request->validate([
             'document_type' => 'required|string|in:signed_commitment,signed_non_commitment,signed_other',
@@ -1167,7 +1177,7 @@ class InvoiceController extends Controller
 
     public function deleteSignedDocument(Invoice $invoice, $mediaId)
     {
-        $this->authorize('invoices.edit');
+        $this->authorizeInvoiceEdit();
 
         $media = $invoice->media()->findOrFail($mediaId);
         $media->delete();

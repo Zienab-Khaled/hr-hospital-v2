@@ -20,14 +20,30 @@ final class RoleNav
         return self::isAdministration($user);
     }
 
-    /** محاسب / أمين صندوق: الفواتير فقط */
+    /** محاسب / أمين صندوق / مساعد المدير — لا يعدّلون بنود الفاتورة (خدمات/أسعار) */
+    public static function cannotEditInvoiceContent(?User $user): bool
+    {
+        if (! $user || self::isAdministration($user)) {
+            return false;
+        }
+
+        return $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
+    }
+
+    /** مساعد المدير — إشراف على دورة الإيراد كاملة */
+    public static function isAssistantManager(?User $user): bool
+    {
+        return $user !== null && $user->hasRole('assistant_manager');
+    }
+
+    /** محاسب / أمين صندوق: قوائم إيرادات محدودة */
     public static function isInvoicesOnly(?User $user): bool
     {
         if (! $user || self::isAdministration($user)) {
             return false;
         }
 
-        return $user->hasAnyRole(['accountant', 'cashier']);
+        return $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
     }
 
     /** مكتب الدخول والاستقبال والممرضة: مرضى وزيارات — بدون مطالبات وفواتير وتقارير */
@@ -55,7 +71,7 @@ final class RoleNav
         }
 
         return self::isAdministration($user)
-            || ($user->hasRole('accountant') && $user->can('invoices.view'));
+            || ($user->hasAnyRole(['accountant', 'assistant_manager']) && $user->can('invoices.view'));
     }
 
     /** أمين الصندوق: الخزينة + استلام الإيداع */
@@ -66,7 +82,7 @@ final class RoleNav
         }
 
         return self::isAdministration($user)
-            || ($user->hasRole('cashier') && $user->can('invoices.view'));
+            || ($user->hasAnyRole(['cashier', 'assistant_manager']) && $user->can('invoices.view'));
     }
 
     /** يرى كل الفواتير بدون تقييد شيفت/قسم (محاسب، أمين صندوق، إدارة) */
@@ -77,7 +93,7 @@ final class RoleNav
         }
 
         return self::isAdministration($user)
-            || $user->hasAnyRole(['accountant', 'cashier']);
+            || $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
     }
 
     public static function canSeeFinancialSummary(?User $user): bool
@@ -88,6 +104,26 @@ final class RoleNav
     public static function canSeeReportsMenu(?User $user): bool
     {
         return self::isAdministration($user);
+    }
+
+    /** ملخص الإيرادات — للإدارة ومساعد المدير */
+    public static function canSeeRevenueSummary(?User $user): bool
+    {
+        return self::isAdministration($user) || self::isAssistantManager($user);
+    }
+
+    /** مطابقة/رفض في غرفة التحكم — المحاسب فقط */
+    public static function canAuditInControlRoom(?User $user): bool
+    {
+        return self::isAdministration($user)
+            || ($user?->hasRole('accountant') && $user->can('reports.view'));
+    }
+
+    /** عمليات الخزينة (جاهز للإيداع / إيداع بنك) — أمين الصندوق فقط */
+    public static function canOperateTreasury(?User $user): bool
+    {
+        return self::isAdministration($user)
+            || ($user?->hasRole('cashier') && $user->can('invoices.view'));
     }
 
     public static function canSeeActivityLog(?User $user): bool
@@ -150,10 +186,20 @@ final class RoleNav
             return false;
         }
 
-        if (self::isInvoicesOnly($user)) {
+        if (self::cannotEditInvoiceContent($user)) {
             return false;
         }
 
         return true;
+    }
+
+    /** تعديل الفاتورة (إضافة خدمات/أسعار) — ممنوع على قسم الإيرادات المالية */
+    public static function canEditInvoices(?User $user): bool
+    {
+        if (! $user || self::cannotEditInvoiceContent($user)) {
+            return false;
+        }
+
+        return $user->can('invoices.edit');
     }
 }
