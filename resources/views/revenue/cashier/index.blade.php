@@ -8,6 +8,7 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.5);
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        color: #000;
     }
     .btn-verify {
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -35,9 +36,9 @@
         {{-- Date Filter --}}
         <form action="{{ route('cashier.index') }}" method="GET" class="premium-card p-5 rounded-3xl flex items-center gap-6">
             <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{{ app()->getLocale() === 'ar' ? 'تاريخ العمليات' : 'Operation Date' }}</label>
+                <label class="text-[10px] font-black text-black uppercase tracking-widest px-1">{{ app()->getLocale() === 'ar' ? 'تاريخ العمليات' : 'Operation Date' }}</label>
                 <input type="date" name="date" value="{{ $date }}"
-                    class="block w-44 rounded-2xl border-slate-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-bold py-2.5">
+                    class="block w-44 rounded-2xl border-slate-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-bold py-2.5 text-black">
             </div>
             <div class="flex items-end self-end mb-0.5">
                 <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-slate-900 text-white text-sm font-black rounded-2xl hover:bg-slate-800 transition-all">
@@ -48,15 +49,15 @@
     </div>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="premium-card p-6 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div class="p-6 rounded-[2.5rem] bg-indigo-600 text-white relative overflow-hidden shadow-lg">
              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-             <p class="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي بانتظار الاستلام' : 'Total Pending Receipt' }}</p>
-             <p class="text-3xl font-black">{{ number_format($invoices->sum('total_amount'), 2) }} <span class="text-xs opacity-70">SR</span></p>
+             <p class="text-[10px] font-black uppercase tracking-widest opacity-90 mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي بانتظار الاستلام' : 'Total Pending Receipt' }}</p>
+             <p class="text-3xl font-black">{{ number_format($invoices->sum('total_amount'), 2) }} <span class="text-xs opacity-90">SR</span></p>
         </div>
-        <div class="premium-card p-6 rounded-[2.5rem] bg-emerald-600 text-white relative overflow-hidden">
+        <div class="p-6 rounded-[2.5rem] bg-emerald-600 text-white relative overflow-hidden shadow-lg">
              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-             <p class="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات الجاهزة' : 'Ready Operations' }}</p>
+             <p class="text-[10px] font-black uppercase tracking-widest opacity-90 mb-1">{{ app()->getLocale() === 'ar' ? 'عدد العمليات الجاهزة' : 'Ready Operations' }}</p>
              <p class="text-3xl font-black">{{ $invoices->count() }}</p>
         </div>
     </div>
@@ -109,10 +110,10 @@
                 </div>
             </div>
         @empty
-            <div class="premium-card rounded-[3rem] p-24 text-center border-2 border-dashed border-slate-200 bg-transparent opacity-60">
+            <div class="premium-card rounded-[3rem] p-24 text-center border-2 border-dashed border-slate-200">
                 <div class="text-6xl mb-6 grayscale">💰</div>
-                <h3 class="text-xl font-black text-slate-400">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للإيداع حالياً' : 'No invoices ready for deposit' }}</h3>
-                <p class="text-sm text-slate-300 font-bold mt-2">{{ app()->getLocale() === 'ar' ? 'بانتظار اعتماد المحاسب المالي' : 'Awaiting financial accountant approval' }}</p>
+                <h3 class="text-xl font-black text-black">{{ app()->getLocale() === 'ar' ? 'لا توجد فواتير جاهزة للإيداع حالياً' : 'No invoices ready for deposit' }}</h3>
+                <p class="text-sm text-black font-bold mt-2">{{ app()->getLocale() === 'ar' ? 'بانتظار اعتماد المحاسب المالي' : 'Awaiting financial accountant approval' }}</p>
             </div>
         @endforelse
     </div>
