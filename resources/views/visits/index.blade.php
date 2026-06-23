@@ -220,7 +220,7 @@
                     <tr>
                         <td colspan="{{ $isAdmin ? 7 : 6 }}" class="p-8 text-center text-slate-500">
                             {{ app()->getLocale() === 'ar' ? 'لا توجد زيارات' : 'No visits yet' }}
-                            @if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('manager'))
+                            @if (!\App\Support\RoleNav::canSeeAllVisits(auth()->user()))
                                 <span class="block mt-1 text-sm">{{ app()->getLocale() === 'ar' ? 'لشيفت اليوم في قسمك.' : 'For today\'s shift in your department.' }}</span>
                             @endif
                         </td>

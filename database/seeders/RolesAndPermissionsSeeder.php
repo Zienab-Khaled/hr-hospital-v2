@@ -150,11 +150,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invoices.view', 'reports.view',
             ]);
 
-            // مساعد المدير: إشراف على دورة الإيراد كاملة (عرض فقط — بدون تعديل فواتير)
+            // مساعد المدير: يرى كل ما يراه المدير (دخول المريض → التحصيل → الفواتير → التقارير)
             $assistantManager = Role::firstOrCreate(['name' => 'assistant_manager', 'guard_name' => $guard]);
-            $assistantManager->syncPermissions([
-                'invoices.view', 'reports.view', 'payments.view',
-            ]);
+            $assistantManager->syncPermissions($allPerms);
 
             // رئيس المديونيات: مديونيات وفواتير ومرضى (بدون تقارير إدارية أو سجل نشاط)
             $debtsHead = Role::firstOrCreate(['name' => 'debts_head', 'guard_name' => $guard]);

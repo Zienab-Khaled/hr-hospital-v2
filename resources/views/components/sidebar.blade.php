@@ -1,7 +1,7 @@
 @php
     use App\Support\RoleNav;
     $user = auth()->user();
-    $isManager = RoleNav::isAdministration($user);
+    $isManager = RoleNav::hasSupervisorVisibility($user);
     $invoicesOnly = RoleNav::isInvoicesOnly($user);
     $admissionOnly = RoleNav::isAdmissionOnly($user);
     $isRtl = app()->getLocale() === 'ar';

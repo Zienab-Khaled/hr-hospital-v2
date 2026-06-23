@@ -79,10 +79,20 @@ class RoleAndPermissionSeeder extends Seeder
             'invoices.view', 'invoices.print', 'reports.view', 'payments.view',
         ]);
 
-        // مساعد المدير: إشراف على دورة الإيراد (عرض فقط)
+        // مساعد المدير: يرى كل ما يراه المدير (دخول المريض → التحصيل → الفواتير → التقارير)
         $assistantManager = Role::firstOrCreate(['name' => 'assistant_manager', 'guard_name' => 'web']);
         $assistantManager->syncPermissions([
-            'invoices.view', 'invoices.print', 'reports.view', 'payments.view',
+            'patients.view', 'patients.create', 'patients.edit', 'patients.print', 'patients.transfer',
+            'visits.view', 'visits.create', 'visits.edit', 'visits.delete', 'visits.print',
+            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.print',
+            'authorizations.view', 'authorizations.create', 'authorizations.edit', 'authorizations.print',
+            'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.daily_close',
+            'claims.view', 'claims.create', 'claims.edit', 'claims.notes', 'claims.send',
+            'attachments.upload', 'attachments.view',
+            'procedures.contact_report', 'procedures.written_commitment', 'procedures.non_commitment', 'procedures.debt_inventory', 'procedures.print',
+            'reports.view', 'reports.export', 'reports.upload_cluster', 'activity.view',
+            'departments.manage', 'services.manage', 'settings.manage', 'users.manage', 'codes.upload',
+            'insurance_companies.manage', 'charity_entities.manage',
         ]);
 
         // التأمين (موظف تأمين)

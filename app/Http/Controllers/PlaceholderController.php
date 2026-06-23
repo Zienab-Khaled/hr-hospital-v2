@@ -226,7 +226,7 @@ class PlaceholderController extends Controller
         Gate::authorize('invoices.view');
 
         $user = auth()->user();
-        $isAdmin = $user->hasRole('admin') || $user->hasRole('manager');
+        $isAdmin = \App\Support\RoleNav::canSeeAllVisits($user);
         $currentShift = Shift::currentAt();
 
         $query = Visit::with(['patient', 'department', 'shift', 'registeredBy']);
@@ -280,7 +280,7 @@ class PlaceholderController extends Controller
 
         $user = auth()->user();
         $canSeeAllInvoices = \App\Support\RoleNav::canSeeAllInvoices($user);
-        $isAdmin = $user->hasAnyRole(['admin', 'manager']);
+        $isAdmin = \App\Support\RoleNav::hasSupervisorVisibility($user);
 
         $query = Invoice::with(['patient', 'visit.shift', 'visit.department']);
 

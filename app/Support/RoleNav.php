@@ -14,20 +14,26 @@ final class RoleNav
         return $user !== null && $user->hasAnyRole(['admin', 'manager']);
     }
 
+    /** مساعد المدير يرى نفس شاشات المدير (إشراف على دورة الإيراد كاملة) */
+    public static function hasSupervisorVisibility(?User $user): bool
+    {
+        return self::isAdministration($user) || self::isAssistantManager($user);
+    }
+
     /** تأكيد المدير على الإيداع — للإدارة فقط */
     public static function canConfirmAsManager(?User $user): bool
     {
         return self::isAdministration($user);
     }
 
-    /** محاسب / أمين صندوق / مساعد المدير — لا يعدّلون بنود الفاتورة (خدمات/أسعار) */
+    /** محاسب / أمين صندوق — لا يعدّلون بنود الفاتورة (خدمات/أسعار) */
     public static function cannotEditInvoiceContent(?User $user): bool
     {
         if (! $user || self::isAdministration($user)) {
             return false;
         }
 
-        return $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
+        return $user->hasAnyRole(['accountant', 'cashier']);
     }
 
     /** مساعد المدير — إشراف على دورة الإيراد كاملة */
@@ -43,7 +49,7 @@ final class RoleNav
             return false;
         }
 
-        return $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
+        return $user->hasAnyRole(['accountant', 'cashier']);
     }
 
     /** مكتب الدخول والاستقبال والممرضة: مرضى وزيارات — بدون مطالبات وفواتير وتقارير */
@@ -70,8 +76,8 @@ final class RoleNav
             return false;
         }
 
-        return self::isAdministration($user)
-            || ($user->hasAnyRole(['accountant', 'assistant_manager']) && $user->can('invoices.view'));
+        return self::hasSupervisorVisibility($user)
+            || ($user->hasRole('accountant') && $user->can('invoices.view'));
     }
 
     /** أمين الصندوق: الخزينة + استلام الإيداع */
@@ -81,8 +87,8 @@ final class RoleNav
             return false;
         }
 
-        return self::isAdministration($user)
-            || ($user->hasAnyRole(['cashier', 'assistant_manager']) && $user->can('invoices.view'));
+        return self::hasSupervisorVisibility($user)
+            || ($user->hasRole('cashier') && $user->can('invoices.view'));
     }
 
     /** يرى كل الفواتير بدون تقييد شيفت/قسم (محاسب، أمين صندوق، إدارة) */
@@ -92,24 +98,24 @@ final class RoleNav
             return false;
         }
 
-        return self::isAdministration($user)
-            || $user->hasAnyRole(['accountant', 'cashier', 'assistant_manager']);
+        return self::hasSupervisorVisibility($user)
+            || $user->hasAnyRole(['accountant', 'cashier']);
     }
 
     public static function canSeeFinancialSummary(?User $user): bool
     {
-        return self::isAdministration($user);
+        return self::hasSupervisorVisibility($user);
     }
 
     public static function canSeeReportsMenu(?User $user): bool
     {
-        return self::isAdministration($user);
+        return self::hasSupervisorVisibility($user);
     }
 
     /** ملخص الإيرادات — للإدارة ومساعد المدير */
     public static function canSeeRevenueSummary(?User $user): bool
     {
-        return self::isAdministration($user) || self::isAssistantManager($user);
+        return self::hasSupervisorVisibility($user);
     }
 
     /** مطابقة/رفض في غرفة التحكم — المحاسب فقط */
@@ -128,7 +134,7 @@ final class RoleNav
 
     public static function canSeeActivityLog(?User $user): bool
     {
-        return self::isAdministration($user);
+        return self::hasSupervisorVisibility($user);
     }
 
     public static function canSeeClaimsMenu(?User $user): bool
@@ -146,7 +152,7 @@ final class RoleNav
             return false;
         }
 
-        return self::isAdministration($user)
+        return self::hasSupervisorVisibility($user)
             || $user->can('patients.view')
             || $user->can('visits.view');
     }
@@ -157,7 +163,9 @@ final class RoleNav
             return false;
         }
 
-        return $user->can('payments.view') || $user->can('payments.approve') || self::isAdministration($user);
+        return self::hasSupervisorVisibility($user)
+            || $user->can('payments.view')
+            || $user->can('payments.approve');
     }
 
     public static function canSeeDelegations(?User $user): bool
@@ -176,7 +184,7 @@ final class RoleNav
     public static function canSeeAllVisits(?User $user): bool
     {
         return $user !== null
-            && ($user->hasAnyRole(['admin', 'manager', 'patient_follow_up']));
+            && ($user->hasAnyRole(['admin', 'manager', 'assistant_manager', 'patient_follow_up']));
     }
 
     /** تقديم خدمة / إنشاء فاتورة — للجميع ما عدا المحاسب وأمين الصندوق */
