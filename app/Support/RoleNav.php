@@ -109,7 +109,19 @@ final class RoleNav
 
     public static function canSeeReportsMenu(?User $user): bool
     {
-        return self::hasSupervisorVisibility($user);
+        return self::isAdministration($user);
+    }
+
+    /** قسم إدارة النظام في القائمة — المدير كامل، مساعد المدير (شركات تأمين + جمعيات فقط) */
+    public static function canSeeSystemAdminSection(?User $user): bool
+    {
+        return self::isAdministration($user) || self::isAssistantManager($user);
+    }
+
+    /** إدارة النظام الكاملة (أقسام، خدمات، موظفين، إعدادات...) — المدير فقط */
+    public static function canSeeFullSystemAdmin(?User $user): bool
+    {
+        return self::isAdministration($user);
     }
 
     /** ملخص الإيرادات — للإدارة ومساعد المدير */

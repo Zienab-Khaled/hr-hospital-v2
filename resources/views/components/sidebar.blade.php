@@ -245,12 +245,13 @@
         @endif
 
         {{-- System Admin Section --}}
-        @if ($isManager)
+        @if (RoleNav::canSeeSystemAdminSection($user))
             <div class="mt-5 pt-4 border-t border-white/10">
                 <p class="px-3 py-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">
                     {{ app()->getLocale() === 'ar' ? 'إدارة النظام' : 'System Admin' }}
                 </p>
 
+                @if (RoleNav::canSeeFullSystemAdmin($user))
                 <a href="{{ route('departments.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('departments.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -272,7 +273,9 @@
                     </svg>
                     <span>{{ __('Services') }}</span>
                 </a>
+                @endif
 
+                @if ($user->can('insurance_companies.manage'))
                 <a href="{{ route('insurance-companies.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('insurance-companies.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -283,7 +286,9 @@
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'شركات التأمين' : 'Insurance Companies' }}</span>
                 </a>
+                @endif
 
+                @if ($user->can('charity_entities.manage'))
                 <a href="{{ route('charity-entities.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('charity-entities.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -294,7 +299,9 @@
                     </svg>
                     <span>{{ app()->getLocale() === 'ar' ? 'الجمعيات الخيرية' : 'Charity Entities' }}</span>
                 </a>
+                @endif
 
+                @if (RoleNav::canSeeFullSystemAdmin($user))
                 <a href="{{ route('users.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('users.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -340,6 +347,7 @@
                     </svg>
                     <span>{{ __('Upload Official Codes') }}</span>
                 </a>
+                @endif
             </div>
         @endif
 
@@ -408,7 +416,7 @@
                 <span>{{ app()->getLocale() === 'ar' ? 'فواتير المحاسب (Control Room)' : 'Accountant Invoices (Control Room)' }}</span>
             </a>
             {{-- أمين الصندوق: مخفي عن المحاسب (يرى Control Room فقط) --}}
-            @if (!$user->hasRole('accountant') || $isManager)
+            @if (!$user->hasRole('accountant') || RoleNav::isAdministration($user))
                 <a href="{{ route('revenue.treasury.index') }}"
                     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                    {{ request()->routeIs('revenue.treasury.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
