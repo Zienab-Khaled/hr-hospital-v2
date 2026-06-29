@@ -6,7 +6,7 @@
     @php
         $inputClass =
             'w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
-        $patientHasPartyCoverage = isset($patient) && in_array($patient->payment_type ?? '', ['insurance', 'charity'], true);
+        $patientHasPartyCoverage = isset($patient) && ($patient->payment_type ?? '') === 'insurance';
         $patientPartyLabelAr = (isset($patient) && ($patient->payment_type ?? '') === 'charity') ? 'الجمعية' : 'التأمين';
         $patientPartyLabelEn = (isset($patient) && ($patient->payment_type ?? '') === 'charity') ? 'Charity' : 'Insurance';
     @endphp
@@ -267,30 +267,52 @@
 
                     <div id="charity-treatment-invoice-wrap" class="hidden mt-4 rounded-lg border-2 border-teal-200 bg-teal-50/80 p-4">
                         <p class="text-sm font-bold text-teal-900 mb-2">
-                            {{ app()->getLocale() === 'ar' ? '🤝 علاج أهلي — المريض لا يدفع (حصة المريض = 0)' : '🤝 Charity treatment — patient pays 0 (patient share = 0)' }}
+                            {{ app()->getLocale() === 'ar' ? '🤝 مريض جمعية — حالة هذه الزيارة' : '🤝 Charity patient — this visit' }}
                         </p>
-                        <p class="text-xs text-teal-800 mb-3">
-                            {{ app()->getLocale() === 'ar' ? 'يظهر هذا الخيار عندما يكون نوع الدفع «جمعية». هل توجد أحقية علاج؟ إذا نعم تُسجَّل الفاتورة كنوع «أحقية العلاج».' : 'Shown when payment type is Charity. Treatment eligibility? If yes, the invoice is recorded as Treatment Eligibility type.' }}
-                        </p>
-                        <div class="flex flex-wrap gap-4">
-                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
-                                <input type="radio" name="charity_treatment_invoice_mode" value=""
-                                    {{ old('charity_treatment_invoice_mode', '') === '' ? 'checked' : '' }}
-                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
-                                <span>{{ app()->getLocale() === 'ar' ? 'فاتورة عادية' : 'Regular invoice' }}</span>
+                        @php
+                            $oldCharityMode = old('charity_treatment_invoice_mode', 'ahli_eligibility');
+                            if (in_array($oldCharityMode, ['eligibility', 'no_eligibility', ''], true)) {
+                                $oldCharityMode = 'ahli_eligibility';
+                            }
+                        @endphp
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="radio" name="charity_treatment_invoice_mode" value="ahli_eligibility"
+                                    {{ $oldCharityMode === 'ahli_eligibility' ? 'checked' : '' }}
+                                    class="mt-1 text-teal-600 focus:ring-teal-500 charity-treatment-mode">
+                                <span>
+                                    <span class="block font-bold">{{ app()->getLocale() === 'ar' ? 'أحقية علاج أهلي' : 'Charity treatment eligibility' }}</span>
+                                    <span class="block text-xs text-teal-800">{{ app()->getLocale() === 'ar' ? 'لديه جمعية — المريض لا يدفع (حصة المريض = 0)' : 'Has charity coverage — patient pays 0' }}</span>
+                                </span>
                             </label>
-                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
-                                <input type="radio" name="charity_treatment_invoice_mode" value="eligibility"
-                                    {{ old('charity_treatment_invoice_mode') === 'eligibility' ? 'checked' : '' }}
-                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
-                                <span>{{ app()->getLocale() === 'ar' ? 'نعم — أحقية علاج (نوع الفاتورة: أحقية العلاج)' : 'Yes — treatment eligibility' }}</span>
+                            <label class="flex items-start gap-2 cursor-pointer font-medium text-slate-800">
+                                <input type="radio" name="charity_treatment_invoice_mode" value="no_charity_now"
+                                    {{ $oldCharityMode === 'no_charity_now' ? 'checked' : '' }}
+                                    class="mt-1 text-teal-600 focus:ring-teal-500 charity-treatment-mode">
+                                <span>
+                                    <span class="block font-bold">{{ app()->getLocale() === 'ar' ? 'لا يوجد جمعية حالياً' : 'No charity currently' }}</span>
+                                    <span class="block text-xs text-teal-800">{{ app()->getLocale() === 'ar' ? 'يُحسب على المريض — نقدي أو تأمين جديد لهذه الزيارة' : 'Billed to patient — cash or new insurance for this visit' }}</span>
+                                </span>
                             </label>
-                            <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
-                                <input type="radio" name="charity_treatment_invoice_mode" value="no_eligibility"
-                                    {{ old('charity_treatment_invoice_mode') === 'no_eligibility' ? 'checked' : '' }}
-                                    class="text-teal-600 focus:ring-teal-500 charity-treatment-mode">
-                                <span>{{ app()->getLocale() === 'ar' ? 'لا — علاج أهلي بدون أحقية' : 'No — charity treatment without eligibility' }}</span>
-                            </label>
+                        </div>
+                        <div id="charity-fallback-wrap" class="hidden mt-4 mr-6 pr-4 border-r-4 border-amber-300 space-y-3">
+                            <p class="text-xs font-bold text-amber-900">
+                                {{ app()->getLocale() === 'ar' ? 'طريقة الدفع لهذه الزيارة:' : 'Payment for this visit:' }}
+                            </p>
+                            <div class="flex flex-wrap gap-4">
+                                <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                    <input type="radio" name="charity_fallback_payment" value="cash"
+                                        {{ old('charity_fallback_payment', 'cash') === 'cash' ? 'checked' : '' }}
+                                        class="text-amber-600 focus:ring-amber-500 charity-fallback-mode">
+                                    <span>{{ app()->getLocale() === 'ar' ? 'نقدي — المريض يدفع' : 'Cash — patient pays' }}</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                                    <input type="radio" name="charity_fallback_payment" value="insurance"
+                                        {{ old('charity_fallback_payment') === 'insurance' ? 'checked' : '' }}
+                                        class="text-amber-600 focus:ring-amber-500 charity-fallback-mode">
+                                    <span>{{ app()->getLocale() === 'ar' ? 'تأمين جديد' : 'New insurance' }}</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -617,9 +639,9 @@
             const total = (qty * price).toFixed(2);
             const covTypeLabelPct = isArabic ? 'نسبة %' : 'Percentage %';
             const covTypeLabelFixed = isArabic ? 'قيمة ثابتة' : 'Fixed amount';
-            const defaultCovType = window.invoicePatientIsCharity ? 'percentage' : '';
-            const defaultCovVal = window.invoicePatientIsCharity ? '100' : '';
-            const selPctDefault = defaultCovType === 'percentage' ? 'selected' : '';
+            const defaultCovType = '';
+            const defaultCovVal = '';
+            const selPctDefault = '';
             const tr = document.createElement('tr');
             tr.className = 'service-row border-b border-slate-400 hover:bg-slate-50';
             tr.innerHTML = `
@@ -694,7 +716,75 @@
             }
         }
 
+        function getCharityInvoiceMode() {
+            const checked = document.querySelector('input[name="charity_treatment_invoice_mode"]:checked');
+            return checked ? checked.value : 'ahli_eligibility';
+        }
+
+        function getCharityFallbackPayment() {
+            const checked = document.querySelector('input[name="charity_fallback_payment"]:checked');
+            return checked ? checked.value : 'cash';
+        }
+
+        function isCharityPatientFreeMode() {
+            return window.invoicePatientIsCharity && getCharityInvoiceMode() === 'ahli_eligibility';
+        }
+
+        function shouldShowCharityFallbackWrap() {
+            const paymentTypeEl = document.getElementById('patient_payment_type');
+            return paymentTypeEl && paymentTypeEl.value === 'charity' && getCharityInvoiceMode() === 'no_charity_now';
+        }
+
+        function shouldShowInsuranceWrapForCharity() {
+            return shouldShowCharityFallbackWrap() && getCharityFallbackPayment() === 'insurance';
+        }
+
+        function refreshPartyCoverageFlags() {
+            const paymentTypeEl = document.getElementById('patient_payment_type');
+            const v = paymentTypeEl ? paymentTypeEl.value : '';
+            window.invoicePatientIsCharity = (v === 'charity');
+            window.invoicePatientHasPartyCoverage = (v === 'insurance') || shouldShowInsuranceWrapForCharity();
+        }
+
+        function syncCharityVisitUi() {
+            const fallbackWrap = document.getElementById('charity-fallback-wrap');
+            const insuranceWrap = document.getElementById('patient_insurance_wrap');
+            const charityWrap = document.getElementById('patient_charity_wrap');
+            const paymentTypeEl = document.getElementById('patient_payment_type');
+            const isCharity = paymentTypeEl && paymentTypeEl.value === 'charity';
+            const showFallback = shouldShowCharityFallbackWrap();
+
+            if (fallbackWrap) fallbackWrap.classList.toggle('hidden', !showFallback);
+            if (charityWrap) charityWrap.classList.toggle('hidden', !isCharity || showFallback);
+            if (insuranceWrap) {
+                const showInsurance = (paymentTypeEl && paymentTypeEl.value === 'insurance') || shouldShowInsuranceWrapForCharity();
+                insuranceWrap.classList.toggle('hidden', !showInsurance);
+            }
+            applyCharityLineCoverageMode();
+            if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
+        }
+
+        function applyCharityLineCoverageMode() {
+            const container = document.getElementById('services-container');
+            if (!container) return;
+            const freeMode = window.invoicePatientIsCharity && isCharityPatientFreeMode();
+            container.querySelectorAll('tr.service-row').forEach(function(tr) {
+                const typeSel = tr.querySelector('select[name*="[insurance_coverage_type]"]');
+                const valInp = tr.querySelector('input[name*="[insurance_coverage_value]"]');
+                if (!typeSel || !valInp) return;
+                if (freeMode) {
+                    typeSel.value = 'percentage';
+                    valInp.value = '100';
+                } else if (window.invoicePatientIsCharity && getCharityInvoiceMode() === 'no_charity_now' && getCharityFallbackPayment() === 'cash') {
+                    typeSel.value = '';
+                    valInp.value = '';
+                }
+            });
+            updateInsuranceTotals();
+        }
+
         function toggleInsuranceColumns() {
+            refreshPartyCoverageFlags();
             const hasPartyCoverage = !!window.invoicePatientHasPartyCoverage;
             document.querySelectorAll('.insurance-coverage-th').forEach(function(el) {
                 el.classList.toggle('hidden', !hasPartyCoverage);
@@ -750,21 +840,24 @@
             if (paymentTypeEl && insuranceWrap && charityWrap) {
                 function togglePaymentFields() {
                     const v = paymentTypeEl.value;
-                    insuranceWrap.classList.toggle('hidden', v !== 'insurance');
-                    charityWrap.classList.toggle('hidden', v !== 'charity');
-                    window.invoicePatientHasPartyCoverage = (v === 'insurance' || v === 'charity');
-                    window.invoicePatientIsCharity = (v === 'charity');
+                    refreshPartyCoverageFlags();
                     if (charityTreatmentWrap) {
                         charityTreatmentWrap.classList.toggle('hidden', v !== 'charity');
                         if (v !== 'charity') {
-                            const def = charityTreatmentWrap.querySelector('input.charity-treatment-mode[value=""]');
+                            const def = charityTreatmentWrap.querySelector('input.charity-treatment-mode[value="ahli_eligibility"]');
                             if (def) def.checked = true;
                         }
                     }
-                    if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
+                    syncCharityVisitUi();
                 }
                 paymentTypeEl.addEventListener('change', togglePaymentFields);
                 togglePaymentFields();
+                document.querySelectorAll('input.charity-treatment-mode').forEach(function(radio) {
+                    radio.addEventListener('change', syncCharityVisitUi);
+                });
+                document.querySelectorAll('input.charity-fallback-mode').forEach(function(radio) {
+                    radio.addEventListener('change', syncCharityVisitUi);
+                });
             } else {
                 if (typeof toggleInsuranceColumns === 'function') toggleInsuranceColumns();
             }

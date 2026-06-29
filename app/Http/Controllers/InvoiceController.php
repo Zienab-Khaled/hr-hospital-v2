@@ -196,7 +196,8 @@ class InvoiceController extends Controller
             'medical_reports.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             'visit_id' => 'nullable|exists:visits,id',
             // علاج أهلي: مجاني على المريض + أحقية علاج أم لا (يظهر فقط لمرضى الجمعية في النموذج)
-            'charity_treatment_invoice_mode' => 'nullable|string|in:,eligibility,no_eligibility',
+            'charity_treatment_invoice_mode' => 'nullable|string|in:ahli_eligibility,no_charity_now,eligibility,no_eligibility',
+            'charity_fallback_payment' => 'nullable|string|in:cash,insurance',
             // Collection Fields
             'collection_amount' => 'nullable|numeric|min:0',
             'collection_method' => ['nullable', 'string', Rule::in(self::COLLECTION_SPLIT_METHODS)],
@@ -248,18 +249,55 @@ class InvoiceController extends Controller
 
             $finalPaymentType = $patient->payment_type;
             $charityMode = trim((string) ($validated['charity_treatment_invoice_mode'] ?? ''));
-            if ($charityMode !== '' && $finalPaymentType !== 'charity') {
+            $charityFallback = trim((string) ($validated['charity_fallback_payment'] ?? ''));
+
+            if (in_array($charityMode, ['eligibility', 'no_eligibility'], true)) {
+                $charityMode = 'ahli_eligibility';
+            }
+
+            if ($finalPaymentType === 'charity') {
+                if ($charityMode === '') {
+                    $charityMode = 'ahli_eligibility';
+                }
+                if (! in_array($charityMode, ['ahli_eligibility', 'no_charity_now'], true)) {
+                    throw ValidationException::withMessages([
+                        'charity_treatment_invoice_mode' => app()->getLocale() === 'ar'
+                            ? 'اختر نوع فاتورة الجمعية.'
+                            : 'Select charity invoice type.',
+                    ]);
+                }
+                if ($charityMode === 'no_charity_now' && ! in_array($charityFallback, ['cash', 'insurance'], true)) {
+                    throw ValidationException::withMessages([
+                        'charity_fallback_payment' => app()->getLocale() === 'ar'
+                            ? 'حدّد طريقة الدفع لهذه الزيارة: نقدي أو تأمين جديد.'
+                            : 'Select payment for this visit: cash or new insurance.',
+                    ]);
+                }
+                if ($charityMode === 'no_charity_now' && $charityFallback === 'insurance' && empty($validated['patient_insurance_company_id'])) {
+                    throw ValidationException::withMessages([
+                        'patient_insurance_company_id' => app()->getLocale() === 'ar'
+                            ? 'اختر شركة التأمين لتأمين هذه الزيارة.'
+                            : 'Select insurance company for this visit.',
+                    ]);
+                }
+            } elseif ($charityMode !== '') {
                 throw ValidationException::withMessages([
                     'charity_treatment_invoice_mode' => app()->getLocale() === 'ar'
-                        ? 'خيار «علاج أهلي / أحقية» يخص مرضى الجمعية فقط.'
-                        : 'Charity treatment / eligibility options apply only to charity patients.',
+                        ? 'خيار فاتورة الجمعية يخص مرضى الجمعية فقط.'
+                        : 'Charity invoice options apply only to charity patients.',
                 ]);
             }
-            $forceCharityPatientFree = $finalPaymentType === 'charity' && in_array($charityMode, ['eligibility', 'no_eligibility'], true);
+
+            $invoicePaymentType = $finalPaymentType;
+            $forceCharityPatientFree = false;
             $isTreatmentEligibilityFree = Patient::isTreatmentEligibility($finalPaymentType);
             $invoiceType = 'regular';
-            if ($forceCharityPatientFree) {
-                $invoiceType = $charityMode === 'eligibility' ? 'eligibility' : 'charity_treatment_free';
+
+            if ($finalPaymentType === 'charity' && $charityMode === 'ahli_eligibility') {
+                $forceCharityPatientFree = true;
+                $invoiceType = 'eligibility';
+            } elseif ($finalPaymentType === 'charity' && $charityMode === 'no_charity_now') {
+                $invoicePaymentType = $charityFallback === 'insurance' ? 'insurance' : 'cash';
             } elseif ($isTreatmentEligibilityFree) {
                 $invoiceType = 'eligibility';
             }
@@ -307,7 +345,7 @@ class InvoiceController extends Controller
                     ? (app()->getLocale() === 'ar' ? 'أحقية العلاج' : 'Treatment Eligibility')
                     : null),
                 'print_media_ids' => $printMediaIds ?: null,
-                'payment_type' => $finalPaymentType,
+                'payment_type' => $invoicePaymentType,
                 'invoice_type' => $invoiceType,
                 'audit_status' => 'under_review',
             ]);
@@ -317,16 +355,14 @@ class InvoiceController extends Controller
                 if ($forceCharityPatientFree || $isTreatmentEligibilityFree) {
                     $coverageType = 'percentage';
                     $coverageValue = 100.0;
-                } elseif ($finalPaymentType === 'charity') {
-                    $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
-                        ? $serviceData['insurance_coverage_type'] : 'percentage';
-                    $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
-                        ? (float) $serviceData['insurance_coverage_value'] : 100.0;
-                } else {
+                } elseif ($invoicePaymentType === 'insurance') {
                     $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
                         ? $serviceData['insurance_coverage_type'] : null;
                     $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
                         ? (float) $serviceData['insurance_coverage_value'] : null;
+                } else {
+                    $coverageType = null;
+                    $coverageValue = null;
                 }
                 $lineTotal = $isTreatmentEligibilityFree ? 0.0 : (float) $serviceData['total_price'];
                 $lineUnit = $isTreatmentEligibilityFree ? 0.0 : (float) $serviceData['unit_price'];
@@ -365,11 +401,11 @@ class InvoiceController extends Controller
             // NEW: Handle Financial Collection & Digital q-1 Documents (supports multiple payment methods)
             $normalizedSplits = $this->normalizeCollectionSplits($request, $validated);
 
-            if ($isTreatmentEligibilityFree && $normalizedSplits->isNotEmpty()) {
+            if (($isTreatmentEligibilityFree || $forceCharityPatientFree) && $normalizedSplits->isNotEmpty()) {
                 throw ValidationException::withMessages([
                     'collection_amount' => app()->getLocale() === 'ar'
-                        ? 'مرضى أحقية العلاج لا يدفعون — لا يمكن تسجيل تحصيل نقدي.'
-                        : 'Treatment eligibility patients do not pay — cash collection is not allowed.',
+                        ? 'هذه الفاتورة مجانية على المريض — لا يمكن تسجيل تحصيل نقدي.'
+                        : 'This invoice is free for the patient — cash collection is not allowed.',
                 ]);
             }
 
@@ -504,25 +540,37 @@ class InvoiceController extends Controller
                 $invoice->refresh();
             }
 
-            // Create approval request for insurance/charity patients (email sent after HTTP response — avoids SMTP hang/timeouts blocking the request)
+            // Create approval request for insurance/charity invoices (email sent after HTTP response)
             $deferredApprovalMail = null;
-            if (in_array($patient->payment_type, ['insurance', 'charity'])) {
+            if (in_array($invoice->payment_type, ['insurance', 'charity'])) {
                 $approval = Approval::create([
                     'invoice_id' => $invoice->id,
                     'patient_id' => $patient->id,
-                    'approval_type' => $patient->payment_type,
-                    'insurance_company_id' => $patient->insurance_company_id,
-                    'charity_entity_id' => $patient->charity_entity_id,
+                    'approval_type' => $invoice->payment_type,
+                    'insurance_company_id' => $invoice->payment_type === 'insurance'
+                        ? ($validated['patient_insurance_company_id'] ?? $patient->insurance_company_id)
+                        : null,
+                    'charity_entity_id' => $invoice->payment_type === 'charity'
+                        ? ($validated['patient_charity_entity_id'] ?? $patient->charity_entity_id)
+                        : null,
                     'requested_amount' => (float) $invoice->total_amount,
                     'status' => 'pending',
                     'requested_by' => auth()->user()?->getKey(),
                 ]);
 
                 $recipientEmail = null;
-                if ($patient->payment_type === 'insurance' && $patient->insuranceCompany) {
-                    $recipientEmail = $patient->insuranceCompany->email;
-                } elseif ($patient->payment_type === 'charity' && $patient->charityEntity) {
-                    $recipientEmail = $patient->charityEntity->email;
+                if ($invoice->payment_type === 'insurance') {
+                    $insuranceCompanyId = $validated['patient_insurance_company_id'] ?? $patient->insurance_company_id;
+                    $insuranceCompany = $insuranceCompanyId
+                        ? InsuranceCompany::find($insuranceCompanyId)
+                        : $patient->insuranceCompany;
+                    $recipientEmail = $insuranceCompany?->email;
+                } elseif ($invoice->payment_type === 'charity') {
+                    $charityEntityId = $validated['patient_charity_entity_id'] ?? $patient->charity_entity_id;
+                    $charityEntity = $charityEntityId
+                        ? CharityEntity::find($charityEntityId)
+                        : $patient->charityEntity;
+                    $recipientEmail = $charityEntity?->email;
                 }
 
                 if ($recipientEmail) {
