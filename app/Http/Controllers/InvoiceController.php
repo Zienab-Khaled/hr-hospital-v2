@@ -599,7 +599,7 @@ class InvoiceController extends Controller
     public function printInvoice(Invoice $invoice)
     {
         $this->authorize('invoices.view');
-        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service', 'visit.department']);
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service', 'visit.department', 'payments']);
 
         $visit = $invoice->visit;
         if ($visit) {

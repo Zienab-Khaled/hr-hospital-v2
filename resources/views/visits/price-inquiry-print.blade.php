@@ -26,13 +26,61 @@
             th { background-color: #dbeafe; color: #1e40af; font-weight: bold; }
             .total-row td { border-top: 2px solid #000; font-weight: bold; }
             .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; font-style: italic; }
+            .totals-summary {
+                max-width: 360px;
+                margin-inline-start: auto;
+                margin-bottom: 20px;
+                border: 2px solid #334155;
+                border-radius: 6px;
+                padding: 12px 14px;
+                background: #f8fafc;
+            }
+            .totals-summary .row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 4px 0;
+                font-size: 14px;
+            }
+            .totals-summary .row.total { font-weight: bold; font-size: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 4px; }
+            .totals-summary .row.paid { color: #15803d; }
+            .totals-summary .row.remaining { font-weight: bold; font-size: 16px; color: #0f172a; border-top: 2px solid #334155; padding-top: 8px; margin-top: 4px; }
+            .print-bottom { margin-top: 20px; }
             @media print {
-                body { padding: 0; }
+                @page { size: A4; margin: 8mm 10mm; }
+                body { padding: 0; font-size: 11px; }
                 .no-print { display: none; }
+                .header { margin-bottom: 10px; padding-bottom: 6px; }
+                .header h1 { font-size: 17px; }
+                .header p { font-size: 12px; }
+                .notice { padding: 8px 10px; margin-bottom: 10px; }
+                .notice strong { font-size: 13px; }
+                .info-grid { gap: 8px; margin-bottom: 10px; }
+                .info-item { padding: 6px 8px; }
+                .info-value { font-size: 13px; }
+                table { margin-bottom: 10px; }
+                th, td { padding: 4px 6px; font-size: 10px; }
+                .totals-summary { margin-bottom: 10px; padding: 8px 10px; break-inside: avoid; }
+                .totals-summary .row { font-size: 11px; padding: 2px 0; }
+                .totals-summary .row.remaining { font-size: 12px; padding-top: 6px; }
+                .footer { margin-top: 8px; font-size: 9px; }
+                .footer-detailed-print { display: none; }
+                .print-bottom {
+                    margin-top: 10px;
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                }
+                .signatures-row { margin-top: 0 !important; gap: 12px !important; }
+                .signatures-row img { max-height: 45px !important; }
                 .report-header-wrap {
                     margin-top: 0 !important;
-                    margin-bottom: 10px !important;
-                    padding: 12px 16px 10px !important;
+                    margin-bottom: 8px !important;
+                    padding: 10px 14px 8px !important;
+                    break-inside: avoid;
+                }
+                .report-footer-wrap {
+                    margin-top: 8px !important;
+                    padding-top: 8px !important;
                     break-inside: avoid;
                 }
                 .report-header-logo img {
@@ -220,6 +268,50 @@
                     @endif
                 </tbody>
             </table>
+
+            @if (isset($printTitle) && $printTitle === 'detailed_invoice' && isset($invoice))
+                @php
+                    $hasInsuranceCoverage = $invoice->items->contains(fn ($i) => ! empty($i->insurance_coverage_type));
+                    $summaryPaymentType = $invoice->payment_type ?? $visit->patient->payment_type ?? '';
+                    $isSummaryInsuranceOrCharity = in_array($summaryPaymentType, ['insurance', 'charity'], true);
+                    $summaryCoveredParty = $summaryPaymentType === 'charity'
+                        ? (app()->getLocale() === 'ar' ? 'الجمعية' : 'Charity')
+                        : (app()->getLocale() === 'ar' ? 'التأمين' : 'Insurance');
+                    $totalInsuranceCovered = $invoice->items->sum(fn ($i) => (float) $i->insurance_covered_amount);
+                    $totalPatientShare = $invoice->items->sum(fn ($i) => (float) $i->patient_amount);
+                    $patientPaidOnly = (float) ($invoice->payments ?? collect())->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
+                    $displayPaid = ($hasInsuranceCoverage || $isSummaryInsuranceOrCharity)
+                        ? $patientPaidOnly
+                        : (float) ($invoice->paid_amount ?? 0);
+                    $displayRemaining = ($hasInsuranceCoverage || $isSummaryInsuranceOrCharity)
+                        ? max(0, round($totalPatientShare - $patientPaidOnly, 2))
+                        : (float) ($invoice->remaining_amount ?? max(0, (float) $invoice->total_amount - $displayPaid));
+                @endphp
+                <div class="totals-summary">
+                    <div class="row total">
+                        <span>{{ app()->getLocale() === 'ar' ? 'الإجمالي:' : 'Total:' }}</span>
+                        <span>{{ number_format((float) $invoice->total_amount, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
+                    </div>
+                    @if ($hasInsuranceCoverage && $totalInsuranceCovered > 0)
+                        <div class="row" style="color:#065f46;">
+                            <span>{{ app()->getLocale() === 'ar' ? 'المغطى (' . $summaryCoveredParty . '):' : $summaryCoveredParty . ' covered:' }}</span>
+                            <span>{{ number_format($totalInsuranceCovered, 2) }}</span>
+                        </div>
+                        <div class="row" style="color:#92400e;">
+                            <span>{{ app()->getLocale() === 'ar' ? 'حصة المريض:' : 'Patient share:' }}</span>
+                            <span>{{ number_format($totalPatientShare, 2) }}</span>
+                        </div>
+                    @endif
+                    <div class="row paid">
+                        <span>{{ app()->getLocale() === 'ar' ? 'المدفوع:' : 'Paid:' }}</span>
+                        <span>{{ number_format($displayPaid, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
+                    </div>
+                    <div class="row remaining">
+                        <span>{{ ($hasInsuranceCoverage || $isSummaryInsuranceOrCharity) ? (app()->getLocale() === 'ar' ? 'المتبقي للمريض (حصته):' : 'Remaining (patient share):') : (app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:') }}</span>
+                        <span>{{ number_format($displayRemaining, 2) }} {{ app()->getLocale() === 'ar' ? 'ريال' : 'SAR' }}</span>
+                    </div>
+                </div>
+            @endif
         @else
             <div style="text-align: center; border: 1px dashed #ccc; padding: 20px; color: #777; margin-bottom: 30px;">
                 {{ app()->getLocale() === 'ar' ? 'لا توجد خدمات محددة لهذا الاستعلام.' : 'No services specified for this inquiry.' }}
@@ -227,7 +319,7 @@
         @endif
 
 
-        <div class="footer">
+        <div class="footer {{ isset($printTitle) && $printTitle === 'detailed_invoice' ? 'footer-detailed-print' : '' }}">
             @if(isset($printTitle) && $printTitle === 'detailed_invoice')
                 <p>{{ app()->getLocale() === 'ar' ? '* فاتورة تفصيلية رسمية مسجّلة في النظام' : '* Official detailed invoice recorded in the system' }}</p>
                 @if(isset($invoice))
@@ -239,8 +331,9 @@
             @endif
         </div>
 
+        <div class="print-bottom">
         {{-- Electronic Signatures Section --}}
-        <div style="margin-top: 40px; display: flex; justify-content: space-around; gap: 30px; page-break-inside: avoid;">
+        <div class="signatures-row" style="display: flex; justify-content: space-around; gap: 30px;">
             {{-- Employee Signature --}}
             <div style="flex: 1; text-align: center;">
                 <div style="font-weight: 600; margin-bottom: 10px; color: #1e293b;">
@@ -277,5 +370,6 @@
         </div>
 
         @include('components.report-footer')
+        </div>
     </body>
     </html>
