@@ -599,6 +599,12 @@ class InvoiceController extends Controller
         $visit = $invoice->visit;
         if ($visit) {
             $visit->load(['patient.insuranceCompany', 'department', 'shift']);
+            if (! $visit->department) {
+                $invoice->patient?->loadMissing('department');
+                if ($invoice->patient?->department) {
+                    $visit->setRelation('department', $invoice->patient->department);
+                }
+            }
         } else {
             $invoice->patient?->load(['insuranceCompany', 'department']);
             $visit = new Visit([

@@ -113,7 +113,7 @@
             </div>
             <div class="info-item">
                 <span class="info-label">{{ app()->getLocale() === 'ar' ? 'العيادة / القسم' : 'Clinic / Department' }}</span>
-                <div class="info-value">{{ app()->getLocale() === 'ar' && $visit->department?->name_ar ? $visit->department->name_ar : ($visit->department?->name ?? '—') }}</div>
+                <div class="info-value">{{ $visit->department ? (app()->getLocale() === 'ar' ? $visit->department->name_ar ?? $visit->department->name : $visit->department->name) : '—' }}</div>
             </div>
             <div class="info-item">
                 <span class="info-label">{{ app()->getLocale() === 'ar' ? 'نوع الدفع' : 'Payment Type' }}</span>
