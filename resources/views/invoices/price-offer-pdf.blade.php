@@ -295,7 +295,7 @@
                 @if (!empty($settings['manager_signature']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($settings['manager_signature']))
                     <img src="{{ public_path('storage/' . $settings['manager_signature']) }}" alt="توقيع" style="max-height: 52px;">
                 @endif
-                <div class="sig-name">{{ $settings['manager_name'] ?? '' }}</div>
+                <div class="sig-name">{{ $senderName ?? ($settings['manager_name'] ?? '') }}</div>
             </div>
         </div>
     </div>

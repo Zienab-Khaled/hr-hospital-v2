@@ -22,7 +22,8 @@ class InvoiceToPartyMail extends Mailable
         public ?string $customSubject = null,
         public ?string $customIntro = null,
         public ?string $treatmentDuration = null,
-        public array $extraAttachmentPaths = []
+        public array $extraAttachmentPaths = [],
+        public ?string $senderName = null,
     ) {
         $this->partySend->load(['invoice.patient', 'invoice.items.service']);
     }
@@ -60,6 +61,8 @@ class InvoiceToPartyMail extends Mailable
                 'rejectUrl' => route('invoice-party-response.show', ['token' => $this->partySend->token, 'action' => 'reject']),
                 'customIntro' => $this->customIntro,
                 'treatmentDuration' => $this->treatmentDuration,
+                'senderName' => $this->senderName ?: ($this->partySend->sentByUser?->name ?? Setting::get('department_manager_name', '')),
+                'showResponseButtons' => true,
             ]
         );
     }

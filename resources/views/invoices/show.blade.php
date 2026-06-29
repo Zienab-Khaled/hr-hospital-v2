@@ -4,22 +4,30 @@
 @section('content')
     @php
         $hasInsuranceCoverage = $invoice->items->contains(fn($i) => !empty($i->insurance_coverage_type));
-        $effectivePaymentType = $invoice->payment_type ?? $invoice->patient?->payment_type ?? '';
+        $effectivePaymentType = $invoice->payment_type ?? ($invoice->patient?->payment_type ?? '');
         $isCharityPatient = $effectivePaymentType === 'charity';
         $isInsurancePatient = $effectivePaymentType === 'insurance';
         $isTreatmentEligibility = \App\Models\Patient::isTreatmentEligibility($effectivePaymentType);
-        $isInsuranceOrCharity = in_array($effectivePaymentType, ['insurance', 'charity'], true)
-            || $isTreatmentEligibility;
-        $coveredPartyLabel = app()->getLocale() === 'ar'
-            ? ($isCharityPatient ? 'الجمعية' : 'التأمين')
-            : ($isCharityPatient ? 'Charity' : 'Insurance');
+        $isInsuranceOrCharity =
+            in_array($effectivePaymentType, ['insurance', 'charity'], true) || $isTreatmentEligibility;
+        $coveredPartyLabel =
+            app()->getLocale() === 'ar'
+                ? ($isCharityPatient
+                    ? 'الجمعية'
+                    : 'التأمين')
+                : ($isCharityPatient
+                    ? 'Charity'
+                    : 'Insurance');
         $totalInsuranceCovered = $invoice->items->sum(fn($i) => (float) $i->insurance_covered_amount);
         $totalPatientShare = $invoice->items->sum(fn($i) => (float) $i->patient_amount);
         // المتبقي للمريض = حصة المريض − ما دفعه المريض فقط (لا نحتسب دفعات التأمين/الجمعية)
-        $patientPaidOnly = (float) ($invoice->payments ?? collect())->whereNotIn('payment_type', ['insurance', 'charity'])->sum('amount');
-        $effectiveRemaining = ($hasInsuranceCoverage || $isInsuranceOrCharity)
-            ? max(0, round($totalPatientShare - $patientPaidOnly, 2))
-            : (float) ($invoice->remaining_amount ?? 0);
+        $patientPaidOnly = (float) ($invoice->payments ?? collect())
+            ->whereNotIn('payment_type', ['insurance', 'charity'])
+            ->sum('amount');
+        $effectiveRemaining =
+            $hasInsuranceCoverage || $isInsuranceOrCharity
+                ? max(0, round($totalPatientShare - $patientPaidOnly, 2))
+                : (float) ($invoice->remaining_amount ?? 0);
         // المتبقي الإجمالي (يدخل فيه جزء التأمين حتى تُدفع المطالبة)
         $totalRemaining = (float) ($invoice->remaining_amount ?? 0);
         $isEntryFeeOnly = $invoice->isEntryFeeOnly();
@@ -50,7 +58,8 @@
         @if ($isEntryFeeOnly)
             {{-- فاتورة كشفية فقط: نعرض تسجيل الدفعة فقط --}}
             <div class="mb-6 p-4 rounded-lg border-2 border-emerald-200 bg-emerald-50/70">
-                <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'فاتورة كشفية دخول' : 'Entry fee invoice' }}</h3>
+                <h3 class="font-bold text-slate-800 mb-3">
+                    {{ app()->getLocale() === 'ar' ? 'فاتورة كشفية دخول' : 'Entry fee invoice' }}</h3>
                 <div class="flex flex-wrap gap-2">
                     @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
                         <button type="button" onclick="openPaymentModal()"
@@ -61,180 +70,177 @@
                 </div>
             </div>
         @else
-        {{-- الخطوات التالية بعد إنشاء الفاتورة --}}
-        <div class="mb-6 p-4 rounded-lg border-2 border-blue-200 bg-blue-50/70">
-            <h3 class="font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'الخطوات التالية' : 'Next steps' }}
-            </h3>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('invoices.print-commitment', $invoice) }}" target="_blank" rel="noopener"
-                    class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
-                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر تعهد' : 'Print commitment form' }}
-                </a>
-                <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
-                    class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
-                    {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
-                </a>
-                {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
-                @if (($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') && $invoice->patient?->charityEntity)
-                    @if ($invoice->patient?->charityEntity?->email)
-                        <a href="{{ route('invoices.charity-email-preview', $invoice) }}"
-                            target="_blank"
-                            title="{{ app()->getLocale() === 'ar' ? 'معاينة شكل الإيميل قبل الإرسال' : 'Preview email before sending' }}"
-                            class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-semibold hover:bg-slate-200">
-                            👁️ {{ app()->getLocale() === 'ar' ? 'معاينة الميل قبل الإرسال' : 'Preview email' }}
-                        </a>
-                        <a href="{{ route('invoices.charity-email-compose', $invoice) }}"
-                            class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                            {{ app()->getLocale() === 'ar' ? '✉️ تعديل ثم إرسال عرض السعر للجمعية' : '✉️ Edit then send price offer to charity' }}
-                        </a>
-                        <form method="POST" action="{{ route('invoices.send-charity-payment-reminder', $invoice) }}"
-                            class="inline"
-                            onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال تذكير بالسداد للجمعية؟' : 'Send payment reminder to charity?' }}');">
-                            @csrf
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 bg-amber-500  px-4 py-2 rounded-lg font-semibold hover:bg-amber-600">
-                                {{ app()->getLocale() === 'ar' ? '💰 إرسال تذكير بالسداد للجمعية' : '💰 Send payment reminder to charity' }}
-                            </button>
-                        </form>
-                    @else
-                        <a href="{{ route('invoices.send-to-party', $invoice) }}"
-                            class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
-                            {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة للجمعية (إدخال البريد)' : '✉️ Send price offer / invoice to charity (enter email)' }}
-                        </a>
-                    @endif
-                @endif
-
-                {{-- Record Payment button for Cash/Partially Paid (المحصل/الاستقبال: payments.create) --}}
-                @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
-                    <button type="button" onclick="openPaymentModal()"
-                        class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
-                        💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
-                    </button>
-                @endif
-
-                {{-- زرار إشعار الجمعية باكتمال الخدمات — يظهر فقط لمرضى الجمعية بعد تنفيذ كل الخدمات --}}
-                @if (
-                    ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
-                        $invoice->isFullyCompleted() &&
-                        $invoice->patient?->charityEntity?->email)
-                    @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
-                        <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
-                            onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
-                            @csrf
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 bg-teal-600  px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 shadow-md ring-2 ring-teal-300 animate-pulse">
-                                ✉️
-                                {{ app()->getLocale() === 'ar' ? 'إشعار الجمعية باكتمال الخدمات' : 'Notify charity of completion' }}
-                            </button>
-                        </form>
-                    @endif
-                @elseif(
-                    ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
-                        !$invoice->isFullyCompleted())
-                    <span
-                        class="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-2 rounded-lg font-semibold text-sm">
-                        ⏳
-                        {{ app()->getLocale() === 'ar' ? 'في انتظار تنفيذ جميع الخدمات' : 'Waiting for all services to be executed' }}
-                        ({{ $invoice->items->where('status', 'completed')->count() }}/{{ $invoice->items->count() }})
-                    </span>
-                @endif
-            </div>
-
-            {{-- Action Flags --}}
-            <div class="mt-4 flex flex-wrap gap-2 border-t border-blue-200 pt-3">
-                @if ($invoice->sent_to_charity_mail_at)
-                    <span
-                        class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded border border-emerald-300">
-                        📧 {{ app()->getLocale() === 'ar' ? 'تم إرسال ميل للجمعية' : 'Mail sent to charity' }}
-                        ({{ $invoice->sent_to_charity_mail_at->format('Y-m-d H:i') }})
-                    </span>
-                @endif
-                @if ($invoice->printed_commitment_at)
-                    <span
-                        class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-300">
-                        📄 {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر التعهد' : 'Commitment form printed' }}
-                        ({{ $invoice->printed_commitment_at->format('Y-m-d H:i') }})
-                    </span>
-                @endif
-                @if ($invoice->printed_non_commitment_at)
-                    <span
-                        class="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-xs font-bold px-2 py-1 rounded border border-slate-300">
-                        📄
-                        {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر إقرار بعدم التوقيع' : 'Non-commitment form printed' }}
-                        ({{ $invoice->printed_non_commitment_at->format('Y-m-d H:i') }})
-                    </span>
-                @endif
-            </div>
-
-            {{-- Communication History (Charity/Insurance Responses) --}}
-            @if ($invoice->partySends->isNotEmpty())
-                <div class="mt-4 border-t border-blue-200 pt-3">
-                    <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">
-                        {{ app()->getLocale() === 'ar' ? 'سجل التواصل والاستجابة' : 'Communication & Response History' }}
-                    </h4>
-                    <div class="space-y-2">
-                        @foreach ($invoice->partySends->sortByDesc('created_at') as $send)
-                            <div
-                                class="p-2 rounded border {{ $send->response_action === 'confirmed' ? 'bg-emerald-50 border-emerald-200' : ($send->response_action === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200') }}">
-                                <div class="flex justify-between items-start">
-                                    <span
-                                        class="text-xs font-bold {{ $send->response_action === 'confirmed' ? 'text-emerald-800' : ($send->response_action === 'rejected' ? 'text-red-800' : 'text-slate-600') }}">
-                                        {{ $send->recipient_name }} ({{ $send->recipient_email }})
-                                    </span>
-                                    <span
-                                        class="text-[10px] text-slate-500">{{ $send->sent_at?->format('Y-m-d H:i') }}</span>
-                                </div>
-
-                                @if ($send->response_action)
-                                    <div class="mt-1 text-xs">
-                                        <span
-                                            class="font-bold {{ $send->response_action === 'confirmed' ? 'text-emerald-700' : 'text-red-700' }}">
-                                            {{ $send->response_action === 'confirmed' ? (app()->getLocale() === 'ar' ? '✅ تمت الموافقة' : '✅ Approved') : (app()->getLocale() === 'ar' ? '❌ تم الرفض' : '❌ Rejected') }}
-                                        </span>
-                                        <p class="text-slate-700 mt-1 italic">"{{ $send->response_text }}"</p>
-                                        <span
-                                            class="text-[10px] text-slate-500 block mt-1">{{ $send->response_at?->format('Y-m-d H:i') }}</span>
-                                    </div>
-                                @else
-                                    <span
-                                        class="text-[10px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded font-bold mt-1 inline-block">
-                                        {{ app()->getLocale() === 'ar' ? '⏳ بانتظار الرد' : '⏳ Awaiting response' }}
-                                    </span>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- Link to latest Approval Document if exists --}}
-                    @if ($invoice->patient?->hasMedia('charity-approvals'))
-                        <div class="mt-3">
-                            <h5 class="text-xs font-bold text-slate-700 mb-1">
-                                {{ app()->getLocale() === 'ar' ? '📎 مستندات الاعتماد المرفوعة:' : '📎 Uploaded Approval Documents:' }}
-                            </h5>
-                            <div class="flex flex-wrap gap-2">
-                                @foreach ($invoice->patient->getMedia('charity-approvals') as $media)
-                                    <a href="{{ $media->getUrl() }}" target="_blank"
-                                        class="inline-flex items-center gap-1 bg-emerald-600  text-[10px] px-2 py-1 rounded hover:bg-emerald-700 font-bold">
-                                        📄 {{ $media->file_name }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($invoice->hasCharityClaim())
-                        <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                            <a href="{{ route('charity-claims.show', $invoice->charityClaim()) }}"
-                                class="text-blue-700 font-bold text-xs hover:underline flex items-center gap-1">
-                                📋
-                                {{ app()->getLocale() === 'ar' ? 'عرض تفاصيل مطالبة الجمعية' : 'View Charity Claim Details' }}
-                                →
+            {{-- الخطوات التالية بعد إنشاء الفاتورة --}}
+            <div class="mb-6 p-4 rounded-lg border-2 border-blue-200 bg-blue-50/70">
+                <h3 class="font-bold text-slate-800 mb-3">
+                    {{ app()->getLocale() === 'ar' ? 'الخطوات التالية' : 'Next steps' }}
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('invoices.print-commitment', $invoice) }}" target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
+                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر تعهد' : 'Print commitment form' }}
+                    </a>
+                    <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
+                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
+                    </a>
+                    {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
+                    @if (
+                        ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
+                            $invoice->patient?->charityEntity)
+                        @if ($invoice->patient?->charityEntity?->email)
+                            <a href="{{ route('invoices.charity-email-compose', $invoice) }}"
+                                class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                                {{ app()->getLocale() === 'ar' ? '✉️ تعديل ثم إرسال عرض السعر للجمعية' : '✉️ Edit then send price offer to charity' }}
                             </a>
-                        </div>
+                            <form method="POST" action="{{ route('invoices.send-charity-payment-reminder', $invoice) }}"
+                                class="inline"
+                                onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إرسال تذكير بالسداد للجمعية؟' : 'Send payment reminder to charity?' }}');">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center gap-2 bg-amber-500  px-4 py-2 rounded-lg font-semibold hover:bg-amber-600">
+                                    {{ app()->getLocale() === 'ar' ? '💰 إرسال تذكير بالسداد للجمعية' : '💰 Send payment reminder to charity' }}
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('invoices.send-to-party', $invoice) }}"
+                                class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700">
+                                {{ app()->getLocale() === 'ar' ? '✉️ إرسال عرض السعر / الفاتورة للجمعية (إدخال البريد)' : '✉️ Send price offer / invoice to charity (enter email)' }}
+                            </a>
+                        @endif
+                    @endif
+
+                    {{-- Record Payment button for Cash/Partially Paid (المحصل/الاستقبال: payments.create) --}}
+                    @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
+                        <button type="button" onclick="openPaymentModal()"
+                            class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
+                            💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
+                        </button>
+                    @endif
+
+                    {{-- زرار إشعار الجمعية باكتمال الخدمات — يظهر فقط لمرضى الجمعية بعد تنفيذ كل الخدمات --}}
+                    @if (
+                        ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
+                            $invoice->isFullyCompleted() &&
+                            $invoice->patient?->charityEntity?->email)
+                        @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
+                            <form method="POST" action="{{ route('invoices.notify-charity-completed', $invoice) }}"
+                                onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل تريد إرسال إيميل للجمعية بأن جميع الخدمات قد نُفِّذت؟' : 'Send completion email to charity?' }}')">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center gap-2 bg-teal-600  px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 shadow-md ring-2 ring-teal-300 animate-pulse">
+                                    ✉️
+                                    {{ app()->getLocale() === 'ar' ? 'إشعار الجمعية باكتمال الخدمات' : 'Notify charity of completion' }}
+                                </button>
+                            </form>
+                        @endif
+                    @elseif(
+                        ($invoice->payment_type === 'charity' || $invoice->patient?->payment_type === 'charity') &&
+                            !$invoice->isFullyCompleted())
+                        <span
+                            class="inline-flex items-center gap-2 bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-2 rounded-lg font-semibold text-sm">
+                            ⏳
+                            {{ app()->getLocale() === 'ar' ? 'في انتظار تنفيذ جميع الخدمات' : 'Waiting for all services to be executed' }}
+                            ({{ $invoice->items->where('status', 'completed')->count() }}/{{ $invoice->items->count() }})
+                        </span>
                     @endif
                 </div>
-            @endif
-        </div>
+
+                {{-- Action Flags --}}
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-blue-200 pt-3">
+                    @if ($invoice->sent_to_charity_mail_at)
+                        <span
+                            class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded border border-emerald-300">
+                            📧 {{ app()->getLocale() === 'ar' ? 'تم إرسال ميل للجمعية' : 'Mail sent to charity' }}
+                            ({{ $invoice->sent_to_charity_mail_at->format('Y-m-d H:i') }})
+                        </span>
+                    @endif
+                    @if ($invoice->printed_commitment_at)
+                        <span
+                            class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-300">
+                            📄 {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر التعهد' : 'Commitment form printed' }}
+                            ({{ $invoice->printed_commitment_at->format('Y-m-d H:i') }})
+                        </span>
+                    @endif
+                    @if ($invoice->printed_non_commitment_at)
+                        <span
+                            class="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-xs font-bold px-2 py-1 rounded border border-slate-300">
+                            📄
+                            {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر إقرار بعدم التوقيع' : 'Non-commitment form printed' }}
+                            ({{ $invoice->printed_non_commitment_at->format('Y-m-d H:i') }})
+                        </span>
+                    @endif
+                </div>
+
+                {{-- Communication History (Charity/Insurance Responses) --}}
+                @if ($invoice->partySends->isNotEmpty())
+                    <div class="mt-4 border-t border-blue-200 pt-3">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">
+                            {{ app()->getLocale() === 'ar' ? 'سجل التواصل والاستجابة' : 'Communication & Response History' }}
+                        </h4>
+                        <div class="space-y-2">
+                            @foreach ($invoice->partySends->sortByDesc('created_at') as $send)
+                                <div
+                                    class="p-2 rounded border {{ $send->response_action === 'confirmed' ? 'bg-emerald-50 border-emerald-200' : ($send->response_action === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200') }}">
+                                    <div class="flex justify-between items-start">
+                                        <span
+                                            class="text-xs font-bold {{ $send->response_action === 'confirmed' ? 'text-emerald-800' : ($send->response_action === 'rejected' ? 'text-red-800' : 'text-slate-600') }}">
+                                            {{ $send->recipient_name }} ({{ $send->recipient_email }})
+                                        </span>
+                                        <span
+                                            class="text-[10px] text-slate-500">{{ $send->sent_at?->format('Y-m-d H:i') }}</span>
+                                    </div>
+
+                                    @if ($send->response_action)
+                                        <div class="mt-1 text-xs">
+                                            <span
+                                                class="font-bold {{ $send->response_action === 'confirmed' ? 'text-emerald-700' : 'text-red-700' }}">
+                                                {{ $send->response_action === 'confirmed' ? (app()->getLocale() === 'ar' ? '✅ تمت الموافقة' : '✅ Approved') : (app()->getLocale() === 'ar' ? '❌ تم الرفض' : '❌ Rejected') }}
+                                            </span>
+                                            <p class="text-slate-700 mt-1 italic">"{{ $send->response_text }}"</p>
+                                            <span
+                                                class="text-[10px] text-slate-500 block mt-1">{{ $send->response_at?->format('Y-m-d H:i') }}</span>
+                                        </div>
+                                    @else
+                                        <span
+                                            class="text-[10px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded font-bold mt-1 inline-block">
+                                            {{ app()->getLocale() === 'ar' ? '⏳ بانتظار الرد' : '⏳ Awaiting response' }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Link to latest Approval Document if exists --}}
+                        @if ($invoice->patient?->hasMedia('charity-approvals'))
+                            <div class="mt-3">
+                                <h5 class="text-xs font-bold text-slate-700 mb-1">
+                                    {{ app()->getLocale() === 'ar' ? '📎 مستندات الاعتماد المرفوعة:' : '📎 Uploaded Approval Documents:' }}
+                                </h5>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach ($invoice->patient->getMedia('charity-approvals') as $media)
+                                        <a href="{{ $media->getUrl() }}" target="_blank"
+                                            class="inline-flex items-center gap-1 bg-emerald-600  text-[10px] px-2 py-1 rounded hover:bg-emerald-700 font-bold">
+                                            📄 {{ $media->file_name }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($invoice->hasCharityClaim())
+                            <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                <a href="{{ route('charity-claims.show', $invoice->charityClaim()) }}"
+                                    class="text-blue-700 font-bold text-xs hover:underline flex items-center gap-1">
+                                    📋
+                                    {{ app()->getLocale() === 'ar' ? 'عرض تفاصيل مطالبة الجمعية' : 'View Charity Claim Details' }}
+                                    →
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            </div>
         @endif
     </div>
 
@@ -295,7 +301,8 @@
                         <span
                             class="text-slate-600 text-sm font-semibold">{{ app()->getLocale() === 'ar' ? 'أنشئت بواسطة:' : 'Created by:' }}</span>
                         <p class="text-lg font-medium text-slate-900">
-                            {{ $invoice->visit->registeredBy->name ?? ($invoice->visit->registeredBy->username ?? '—') }}</p>
+                            {{ $invoice->visit->registeredBy->name ?? ($invoice->visit->registeredBy->username ?? '—') }}
+                        </p>
                     </div>
                 @endif
             </div>
@@ -324,7 +331,8 @@
                     @if ($invoice->patient->payment_type === 'insurance' && $invoice->patient->insuranceCompany)
                         <p><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'شركة التأمين:' : 'Insurance company:' }}</span>
-                            {{ app()->getLocale() === 'ar' ? ($invoice->patient->insuranceCompany->name_ar ?? $invoice->patient->insuranceCompany->name) : $invoice->patient->insuranceCompany->name }}</p>
+                            {{ app()->getLocale() === 'ar' ? $invoice->patient->insuranceCompany->name_ar ?? $invoice->patient->insuranceCompany->name : $invoice->patient->insuranceCompany->name }}
+                        </p>
                     @endif
                     @if ($invoice->patient->payment_type === 'charity' && $invoice->patient->charityEntity)
                         <p><span
@@ -378,7 +386,7 @@
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
                             @endif
-                            @if(\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
+                            @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'التنفيذ' : 'Execution' }}</th>
                             @endif
@@ -388,7 +396,7 @@
                         @forelse($invoice->items as $item)
                             <tr class="border-b border-slate-300 {{ $item->isCompleted() ? 'bg-emerald-50/40' : '' }}">
                                 <td class="border border-slate-300 px-2 py-2 text-center text-sm">
-                                    {{ $item->service_id ? ($item->service?->code ?? '—') : '—' }}</td>
+                                    {{ $item->service_id ? $item->service?->code ?? '—' : '—' }}</td>
                                 <td class="border border-slate-300 px-2 py-2 text-sm">
                                     @if ($item->service_id)
                                         {{ app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '—' }}
@@ -425,7 +433,7 @@
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">
                                         @currencyInvoice($item->patient_amount)</td>
                                 @endif
-                                @if(\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
+                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
                                         <div class="flex flex-col items-center gap-1">
                                             @if ($item->isCompleted())
@@ -448,9 +456,10 @@
                                                     ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
                                                 </button>
                                             @else
-                                                <span class="text-slate-500 text-xs">{{ app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee' }}</span>
+                                                <span
+                                                    class="text-slate-500 text-xs">{{ app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee' }}</span>
                                             @endif
-                                            @if($item->service_id && $invoice->visit_id && (auth()->user()->can('invoices.create')))
+                                            @if ($item->service_id && $invoice->visit_id && auth()->user()->can('invoices.create'))
                                                 <a href="{{ route('invoices.items.treatment-eligibility-print', [$invoice, $item]) }}"
                                                     target="_blank"
                                                     title="{{ app()->getLocale() === 'ar' ? 'طباعة أحقية علاج لهذه الخدمة فقط (بدون إنشاء فاتورة)' : 'Print treatment eligibility for this service only (no invoice created)' }}"
@@ -553,7 +562,7 @@
                                     <td class="px-3 py-2 text-center">
                                         <span
                                             class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ in_array($receipt?->payment_method, ['card', 'bank_transfer', 'mixed']) ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                                            {{ $receipt?->split_methods_summary ?? $receipt?->payment_method_label ?? ($payment->payment_type ?? '—') }}
+                                            {{ $receipt?->split_methods_summary ?? ($receipt?->payment_method_label ?? ($payment->payment_type ?? '—')) }}
                                         </span>
                                     </td>
                                     <td class="px-3 py-2 text-center">
@@ -626,17 +635,20 @@
                 </div>
                 <div class="flex justify-between text-sm pt-2 border-t border-slate-300">
                     <span
-                        class="font-semibold text-slate-700">{{ ($hasInsuranceCoverage || $isInsuranceOrCharity) ? (app()->getLocale() === 'ar' ? 'المتبقي للمريض (حصته):' : 'Remaining (patient share):') : (app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:') }}</span>
+                        class="font-semibold text-slate-700">{{ $hasInsuranceCoverage || $isInsuranceOrCharity ? (app()->getLocale() === 'ar' ? 'المتبقي للمريض (حصته):' : 'Remaining (patient share):') : (app()->getLocale() === 'ar' ? 'المتبقي:' : 'Remaining:') }}</span>
                     <span class="font-bold text-slate-900">@currencyInvoice($effectiveRemaining)</span>
                 </div>
                 @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && $totalRemaining != $effectiveRemaining)
                     <div class="flex justify-between text-sm">
-                        <span class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة ' . $coveredPartyLabel . '):' : 'Total remaining (debt — until ' . strtolower($coveredPartyLabel) . ' claim paid):' }}</span>
+                        <span
+                            class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة ' . $coveredPartyLabel . '):' : 'Total remaining (debt — until ' . strtolower($coveredPartyLabel) . ' claim paid):' }}</span>
                         <span class="font-bold text-slate-800">@currencyInvoice($totalRemaining)</span>
                     </div>
                 @endif
                 @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && (float) $invoice->paid_amount == 0)
-                    <p class="text-xs text-amber-700 mt-2">{{ app()->getLocale() === 'ar' ? 'لم يُدفع شيء — الإجمالي المستحق = حصة المريض كاملة.' : 'Nothing paid — total due = full patient share.' }}</p>
+                    <p class="text-xs text-amber-700 mt-2">
+                        {{ app()->getLocale() === 'ar' ? 'لم يُدفع شيء — الإجمالي المستحق = حصة المريض كاملة.' : 'Nothing paid — total due = full patient share.' }}
+                    </p>
                 @endif
             </div>
             @if ($printMedia->isNotEmpty())
@@ -678,39 +690,39 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {{-- Upload Form --}}
                 @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
-                <div>
-                    <h4 class="text-sm font-bold text-slate-700 mb-4">
-                        {{ app()->getLocale() === 'ar' ? 'رفع مستند جديد:' : 'Upload new document:' }}</h4>
-                    <form action="{{ route('invoices.upload-signed-document', $invoice) }}" method="POST"
-                        enctype="multipart/form-data" class="space-y-4">
-                        @csrf
-                        <div>
-                            <label
-                                class="block text-xs font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'نوع المستند:' : 'Document Type:' }}</label>
-                            <select name="document_type" required
-                                class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500">
-                                <option value="signed_commitment">
-                                    {{ app()->getLocale() === 'ar' ? 'تعهد موقع' : 'Signed Commitment' }}</option>
-                                <option value="signed_non_commitment">
-                                    {{ app()->getLocale() === 'ar' ? 'إقرار عدم توقيع موقع' : 'Signed Non-commitment' }}
-                                </option>
-                                <option value="signed_other">
-                                    {{ app()->getLocale() === 'ar' ? 'مستند آخر موقع' : 'Other Signed Document' }}
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <label
-                                class="block text-xs  font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الملف (PDF أو صورة):' : 'File (PDF or Image):' }}</label>
-                            <input type="file" name="signed_file" required accept=".pdf,image/*"
-                                class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                        </div>
-                        <button type="submit"
-                            class="w-full m-2 bg-emerald-600 text-slate-50 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow transition-colors">
-                            {{ app()->getLocale() === 'ar' ? '⬆️ رفع المستند' : '⬆️ Upload Document' }}
-                        </button>
-                    </form>
-                </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-700 mb-4">
+                            {{ app()->getLocale() === 'ar' ? 'رفع مستند جديد:' : 'Upload new document:' }}</h4>
+                        <form action="{{ route('invoices.upload-signed-document', $invoice) }}" method="POST"
+                            enctype="multipart/form-data" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'نوع المستند:' : 'Document Type:' }}</label>
+                                <select name="document_type" required
+                                    class="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500">
+                                    <option value="signed_commitment">
+                                        {{ app()->getLocale() === 'ar' ? 'تعهد موقع' : 'Signed Commitment' }}</option>
+                                    <option value="signed_non_commitment">
+                                        {{ app()->getLocale() === 'ar' ? 'إقرار عدم توقيع موقع' : 'Signed Non-commitment' }}
+                                    </option>
+                                    <option value="signed_other">
+                                        {{ app()->getLocale() === 'ar' ? 'مستند آخر موقع' : 'Other Signed Document' }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs  font-bold text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'الملف (PDF أو صورة):' : 'File (PDF or Image):' }}</label>
+                                <input type="file" name="signed_file" required accept=".pdf,image/*"
+                                    class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                            </div>
+                            <button type="submit"
+                                class="w-full m-2 bg-emerald-600 text-slate-50 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow transition-colors">
+                                {{ app()->getLocale() === 'ar' ? '⬆️ رفع المستند' : '⬆️ Upload Document' }}
+                            </button>
+                        </form>
+                    </div>
                 @endif
 
                 {{-- List of Documents --}}
@@ -755,16 +767,16 @@
                                     </div>
                                 </div>
                                 @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
-                                <form action="{{ route('invoices.delete-signed-document', [$invoice, $media]) }}"
-                                    method="POST"
-                                    onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete?' }}')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        🗑️
-                                    </button>
-                                </form>
+                                    <form action="{{ route('invoices.delete-signed-document', [$invoice, $media]) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete?' }}')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            🗑️
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         @endforeach
@@ -784,7 +796,8 @@
     </div>
 
     {{-- Payment Recording Modal --}}
-    <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+    <div id="payment-modal"
+        class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 my-4">
             <h3 class="text-xl font-bold text-slate-800 mb-4">
                 {{ app()->getLocale() === 'ar' ? '💰 تسجيل دفعة ومستندات التحصيل' : '💰 Record Payment & Collection Documents' }}
@@ -841,29 +854,43 @@
                         <table class="w-full text-sm" id="split-payment-table">
                             <thead>
                                 <tr class="bg-slate-100 text-slate-700">
-                                    <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'الطريقة' : 'Method' }}</th>
-                                    <th class="p-2 text-start font-bold w-32">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
-                                    <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'مرجع' : 'Ref.' }}</th>
+                                    <th class="p-2 text-start font-bold">
+                                        {{ app()->getLocale() === 'ar' ? 'الطريقة' : 'Method' }}</th>
+                                    <th class="p-2 text-start font-bold w-32">
+                                        {{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                    <th class="p-2 text-start font-bold">
+                                        {{ app()->getLocale() === 'ar' ? 'مرجع' : 'Ref.' }}</th>
                                     <th class="p-2 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody id="split-rows-body">
                                 <tr data-split-row>
                                     <td class="p-2 align-top">
-                                        <select name="split_lines[0][payment_method]" class="split-method w-full rounded border border-slate-300 px-2 py-1.5 font-medium">
-                                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش' : 'Cash' }}</option>
-                                            <option value="card">{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
-                                            <option value="bank_transfer">{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank transfer' }}</option>
-                                            <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
-                                            <option value="loyalty_points">{{ app()->getLocale() === 'ar' ? 'نقاط بيع' : 'Loyalty / sale points' }}</option>
+                                        <select name="split_lines[0][payment_method]"
+                                            class="split-method w-full rounded border border-slate-300 px-2 py-1.5 font-medium">
+                                            <option value="cash">{{ app()->getLocale() === 'ar' ? 'كاش' : 'Cash' }}
+                                            </option>
+                                            <option value="card">
+                                                {{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
+                                            <option value="bank_transfer">
+                                                {{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank transfer' }}
+                                            </option>
+                                            <option value="cheque">{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}
+                                            </option>
+                                            <option value="loyalty_points">
+                                                {{ app()->getLocale() === 'ar' ? 'نقاط بيع' : 'Loyalty / sale points' }}
+                                            </option>
                                             @if ($invoice->patient && in_array($invoice->patient->payment_type, ['insurance', 'charity']))
-                                                <option value="insurance">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
-                                                <option value="charity">{{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
+                                                <option value="insurance">
+                                                    {{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
+                                                <option value="charity">
+                                                    {{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
                                             @endif
                                         </select>
                                     </td>
                                     <td class="p-2 align-top">
-                                        <input type="number" name="split_lines[0][amount]" step="0.01" min="0.01" required
+                                        <input type="number" name="split_lines[0][amount]" step="0.01"
+                                            min="0.01" required
                                             class="split-amount w-full rounded border border-slate-300 px-2 py-1.5 font-bold text-green-800">
                                     </td>
                                     <td class="p-2 align-top">
@@ -871,13 +898,16 @@
                                             class="w-full rounded border border-slate-300 px-2 py-1.5 text-xs">
                                     </td>
                                     <td class="p-2 align-top text-center">
-                                        <button type="button" class="btn-remove-split text-red-600 font-bold text-lg leading-none hidden" title="{{ app()->getLocale() === 'ar' ? 'حذف السطر' : 'Remove' }}">×</button>
+                                        <button type="button"
+                                            class="btn-remove-split text-red-600 font-bold text-lg leading-none hidden"
+                                            title="{{ app()->getLocale() === 'ar' ? 'حذف السطر' : 'Remove' }}">×</button>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <button type="button" id="btn-add-split-row" class="mt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+                    <button type="button" id="btn-add-split-row"
+                        class="mt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
                         + {{ app()->getLocale() === 'ar' ? 'إضافة طريقة دفع' : 'Add payment method' }}
                     </button>
                     <p id="split-sum-warning" class="mt-2 text-xs text-red-600 hidden"></p>
@@ -889,14 +919,21 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">
-                            {{ app()->getLocale() === 'ar' ? 'إجمالي هذه الدفعة (حصة المريض فقط)' : 'This payment total (patient share only)' }} *
+                            {{ app()->getLocale() === 'ar' ? 'إجمالي هذه الدفعة (حصة المريض فقط)' : 'This payment total (patient share only)' }}
+                            *
                         </label>
                         @if ($hasInsuranceCoverage || $isInsuranceOrCharity)
-                            <p class="text-xs text-amber-700 mb-1">{{ app()->getLocale() === 'ar' ? 'المبلغ المستحق من المريض فقط — لا يدخل مبلغ شركة التأمين/الجمعية هنا.' : 'Amount due from patient only — do not enter insurance/charity portion here.' }}</p>
-                            <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'يمكنك تسجيل دفعة جزئية الآن (مثلاً جزء كاش وجزء شبكة) والباقي يبقى على الفاتورة حتى يُسدد لاحقاً.' : 'You can record a partial payment now (e.g. part cash, part POS). The rest stays on the invoice until settled later.' }}</p>
+                            <p class="text-xs text-amber-700 mb-1">
+                                {{ app()->getLocale() === 'ar' ? 'المبلغ المستحق من المريض فقط — لا يدخل مبلغ شركة التأمين/الجمعية هنا.' : 'Amount due from patient only — do not enter insurance/charity portion here.' }}
+                            </p>
+                            <p class="text-xs text-slate-600 mb-1">
+                                {{ app()->getLocale() === 'ar' ? 'يمكنك تسجيل دفعة جزئية الآن (مثلاً جزء كاش وجزء شبكة) والباقي يبقى على الفاتورة حتى يُسدد لاحقاً.' : 'You can record a partial payment now (e.g. part cash, part POS). The rest stays on the invoice until settled later.' }}
+                            </p>
                         @endif
                         @if (!$hasInsuranceCoverage && !$isInsuranceOrCharity)
-                            <p class="text-xs text-slate-600 mb-1">{{ app()->getLocale() === 'ar' ? 'يمكنك دفع جزء من المبلغ الآن؛ مجموع أسطر طرق الدفع يجب أن يساوي «إجمالي هذه الدفعة» (يمكن أن يكون أقل من إجمالي الفاتورة).' : 'You can pay part of the amount now; the sum of payment lines must equal this payment total (it may be less than the full invoice).' }}</p>
+                            <p class="text-xs text-slate-600 mb-1">
+                                {{ app()->getLocale() === 'ar' ? 'يمكنك دفع جزء من المبلغ الآن؛ مجموع أسطر طرق الدفع يجب أن يساوي «إجمالي هذه الدفعة» (يمكن أن يكون أقل من إجمالي الفاتورة).' : 'You can pay part of the amount now; the sum of payment lines must equal this payment total (it may be less than the full invoice).' }}
+                            </p>
                         @endif
                         <input type="number" name="amount" id="payment-total-amount" step="0.01" min="0.01"
                             max="{{ $effectiveRemaining }}" value="{{ $effectiveRemaining }}" required
@@ -912,7 +949,8 @@
                         <label class="block text-sm font-semibold text-rose-700 mb-1">
                             {{ app()->getLocale() === 'ar' ? 'رقم الترقيم من الوزارة (يُطبع على إيصال التحصيل)' : 'Ministry receipt number (printed on q-1)' }}
                         </label>
-                        <input type="text" name="ministry_receipt_number" value="{{ old('ministry_receipt_number') }}"
+                        <input type="text" name="ministry_receipt_number"
+                            value="{{ old('ministry_receipt_number') }}"
                             placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: 5267859' : 'e.g. 5267859' }}"
                             class="w-full rounded-lg border-2 border-rose-200 px-3 py-2 focus:ring-2 focus:ring-rose-500">
                     </div>
@@ -953,8 +991,7 @@
                 </div>
 
                 <div class="flex gap-3">
-                    <button type="submit" id="submit-payment-btn"
-                    style="background-color: #77786c;"
+                    <button type="submit" id="submit-payment-btn" style="background-color: #77786c;"
                         class="flex-1 bg-green-600  px-4 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg flex items-center justify-center gap-2">
                         ✅ {{ app()->getLocale() === 'ar' ? 'حفظ وإرسال للمحاسب' : 'Save & Send to Accountant' }}
                     </button>
@@ -998,7 +1035,8 @@
                 row.querySelectorAll('select, input').forEach(function(el) {
                     const n = el.getAttribute('name');
                     if (n && n.indexOf('split_lines[') === 0) {
-                        el.setAttribute('name', n.replace(/split_lines\[\d+]/, 'split_lines[' + index + ']'));
+                        el.setAttribute('name', n.replace(/split_lines\[\d+]/, 'split_lines[' + index +
+                            ']'));
                     }
                 });
                 const rm = row.querySelector('.btn-remove-split');
@@ -1069,17 +1107,20 @@
             const isAr = isPaymentLangAr();
 
             if (sum > maxR + 0.02) {
-                warn.textContent = isAr
-                    ? ('مجموع أسطر الدفع (' + sum.toFixed(2) + ') يتجاوز المتبقي على حصة المريض (' + maxR.toFixed(2) + '). خفّض المبالغ في الأسطر.')
-                    : ('Sum of payment lines (' + sum.toFixed(2) + ') exceeds patient share remaining (' + maxR.toFixed(2) + '). Lower the amounts.');
+                warn.textContent = isAr ?
+                    ('مجموع أسطر الدفع (' + sum.toFixed(2) + ') يتجاوز المتبقي على حصة المريض (' + maxR.toFixed(2) +
+                        '). خفّض المبالغ في الأسطر.') :
+                    ('Sum of payment lines (' + sum.toFixed(2) + ') exceeds patient share remaining (' + maxR.toFixed(2) +
+                        '). Lower the amounts.');
                 warn.classList.remove('hidden');
                 refreshPaymentSubmitState();
                 return false;
             }
             if (Math.abs(sum - target) > 0.02) {
-                warn.textContent = isAr
-                    ? ('مجموع المبالغ في الأسطر (' + sum.toFixed(2) + ') يجب أن يساوي «إجمالي هذه الدفعة» (' + target.toFixed(2) + '). عدّل الأسطر أو الإجمالي — أو اكتب المبلغ في السطر فيُحدَّث الإجمالي تلقائياً.')
-                    : ('Line amounts (' + sum.toFixed(2) + ') must equal this payment total (' + target.toFixed(2) + ').');
+                warn.textContent = isAr ?
+                    ('مجموع المبالغ في الأسطر (' + sum.toFixed(2) + ') يجب أن يساوي «إجمالي هذه الدفعة» (' + target.toFixed(
+                        2) + '). عدّل الأسطر أو الإجمالي — أو اكتب المبلغ في السطر فيُحدَّث الإجمالي تلقائياً.') :
+                    ('Line amounts (' + sum.toFixed(2) + ') must equal this payment total (' + target.toFixed(2) + ').');
                 warn.classList.remove('hidden');
                 refreshPaymentSubmitState();
                 return false;
@@ -1153,9 +1194,11 @@
                     const t = parseFloat(totalInput && totalInput.value ? totalInput.value : 0);
                     if (t > maxR + 0.02) {
                         e.preventDefault();
-                        alert(document.documentElement.lang === 'ar'
-                            ? 'مبلغ الدفعة (' + t.toFixed(2) + ') يتجاوز المتبقي (' + maxR.toFixed(2) + ').'
-                            : 'Payment amount (' + t.toFixed(2) + ') exceeds remaining (' + maxR.toFixed(2) + ').');
+                        alert(document.documentElement.lang === 'ar' ?
+                            'مبلغ الدفعة (' + t.toFixed(2) + ') يتجاوز المتبقي (' + maxR.toFixed(2) +
+                            ').' :
+                            'Payment amount (' + t.toFixed(2) + ') exceeds remaining (' + maxR.toFixed(
+                                2) + ').');
                     }
                 });
             }
@@ -1184,9 +1227,11 @@
                 el.textContent = '';
                 return;
             }
-            el.textContent = isAr
-                ? ('المتبقي على المريض بعد هذه الدفعة: ' + after.toFixed(2) + ' ر.س (من أصل متبقي قبل الدفعة: ' + maxR.toFixed(2) + ')')
-                : ('Patient share remaining after this payment: ' + after.toFixed(2) + ' SAR (was ' + maxR.toFixed(2) + ' before this payment).');
+            el.textContent = isAr ?
+                ('المتبقي على المريض بعد هذه الدفعة: ' + after.toFixed(2) + ' ر.س (من أصل متبقي قبل الدفعة: ' + maxR
+                    .toFixed(2) + ')') :
+                ('Patient share remaining after this payment: ' + after.toFixed(2) + ' SAR (was ' + maxR.toFixed(2) +
+                    ' before this payment).');
         }
 
         function updateCalculatedTotal() {
@@ -1202,11 +1247,13 @@
             const hint = document.getElementById('payment-items-sum-hint');
             if (hint) {
                 const isAr = document.documentElement.lang === 'ar';
-                hint.textContent = sumChecked > 0
-                    ? (isAr
-                        ? ('مجموع البنود المحددة (للمرجعية على الإيصال): ' + sumChecked.toFixed(2) + ' — الحد الأقصى للدفعة الحالية: ' + maxRemaining.toFixed(2))
-                        : ('Selected lines total (for receipt): ' + sumChecked.toFixed(2) + ' — max you can pay this time: ' + maxRemaining.toFixed(2)))
-                    : '';
+                hint.textContent = sumChecked > 0 ?
+                    (isAr ?
+                        ('مجموع البنود المحددة (للمرجعية على الإيصال): ' + sumChecked.toFixed(2) +
+                            ' — الحد الأقصى للدفعة الحالية: ' + maxRemaining.toFixed(2)) :
+                        ('Selected lines total (for receipt): ' + sumChecked.toFixed(2) + ' — max you can pay this time: ' +
+                            maxRemaining.toFixed(2))) :
+                    '';
             }
 
             const totalInput = document.getElementById('payment-total-amount');

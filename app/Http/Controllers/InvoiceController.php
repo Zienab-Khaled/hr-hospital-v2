@@ -787,14 +787,15 @@ class InvoiceController extends Controller
         $patientIdentity = $patient->identity_value ?: $patient->file_number ?? '—';
         $defaultIntro = 'تجدون أدناه عرض سعر للخدمات العلاجية المطلوبة للمريضة / ' . $patientName . ' رقم الجواز (' . $patientIdentity . ') ونفيد سعادتكم بانه تم ارفاق التقرير الطبي وفي حال السداد نأمل تحويل المبلغ على الحساب في ' . $bankName . ' (' . $accountNumber . ') رقم الأيبان ' . $ibanNumber;
         $defaultSubject = (app()->getLocale() === 'ar' ? 'عرض سعر / فاتورة ' : 'Price offer / Invoice ') . $invoice->invoice_number;
+        $defaultSenderName = auth()->user()?->name ?? Setting::get('department_manager_name', '');
 
-        return view('invoices.charity-email-compose', compact('invoice', 'defaultSubject', 'defaultIntro'));
+        return view('invoices.charity-email-compose', compact('invoice', 'defaultSubject', 'defaultIntro', 'defaultSenderName'));
     }
 
     /**
      * معاينة محتوى الإيميل الذي سيُرسل للجمعية قبل الإرسال (نفس شكل الإيميل الفعلي).
      */
-    public function previewCharityEmail(Invoice $invoice)
+    public function previewCharityEmail(Request $request, Invoice $invoice)
     {
         $this->authorize('invoices.view');
         $invoice->load(['patient.charityEntity', 'items.service']);
@@ -830,8 +831,21 @@ class InvoiceController extends Controller
 
         $confirmUrl = '#';
         $rejectUrl = '#';
+        $showResponseButtons = false;
+        $customIntro = $request->input('custom_intro');
+        $treatmentDuration = $request->input('treatment_duration');
+        $senderName = $request->input('sender_name', auth()->user()?->name ?? Setting::get('department_manager_name', ''));
 
-        return response()->view('emails.invoice-to-party', compact('partySend', 'settings', 'confirmUrl', 'rejectUrl'))
+        return response()->view('emails.invoice-to-party', compact(
+            'partySend',
+            'settings',
+            'confirmUrl',
+            'rejectUrl',
+            'showResponseButtons',
+            'customIntro',
+            'treatmentDuration',
+            'senderName'
+        ))
             ->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
@@ -857,6 +871,7 @@ class InvoiceController extends Controller
             'subject' => 'nullable|string|max:255',
             'custom_intro' => 'nullable|string|max:4000',
             'treatment_duration' => 'nullable|string|max:500',
+            'sender_name' => 'required|string|max:255',
             'attachments.*' => 'nullable|file|max:20480',
         ]);
 
@@ -908,11 +923,15 @@ class InvoiceController extends Controller
             }
 
             $attachmentPaths = $invoice->getAttachmentPathsForPdf();
+            $senderName = $request->filled('sender_name')
+                ? $request->input('sender_name')
+                : (auth()->user()?->name ?? Setting::get('department_manager_name', ''));
             $html = view('invoices.price-offer-pdf', [
                 'invoice' => $invoice,
                 'recipientName' => $recipientName,
                 'settings' => $settings,
                 'attachmentPaths' => $attachmentPaths,
+                'senderName' => $senderName,
             ])->render();
             $mpdf = new Mpdf([
                 'mode' => 'utf-8',
@@ -938,7 +957,8 @@ class InvoiceController extends Controller
                 $customSubject,
                 $customIntro,
                 $treatmentDuration,
-                $extraPaths
+                $extraPaths,
+                $senderName
             ));
 
             $invoice->update(['status' => 'sent_to_charity']);

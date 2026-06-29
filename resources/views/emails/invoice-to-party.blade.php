@@ -46,6 +46,12 @@
     $ibanNumber = $settings['iban_number'] ?? '';
 @endphp
 <div class="doc">
+    @if (!($showResponseButtons ?? false))
+        <div style="background:#eff6ff;border:2px solid #3b82f6;padding:12px;margin-bottom:16px;border-radius:8px;text-align:center;font-size:13px;">
+            <strong>{{ app()->getLocale() === 'ar' ? 'معاينة للموظفين' : 'Staff preview' }}</strong>
+            — {{ app()->getLocale() === 'ar' ? 'أزرار «الموافقة / الرفض» تظهر للجمعية فقط داخل الإيميل المرسل.' : 'Confirm/Reject buttons appear for the charity only in the sent email.' }}
+        </div>
+    @endif
     {{-- رأس رسمي: يسار = الجهة، يمين = الشعار --}}
     <div class="header-wrap">
         <div class="header-right">
@@ -145,16 +151,24 @@
         @if($footerHospital)
             <div class="hospital">{{ $footerHospital }}</div>
         @endif
-        <div class="name">{{ $settings['department_manager_name'] ?? $settings['manager_name'] ?? '' }}</div>
+        @php
+            $displaySenderName = trim((string) ($senderName ?? ''));
+            if ($displaySenderName === '') {
+                $displaySenderName = $settings['department_manager_name'] ?? $settings['manager_name'] ?? '';
+            }
+        @endphp
+        <div class="name">{{ $displaySenderName }}</div>
     </div>
 
-    {{-- أزرار الرد (تأكيد/رفض) للعمل الفعلي للإيميل --}}
+    @if ($showResponseButtons ?? false)
+    {{-- أزرار الرد (تأكيد/رفض) — للجمعية في الإيميل المرسل فقط --}}
     <div class="action-bar">
         <p style="font-weight: bold; margin-bottom: 10px;">{{ app()->getLocale() === 'ar' ? 'للرد على هذه المطالبة:' : 'To respond to this claim:' }}</p>
         <a href="{{ $confirmUrl }}" class="btn btn-confirm">{{ app()->getLocale() === 'ar' ? 'أؤكد الالتزام بالدفع' : 'Confirm payment commitment' }}</a>
         <a href="{{ $rejectUrl }}" class="btn btn-reject">{{ app()->getLocale() === 'ar' ? 'رفض' : 'Reject' }}</a>
         <p class="action-note">{{ app()->getLocale() === 'ar' ? 'في كلا الحالتين سيُطلب منكم إدخال موافقة خطية أو سبب الرفض.' : 'In both cases you will be asked to provide written approval or rejection reason.' }}</p>
     </div>
+    @endif
 </div>
 </body>
 </html>
