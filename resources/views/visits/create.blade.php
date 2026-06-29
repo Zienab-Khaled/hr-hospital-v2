@@ -9,6 +9,10 @@
         $isTransferred = $visitForPrint && $visitForPrint->transferred_department_id;
         $showEligibilitySection = !$isTransferred && ($visitForPrint ?? null) && isset($departments);
         $patientIsInsurance = $patient && $patient->payment_type === 'insurance';
+        $patientIsCharity = $patient && $patient->payment_type === 'charity';
+        $patientHasPartyCoverage = $patientIsInsurance || $patientIsCharity;
+        $patientPartyLabelAr = $patientIsCharity ? 'الجمعية' : 'التأمين';
+        $patientPartyLabelEn = $patientIsCharity ? 'Charity' : 'Insurance';
         $patientIsTreatmentEligibility = $patient && $patient->payment_type === 'treatment_eligibility';
     @endphp
     <div class="max-w-6xl mx-auto">
@@ -377,7 +381,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        @if ($patientIsInsurance)
+                                        @if ($patientHasPartyCoverage)
                                             <select name="insurance_coverage_type" class="{{ $inputClass }} w-32 text-sm">
                                                 <option value="">{{ app()->getLocale() === 'ar' ? 'تغطية' : 'Coverage' }}</option>
                                                 <option value="percentage">{{ app()->getLocale() === 'ar' ? 'نسبة %' : '%' }}</option>
@@ -419,7 +423,7 @@
                                     <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-16">{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
                                     <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'السعر' : 'Price' }}</th>
                                     <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-24">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
-                                    @if ($patientIsInsurance)
+                                    @if ($patientHasPartyCoverage)
                                         <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
                                         <th class="border border-slate-300 px-2 py-2 text-center text-xs font-bold text-slate-800 w-28">{{ app()->getLocale() === 'ar' ? 'قيمة التغطية' : 'Value' }}</th>
                                     @endif
@@ -429,17 +433,17 @@
                             <tbody id="eligibility_services_tbody"></tbody>
                             <tfoot>
                                 <tr class="bg-slate-50 font-bold text-slate-800">
-                                    <td colspan="{{ $patientIsInsurance ? 5 : 4 }}" class="border border-slate-300 px-2 py-2 text-end text-sm">{{ app()->getLocale() === 'ar' ? 'المجموع:' : 'Total:' }}</td>
+                                    <td colspan="{{ $patientHasPartyCoverage ? 5 : 4 }}" class="border border-slate-300 px-2 py-2 text-end text-sm">{{ app()->getLocale() === 'ar' ? 'المجموع:' : 'Total:' }}</td>
                                     <td class="border border-slate-300 px-2 py-2 text-center" id="eligibility_grand_total">0.00</td>
-                                    @if ($patientIsInsurance)
+                                    @if ($patientHasPartyCoverage)
                                         <td colspan="3" class="border border-slate-300"></td>
                                     @else
                                         <td class="border border-slate-300"></td>
                                     @endif
                                 </tr>
-                                @if ($patientIsInsurance)
+                                @if ($patientHasPartyCoverage)
                                     <tr class="bg-emerald-50 font-bold text-emerald-900 text-sm">
-                                        <td colspan="5" class="border border-slate-300 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل التأمين:' : 'Insurance:' }}</td>
+                                        <td colspan="5" class="border border-slate-300 px-2 py-2 text-end">{{ app()->getLocale() === 'ar' ? 'تحمّل ' . $patientPartyLabelAr . ':' : $patientPartyLabelEn . ':' }}</td>
                                         <td class="border border-slate-300 px-2 py-2 text-center" id="eligibility_insurance_total">0.00</td>
                                         <td colspan="3" class="border border-slate-300"></td>
                                     </tr>
@@ -615,7 +619,8 @@
     {{-- أحقية العلاج: بحث خدمات حسب القسم، جدول، مجموع، طباعة --}}
     @if ($patient && $showEligibilitySection)
     <script>
-        window.visitPatientIsInsurance = @json($patientIsInsurance);
+        window.visitPatientHasPartyCoverage = @json($patientHasPartyCoverage);
+        window.visitPatientIsCharity = @json($patientIsCharity);
         window.visitPatientIsTreatmentEligibility = @json($patientIsTreatmentEligibility);
         window.lastEligibilityServices = @json($visitForPrint->last_eligibility_services ?? []);
         window.lastPriceInquiryServices = @json($visitForPrint->last_price_inquiry_services ?? []);
@@ -662,8 +667,8 @@
                         qty: qty,
                         unit_price: unitPrice,
                         total: total,
-                        insurance_coverage_type: '',
-                        insurance_coverage_value: 0
+                        insurance_coverage_type: window.visitPatientIsCharity ? 'percentage' : '',
+                        insurance_coverage_value: window.visitPatientIsCharity ? 100 : 0
                     };
                     rows.push(row);
                 }
@@ -694,11 +699,11 @@
             function recalculateTotals() {
                 var grand = 0;
                 var insuranceTotal = 0;
-                var isIns = window.visitPatientIsInsurance;
+                var hasPartyCoverage = window.visitPatientHasPartyCoverage;
 
                 rows.forEach(function(r) {
                     grand += r.total;
-                    if (isIns && r.insurance_coverage_type && r.total > 0) {
+                    if (hasPartyCoverage && r.insurance_coverage_type && r.total > 0) {
                         var val = r.insurance_coverage_value;
                         if (r.insurance_coverage_type === 'percentage') {
                             insuranceTotal += r.total * Math.min(100, Math.max(0, val)) / 100;
@@ -712,7 +717,7 @@
 
                 if (window.visitPatientIsTreatmentEligibility && patientShareEl) {
                     patientShareEl.textContent = '0.00';
-                } else if (isIns && insuranceTotalEl && patientShareEl) {
+                } else if (hasPartyCoverage && insuranceTotalEl && patientShareEl) {
                     var patientShare = Math.max(0, grand - insuranceTotal);
                     insuranceTotalEl.textContent = insuranceTotal.toFixed(2);
                     patientShareEl.textContent = patientShare.toFixed(2);
@@ -721,7 +726,7 @@
 
             function renderRows() {
                 tbody.innerHTML = '';
-                var isIns = window.visitPatientIsInsurance;
+                var hasPartyCoverage = window.visitPatientHasPartyCoverage;
 
                 rows.forEach(function(r, i) {
                     var tr = document.createElement('tr');
@@ -729,7 +734,7 @@
                     var nameDisplay = (document.documentElement.lang === 'ar' && r.name_ar) ? r.name_ar : r.name;
 
                     var insuranceCols = '';
-                    if (isIns) {
+                    if (hasPartyCoverage) {
                         var pctLabel = document.documentElement.lang === 'ar' ? 'نسبة %' : 'Percentage %';
                         var fixedLabel = document.documentElement.lang === 'ar' ? 'قيمة ثابتة' : 'Fixed amount';
                         var selPct = r.insurance_coverage_type === 'percentage' ? 'selected' : '';
@@ -767,7 +772,7 @@
                 tbody.querySelectorAll('input[data-field="unit_price"]').forEach(function(inp) {
                     inp.addEventListener('input', function() { updateRow(parseInt(this.dataset.row, 10), 'unit_price', this.value); });
                 });
-                if (isIns) {
+                if (hasPartyCoverage) {
                     tbody.querySelectorAll('select[data-field="insurance_coverage_type"]').forEach(function(sel) {
                         sel.addEventListener('change', function() { updateRow(parseInt(this.dataset.row, 10), 'insurance_coverage_type', this.value); });
                     });

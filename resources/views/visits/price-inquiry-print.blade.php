@@ -133,7 +133,11 @@
         @if (!empty($services))
             <table>
                 @php
-                    $isInsurance = $visit->patient->payment_type === 'insurance';
+                    $effectivePaymentType = $invoice->payment_type ?? $visit->patient->payment_type ?? '';
+                    $isCharityPatient = $effectivePaymentType === 'charity';
+                    $hasPartyCoverage = in_array($effectivePaymentType, ['insurance', 'charity'], true);
+                    $partyLabelAr = $isCharityPatient ? 'الجمعية' : 'التأمين';
+                    $partyLabelEn = $isCharityPatient ? 'Charity' : 'Insurance';
                 @endphp
                 <thead>
                     <tr>
@@ -143,7 +147,7 @@
                         <th>{{ app()->getLocale() === 'ar' ? 'الكمية' : 'Qty' }}</th>
                         <th>{{ app()->getLocale() === 'ar' ? 'السعر' : 'Price' }}</th>
                         <th>{{ app()->getLocale() === 'ar' ? 'المجموع' : 'Total' }}</th>
-                        @if ($isInsurance)
+                        @if ($hasPartyCoverage)
                             <th>{{ app()->getLocale() === 'ar' ? 'التغطية' : 'Coverage' }}</th>
                         @endif
                     </tr>
@@ -164,7 +168,7 @@
                             $covVal = floatval($s['insurance_coverage_value'] ?? 0);
                             $covered = 0;
 
-                            if ($isInsurance && $covType && $total > 0) {
+                            if ($hasPartyCoverage && $covType && $total > 0) {
                                 if ($covType === 'percentage') {
                                     $covered = $total * min(100, max(0, $covVal)) / 100;
                                 } elseif ($covType === 'fixed') {
@@ -180,7 +184,7 @@
                             <td>{{ $qty }}</td>
                             <td>{{ number_format($price, 2) }}</td>
                             <td>{{ number_format($total, 2) }}</td>
-                            @if ($isInsurance)
+                            @if ($hasPartyCoverage)
                                 <td>
                                     @if ($covType === 'percentage')
                                         {{ $covVal }}%
@@ -194,16 +198,16 @@
                         </tr>
                     @endforeach
                     <tr class="total-row">
-                        <td colspan="{{ $isInsurance ? 5 : 5 }}" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px;">
+                        <td colspan="{{ $hasPartyCoverage ? 5 : 5 }}" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px;">
                             {{ app()->getLocale() === 'ar' ? (isset($printTitle) && $printTitle === 'detailed_invoice' ? 'الإجمالي:' : 'الإجمالي التقديري:') : (isset($printTitle) && $printTitle === 'detailed_invoice' ? 'Total:' : 'Estimated Total:') }}
                         </td>
-                        <td colspan="{{ $isInsurance ? 2 : 1 }}">{{ number_format(isset($invoice) && isset($printTitle) && $printTitle === 'detailed_invoice' ? (float) $invoice->total_amount : $grandTotal, 2) }}</td>
+                        <td colspan="{{ $hasPartyCoverage ? 2 : 1 }}">{{ number_format(isset($invoice) && isset($printTitle) && $printTitle === 'detailed_invoice' ? (float) $invoice->total_amount : $grandTotal, 2) }}</td>
                     </tr>
-                    @if ($isInsurance)
+                    @if ($hasPartyCoverage)
                     @php $patientShare = max(0, $grandTotal - $insuranceTotal); @endphp
                     <tr class="total-row" style="background-color: #f0fff4;">
                         <td colspan="5" style="text-align: {{ app()->getLocale() === 'ar' ? 'left' : 'right' }}; padding-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}: 15px; color: #065f46;">
-                            {{ app()->getLocale() === 'ar' ? 'تحمّل التأمين (تقديري):' : 'Insurance Share (Estimated):' }}
+                            {{ app()->getLocale() === 'ar' ? 'تحمّل ' . $partyLabelAr . ' (تقديري):' : $partyLabelEn . ' Share (Estimated):' }}
                         </td>
                         <td colspan="2" style="color: #065f46;">{{ number_format($insuranceTotal, 2) }}</td>
                     </tr>

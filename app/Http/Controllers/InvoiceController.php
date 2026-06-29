@@ -309,6 +309,11 @@ class InvoiceController extends Controller
                 if ($forceCharityPatientFree || $isTreatmentEligibilityFree) {
                     $coverageType = 'percentage';
                     $coverageValue = 100.0;
+                } elseif ($finalPaymentType === 'charity') {
+                    $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
+                        ? $serviceData['insurance_coverage_type'] : 'percentage';
+                    $coverageValue = isset($serviceData['insurance_coverage_value']) && $serviceData['insurance_coverage_value'] !== ''
+                        ? (float) $serviceData['insurance_coverage_value'] : 100.0;
                 } else {
                     $coverageType = isset($serviceData['insurance_coverage_type']) && in_array($serviceData['insurance_coverage_type'], ['percentage', 'fixed'], true)
                         ? $serviceData['insurance_coverage_type'] : null;

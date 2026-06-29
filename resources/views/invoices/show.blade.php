@@ -4,9 +4,15 @@
 @section('content')
     @php
         $hasInsuranceCoverage = $invoice->items->contains(fn($i) => !empty($i->insurance_coverage_type));
-        $isTreatmentEligibility = \App\Models\Patient::isTreatmentEligibility($invoice->payment_type ?? $invoice->patient?->payment_type ?? null);
-        $isInsuranceOrCharity = in_array($invoice->payment_type ?? $invoice->patient?->payment_type ?? '', ['insurance', 'charity'])
+        $effectivePaymentType = $invoice->payment_type ?? $invoice->patient?->payment_type ?? '';
+        $isCharityPatient = $effectivePaymentType === 'charity';
+        $isInsurancePatient = $effectivePaymentType === 'insurance';
+        $isTreatmentEligibility = \App\Models\Patient::isTreatmentEligibility($effectivePaymentType);
+        $isInsuranceOrCharity = in_array($effectivePaymentType, ['insurance', 'charity'], true)
             || $isTreatmentEligibility;
+        $coveredPartyLabel = app()->getLocale() === 'ar'
+            ? ($isCharityPatient ? 'الجمعية' : 'التأمين')
+            : ($isCharityPatient ? 'Charity' : 'Insurance');
         $totalInsuranceCovered = $invoice->items->sum(fn($i) => (float) $i->insurance_covered_amount);
         $totalPatientShare = $invoice->items->sum(fn($i) => (float) $i->patient_amount);
         // المتبقي للمريض = حصة المريض − ما دفعه المريض فقط (لا نحتسب دفعات التأمين/الجمعية)
@@ -604,7 +610,7 @@
                 @if ($hasInsuranceCoverage && $totalInsuranceCovered > 0)
                     <div class="flex justify-between text-sm">
                         <span
-                            class="font-semibold text-emerald-700">{{ app()->getLocale() === 'ar' ? 'إجمالي المغطى (التأمين):' : 'Insurance covered:' }}</span>
+                            class="font-semibold text-emerald-700">{{ app()->getLocale() === 'ar' ? 'إجمالي المغطى (' . $coveredPartyLabel . '):' : $coveredPartyLabel . ' covered:' }}</span>
                         <span class="font-bold text-emerald-700">@currencyInvoice($totalInsuranceCovered)</span>
                     </div>
                     <div class="flex justify-between text-sm">
@@ -625,7 +631,7 @@
                 </div>
                 @if (($hasInsuranceCoverage || $isInsuranceOrCharity) && $totalRemaining != $effectiveRemaining)
                     <div class="flex justify-between text-sm">
-                        <span class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة التأمين):' : 'Total remaining (debt — until claim paid):' }}</span>
+                        <span class="font-semibold text-slate-600">{{ app()->getLocale() === 'ar' ? 'المتبقي الإجمالي (مديونية — حتى تُدفع مطالبة ' . $coveredPartyLabel . '):' : 'Total remaining (debt — until ' . strtolower($coveredPartyLabel) . ' claim paid):' }}</span>
                         <span class="font-bold text-slate-800">@currencyInvoice($totalRemaining)</span>
                     </div>
                 @endif

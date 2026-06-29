@@ -6,6 +6,9 @@
     @php
         $inputClass =
             'w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+        $patientHasPartyCoverage = isset($patient) && in_array($patient->payment_type ?? '', ['insurance', 'charity'], true);
+        $patientPartyLabelAr = (isset($patient) && ($patient->payment_type ?? '') === 'charity') ? 'الجمعية' : 'التأمين';
+        $patientPartyLabelEn = (isset($patient) && ($patient->payment_type ?? '') === 'charity') ? 'Charity' : 'Insurance';
     @endphp
     <div class="max-w-6xl mx-auto">
         <div class=" rounded-lg shadow-lg p-6">
@@ -359,10 +362,10 @@
                                         class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800 w-28">
                                         {{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
                                     <th id="th-coverage-type"
-                                        class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-32 {{ isset($patient) && $patient->payment_type === 'insurance' ? '' : 'hidden' }}">
+                                        class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-32 {{ $patientHasPartyCoverage ? '' : 'hidden' }}">
                                         {{ app()->getLocale() === 'ar' ? 'نوع التغطية' : 'Coverage type' }}</th>
                                     <th id="th-coverage-value"
-                                        class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-36 {{ isset($patient) && $patient->payment_type === 'insurance' ? '' : 'hidden' }}">
+                                        class="insurance-coverage-th border border-slate-500 px-2 py-2 text-center text-sm font-bold text-slate-800 w-36 {{ $patientHasPartyCoverage ? '' : 'hidden' }}">
                                         {{ app()->getLocale() === 'ar' ? 'قيمة التغطية / الخصم' : 'Coverage / discount' }}
                                     </th>
                                     <th class="border border-slate-500 px-2 py-2 text-center w-14"></th>
@@ -383,11 +386,11 @@
                             <span id="grand-total" class="text-3xl font-bold text-white">0.00</span>
                         </div>
                         <div id="insurance-totals-wrap"
-                            class="mt-3 space-y-2 {{ isset($patient) && $patient->payment_type === 'insurance' ? '' : 'hidden' }}">
+                            class="mt-3 space-y-2 {{ $patientHasPartyCoverage ? '' : 'hidden' }}">
                             <div
                                 class="flex justify-between items-center bg-emerald-100 border border-emerald-300 p-3 rounded-lg">
-                                <span
-                                    class="font-semibold text-emerald-800">{{ app()->getLocale() === 'ar' ? 'إجمالي المبلغ المغطى (التأمين):' : 'Insurance covered total:' }}</span>
+                                <span id="party-covered-label"
+                                    class="font-semibold text-emerald-800">{{ app()->getLocale() === 'ar' ? 'إجمالي المبلغ المغطى (' . $patientPartyLabelAr . '):' : $patientPartyLabelEn . ' covered total:' }}</span>
                                 <span id="insurance-covered-total" class="text-xl font-bold text-emerald-800">0.00</span>
                             </div>
                             <div
@@ -567,7 +570,17 @@
         const invoiceCreateUrl = '{{ route('invoices.create') }}';
         const isArabic = '{{ app()->getLocale() }}' === 'ar';
         let serviceRowIndex = 0;
-        window.invoicePatientIsInsurance = @json(isset($patient) && $patient->payment_type === 'insurance');
+        window.invoicePatientHasPartyCoverage = @json($patientHasPartyCoverage);
+        window.invoicePatientIsCharity = @json(isset($patient) && ($patient->payment_type ?? '') === 'charity');
+
+        function updatePartyCoverageLabel() {
+            const label = document.getElementById('party-covered-label');
+            if (!label) return;
+            const isCharity = !!window.invoicePatientIsCharity;
+            label.textContent = isArabic
+                ? ('إجمالي المبلغ المغطى (' + (isCharity ? 'الجمعية' : 'التأمين') + '):')
+                : ((isCharity ? 'Charity' : 'Insurance') + ' covered total:');
+        }
 
         function addServiceRow(service) {
             const tbody = document.getElementById('services-container');
@@ -579,6 +592,9 @@
             const total = (qty * price).toFixed(2);
             const covTypeLabelPct = isArabic ? 'نسبة %' : 'Percentage %';
             const covTypeLabelFixed = isArabic ? 'قيمة ثابتة' : 'Fixed amount';
+            const defaultCovType = window.invoicePatientIsCharity ? 'percentage' : '';
+            const defaultCovVal = window.invoicePatientIsCharity ? '100' : '';
+            const selPctDefault = defaultCovType === 'percentage' ? 'selected' : '';
             const tr = document.createElement('tr');
             tr.className = 'service-row border-b border-slate-400 hover:bg-slate-50';
             tr.innerHTML = `
@@ -600,12 +616,12 @@
                 <td class="border border-slate-400 px-2 py-2 align-top insurance-coverage-cell">
                     <select form="invoice-form" name="services[${index}][insurance_coverage_type]" class="w-full rounded border border-slate-400 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 insurance-coverage-type" onchange="updateInsuranceTotals()">
                         <option value="">—</option>
-                        <option value="percentage">${covTypeLabelPct}</option>
+                        <option value="percentage" ${selPctDefault}>${covTypeLabelPct}</option>
                         <option value="fixed">${covTypeLabelFixed}</option>
                     </select>
                 </td>
                 <td class="border border-slate-400 px-2 py-2 align-top insurance-coverage-cell">
-                    <input type="number" form="invoice-form" name="services[${index}][insurance_coverage_value]" step="0.01" min="0" placeholder="0" class="w-full rounded border border-slate-400 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" onchange="updateInsuranceTotals()" oninput="updateInsuranceTotals()">
+                    <input type="number" form="invoice-form" name="services[${index}][insurance_coverage_value]" step="0.01" min="0" placeholder="0" value="${defaultCovVal}" class="w-full rounded border border-slate-400 px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" onchange="updateInsuranceTotals()" oninput="updateInsuranceTotals()">
                 </td>
                 <td class="border border-slate-400 px-1 py-2 align-middle text-center">
                     <button type="button" onclick="removeServiceRow(this)" class="text-red-600 hover:text-red-800 p-1" title="${isArabic ? 'حذف' : 'Remove'}">
@@ -658,20 +674,21 @@
         }
 
         function toggleInsuranceColumns() {
-            const isIns = !!window.invoicePatientIsInsurance;
+            const hasPartyCoverage = !!window.invoicePatientHasPartyCoverage;
             document.querySelectorAll('.insurance-coverage-th').forEach(function(el) {
-                el.classList.toggle('hidden', !isIns);
+                el.classList.toggle('hidden', !hasPartyCoverage);
             });
             document.querySelectorAll('.insurance-coverage-cell').forEach(function(el) {
-                el.classList.toggle('hidden', !isIns);
+                el.classList.toggle('hidden', !hasPartyCoverage);
             });
             const wrap = document.getElementById('insurance-totals-wrap');
-            if (wrap) wrap.classList.toggle('hidden', !isIns);
+            if (wrap) wrap.classList.toggle('hidden', !hasPartyCoverage);
+            updatePartyCoverageLabel();
             updateInsuranceTotals();
         }
 
         function updateInsuranceTotals() {
-            if (!window.invoicePatientIsInsurance) return;
+            if (!window.invoicePatientHasPartyCoverage) return;
             const container = document.getElementById('services-container');
             const rows = container.querySelectorAll('tr.service-row');
             let covered = 0;
@@ -714,7 +731,8 @@
                     const v = paymentTypeEl.value;
                     insuranceWrap.classList.toggle('hidden', v !== 'insurance');
                     charityWrap.classList.toggle('hidden', v !== 'charity');
-                    window.invoicePatientIsInsurance = (v === 'insurance');
+                    window.invoicePatientHasPartyCoverage = (v === 'insurance' || v === 'charity');
+                    window.invoicePatientIsCharity = (v === 'charity');
                     if (charityTreatmentWrap) {
                         charityTreatmentWrap.classList.toggle('hidden', v !== 'charity');
                         if (v !== 'charity') {

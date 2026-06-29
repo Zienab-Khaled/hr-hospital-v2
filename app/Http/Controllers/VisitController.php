@@ -542,6 +542,10 @@ class VisitController extends Controller
                     $coverageValue = $isTreatmentEligibility
                         ? 100.0
                         : (isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null);
+                    if (! $isTreatmentEligibility && $finalPaymentType === 'charity' && ! $coverageType) {
+                        $coverageType = 'percentage';
+                        $coverageValue = 100.0;
+                    }
                     $invoice->items()->create([
                         'service_id' => $s['service_id'] ?? null,
                         'quantity' => (int) round((float) ($s['qty'] ?? $s['quantity'] ?? 1)),
@@ -752,6 +756,10 @@ class VisitController extends Controller
                 $coverageValue = $isTreatmentEligibility
                     ? 100.0
                     : (isset($s['insurance_coverage_value']) && $s['insurance_coverage_value'] !== '' ? (float) $s['insurance_coverage_value'] : null);
+                if (! $isTreatmentEligibility && $finalPaymentType === 'charity' && ! $coverageType) {
+                    $coverageType = 'percentage';
+                    $coverageValue = 100.0;
+                }
 
                 $invoice->items()->create([
                     'service_id' => $s['service_id'] ?? null,
