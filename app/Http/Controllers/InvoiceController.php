@@ -27,10 +27,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
+    /** @var list<string> */
+    private const COLLECTION_SPLIT_METHODS = ['cash', 'card', 'bank_transfer', 'cheque', 'loyalty_points', 'insurance', 'charity'];
+
     protected function authorizeInvoiceEdit(): void
     {
         if (! RoleNav::canEditInvoices(auth()->user())) {
@@ -195,8 +199,12 @@ class InvoiceController extends Controller
             'charity_treatment_invoice_mode' => 'nullable|string|in:,eligibility,no_eligibility',
             // Collection Fields
             'collection_amount' => 'nullable|numeric|min:0',
-            'collection_method' => 'nullable|string|in:cash,card,bank_transfer,cheque',
+            'collection_method' => ['nullable', 'string', Rule::in(self::COLLECTION_SPLIT_METHODS)],
             'collection_reference' => 'nullable|string|max:100',
+            'split_lines' => 'nullable|array|max:12',
+            'split_lines.*.payment_method' => ['nullable', 'string', Rule::in(self::COLLECTION_SPLIT_METHODS)],
+            'split_lines.*.amount' => 'nullable|numeric|min:0.01',
+            'split_lines.*.reference_number' => 'nullable|string|max:100',
             'ministry_receipt_number' => 'nullable|string|max:50',
             'physical_receipt' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'collector_screenshot' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
@@ -354,19 +362,36 @@ class InvoiceController extends Controller
                 }
             }
 
-            // NEW: Handle Financial Collection & Digital q-1 Documents
-            if ($isTreatmentEligibilityFree && ! empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
+            // NEW: Handle Financial Collection & Digital q-1 Documents (supports multiple payment methods)
+            $normalizedSplits = $this->normalizeCollectionSplits($request, $validated);
+
+            if ($isTreatmentEligibilityFree && $normalizedSplits->isNotEmpty()) {
                 throw ValidationException::withMessages([
                     'collection_amount' => app()->getLocale() === 'ar'
                         ? 'مرضى أحقية العلاج لا يدفعون — لا يمكن تسجيل تحصيل نقدي.'
                         : 'Treatment eligibility patients do not pay — cash collection is not allowed.',
                 ]);
             }
-            if (!empty($validated['collection_method']) && ($validated['collection_amount'] ?? 0) > 0) {
-                $collectionAmt = (float) $validated['collection_amount'];
-                if (($validated['collection_method'] ?? '') === 'cash' && ($invoice->payment_type ?? '') === 'cash') {
+
+            if ($normalizedSplits->isNotEmpty()) {
+                $collectionAmt = round((float) $normalizedSplits->sum('amount'), 2);
+                $cashOnly = $normalizedSplits->every(fn ($l) => ($l['payment_method'] ?? '') === 'cash');
+                if ($cashOnly && ($invoice->payment_type ?? '') === 'cash') {
                     $collectionAmt = InvoiceAmountHelper::roundCashRiyalToWhole($collectionAmt);
+                    if ($normalizedSplits->count() === 1) {
+                        $normalizedSplits = $normalizedSplits->map(fn ($l) => array_merge($l, ['amount' => $collectionAmt]));
+                    }
                 }
+
+                $declaredTotal = isset($validated['collection_amount']) ? (float) $validated['collection_amount'] : 0;
+                if ($declaredTotal > 0.009 && abs($declaredTotal - $collectionAmt) > 0.02) {
+                    throw ValidationException::withMessages([
+                        'collection_amount' => app()->getLocale() === 'ar'
+                            ? 'إجمالي التحصيل يجب أن يساوي مجموع أسطر طرق الدفع.'
+                            : 'Collection total must equal the sum of payment method lines.',
+                    ]);
+                }
+
                 if ($collectionAmt > (float) $invoice->total_amount + 0.009) {
                     throw ValidationException::withMessages([
                         'collection_amount' => app()->getLocale() === 'ar'
@@ -375,24 +400,44 @@ class InvoiceController extends Controller
                     ]);
                 }
 
+                $methods = $normalizedSplits->pluck('payment_method');
+                if ($methods->contains('insurance') || $methods->contains('charity')) {
+                    if ($methods->count() > 1) {
+                        throw ValidationException::withMessages([
+                            'split_lines' => app()->getLocale() === 'ar'
+                                ? 'لا يمكن الجمع بين تأمين/جمعية وطرق دفع أخرى في نفس التحصيل.'
+                                : 'Insurance/charity cannot be combined with other payment methods in one collection.',
+                        ]);
+                    }
+                }
+
                 $invoice->load('items.service');
+
+                $paymentType = $normalizedSplits->count() > 1
+                    ? 'mixed'
+                    : ($normalizedSplits->first()['payment_method'] ?? 'cash');
+                $receiptPaymentMethod = $normalizedSplits->count() > 1 ? 'mixed' : $paymentType;
+                $mergedRef = $normalizedSplits->pluck('reference_number')->filter()->implode(' / ');
+                if ($mergedRef === '') {
+                    $mergedRef = $validated['collection_reference'] ?? null;
+                }
 
                 // 1. Create Payment record
                 $payment = \App\Models\Payment::create([
                     'invoice_id' => $invoice->id,
-                    'payment_type' => $invoice->payment_type,
+                    'payment_type' => $paymentType,
                     'amount' => $collectionAmt,
                     'received_date' => now(),
                     'received_by' => auth()->user()->id,
-                    'approved_by' => auth()->user()->id, // Auto-approve immediate collection
+                    'approved_by' => auth()->user()->id,
                     'approved_at' => now(),
-                    'reference_no' => $validated['collection_reference'] ?? null,
+                    'reference_no' => $mergedRef,
                     'status' => 'approved',
                     'audit_status' => 'matched',
                     'notes' => $validated['notes'] ?? 'Immediate collection upon creation',
                 ]);
 
-                // Prepare selected items data for receipt snapshot (Digital q-1) — من البنود بعد المزامنة/التقريب
+                // Prepare selected items data for receipt snapshot (Digital q-1)
                 $selectedItemsData = [];
                 foreach ($invoice->items as $itemRow) {
                     $lineName = $itemRow->service?->name_ar
@@ -415,8 +460,8 @@ class InvoiceController extends Controller
                     'patient_id' => $invoice->patient_id,
                     'ministry_receipt_number' => $validated['ministry_receipt_number'] ?? null,
                     'amount' => $collectionAmt,
-                    'payment_method' => $validated['collection_method'],
-                    'reference_number' => $validated['collection_reference'] ?? null,
+                    'payment_method' => $receiptPaymentMethod,
+                    'reference_number' => $mergedRef,
                     'invoice_snapshot_total' => $invoice->total_amount,
                     'invoice_snapshot_paid' => $invoice->paid_amount + $collectionAmt,
                     'invoice_snapshot_remaining' => $invoice->total_amount - ($invoice->paid_amount + $collectionAmt),
@@ -426,13 +471,15 @@ class InvoiceController extends Controller
                     'selected_items' => $selectedItemsData,
                 ]);
 
-                \App\Models\PaymentReceiptSplit::create([
-                    'payment_receipt_id' => $receipt->id,
-                    'payment_method' => $validated['collection_method'],
-                    'amount' => $collectionAmt,
-                    'reference_number' => $validated['collection_reference'] ?? null,
-                    'sort_order' => 0,
-                ]);
+                foreach ($normalizedSplits->values() as $idx => $line) {
+                    \App\Models\PaymentReceiptSplit::create([
+                        'payment_receipt_id' => $receipt->id,
+                        'payment_method' => $line['payment_method'],
+                        'amount' => $line['amount'],
+                        'reference_number' => $line['reference_number'],
+                        'sort_order' => $idx,
+                    ]);
+                }
 
                 // 3. Attach Proof Documents (Spatie Media Library)
                 if ($request->hasFile('physical_receipt')) {
@@ -454,7 +501,7 @@ class InvoiceController extends Controller
                     'debt_status' => $newRemainingAmount <= 0 ? 'paid' : $invoice->debt_status,
                 ]);
 
-                $invoice->refresh(); // Sync the model state
+                $invoice->refresh();
             }
 
             // Create approval request for insurance/charity patients (email sent after HTTP response — avoids SMTP hang/timeouts blocking the request)
@@ -1219,5 +1266,49 @@ class InvoiceController extends Controller
         ], null);
 
         return back()->with('success', app()->getLocale() === 'ar' ? 'تم حذف المستند بنجاح.' : 'Document deleted successfully.');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array{payment_method: string, amount: float, reference_number: ?string}>
+     */
+    private function normalizeCollectionSplits(Request $request, array $validated): \Illuminate\Support\Collection
+    {
+        $rows = $request->input('split_lines', []);
+        $out = collect();
+
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                $m = $row['payment_method'] ?? null;
+                $amt = isset($row['amount']) ? (float) $row['amount'] : 0;
+                $ref = isset($row['reference_number']) ? trim((string) $row['reference_number']) : '';
+                if ($m && in_array($m, self::COLLECTION_SPLIT_METHODS, true) && $amt > 0) {
+                    $out->push([
+                        'payment_method' => $m,
+                        'amount' => round($amt, 2),
+                        'reference_number' => $ref !== '' ? $ref : null,
+                    ]);
+                }
+            }
+        }
+
+        if ($out->isNotEmpty()) {
+            return $out;
+        }
+
+        $singleMethod = $validated['collection_method'] ?? null;
+        $collectionAmt = isset($validated['collection_amount']) ? (float) $validated['collection_amount'] : 0;
+        if ($singleMethod && in_array($singleMethod, self::COLLECTION_SPLIT_METHODS, true) && $collectionAmt > 0) {
+            $ref = isset($validated['collection_reference']) ? trim((string) $validated['collection_reference']) : '';
+            $out->push([
+                'payment_method' => $singleMethod,
+                'amount' => round($collectionAmt, 2),
+                'reference_number' => $ref !== '' ? $ref : null,
+            ]);
+        }
+
+        return $out;
     }
 }

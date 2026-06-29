@@ -32,6 +32,8 @@
     $snapInvoiceTotal = round((float) ($receipt->invoice_snapshot_total ?? 0), 2);
     $snapPaidThisReceipt = round((float) ($receipt->amount ?? 0), 2);
     $snapPaidCumulative = round((float) ($receipt->invoice_snapshot_paid ?? 0), 2);
+    $printRowCount = count($rowsForTable) + $nSplitLines;
+    $printDensityClass = $printRowCount > 14 ? 'print-density-tight' : ($printRowCount > 9 ? 'print-density-compact' : '');
 @endphp
 <!DOCTYPE html>
 <html lang="ar-SA-u-nu-latn" dir="rtl">
@@ -55,8 +57,46 @@
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { padding: 6px 12px; font-size: 12px; }
-            @page { margin: 1cm; size: A4; }
+            .report-footer-wrap { display: none !important; }
+            html, body {
+                height: auto;
+                overflow: visible;
+                margin: 0;
+                padding: 0;
+            }
+            body { padding: 4px 8px; font-size: 11px; }
+            @page { margin: 0.4cm; size: A4 portrait; }
+            .moh-form {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .moh-form.print-fit-scale {
+                transform-origin: top center;
+            }
+        }
+        @media print {
+            .moh-form.print-density-compact .moh-header { margin-bottom: 8px; padding-bottom: 6px; }
+            .moh-form.print-density-compact .moh-header-right .moh-main-title { font-size: 20px; }
+            .moh-form.print-density-compact .services-table { font-size: 10px; margin-bottom: 8px; }
+            .moh-form.print-density-compact .services-table th,
+            .moh-form.print-density-compact .services-table td { padding: 4px 5px; }
+            .moh-form.print-density-compact .receipt-money-summary { margin: 6px 0 8px; padding: 6px 8px; font-size: 10px; line-height: 1.5; }
+            .moh-form.print-density-compact .total-section .total-num { font-size: 15px; }
+            .moh-form.print-density-compact .footer-sigs { margin-top: 12px; }
+            .moh-form.print-density-compact .footer-sigs .col-content { min-height: 40px; padding: 4px; }
+            .moh-form.print-density-tight .moh-header { margin-bottom: 6px; padding-bottom: 4px; }
+            .moh-form.print-density-tight .moh-header-right .moh-main-title { font-size: 18px; }
+            .moh-form.print-density-tight .moh-header-center .form-title-box { padding: 6px 14px; font-size: 14px; }
+            .moh-form.print-density-tight .services-table { font-size: 9px; margin-bottom: 6px; }
+            .moh-form.print-density-tight .services-table th,
+            .moh-form.print-density-tight .services-table td { padding: 3px 4px; }
+            .moh-form.print-density-tight .receipt-money-summary { margin: 4px 0 6px; padding: 5px 6px; font-size: 9px; line-height: 1.4; }
+            .moh-form.print-density-tight .total-section .total-num { font-size: 14px; }
+            .moh-form.print-density-tight .total-section .total-words { font-size: 10px; }
+            .moh-form.print-density-tight .payment-type-section { margin-bottom: 10px; }
+            .moh-form.print-density-tight .footer-sigs { margin-top: 8px; }
+            .moh-form.print-density-tight .footer-sigs .col { min-width: 100px; max-width: 150px; }
+            .moh-form.print-density-tight .footer-sigs .col-content { min-height: 34px; padding: 3px; }
         }
         .no-print {
             margin-bottom: 12px;
@@ -211,7 +251,7 @@
         <p class="hint">يمكنك تعديل حقول «شيك رقم» و«إيداع في الحساب» و«على بنك» و«فرع» أدناه قبل الطباعة.</p>
     </div>
 
-    <div class="moh-form">
+    <div class="moh-form {{ $printDensityClass }}" id="receipt-print-root">
         <div class="moh-header">
             {{-- يمين: وزارة الصحة + الإدارة + المديرية + المرفق + المدة + نوع الإيراد --}}
             <div class="moh-header-right">
@@ -368,16 +408,46 @@
                 </div>
             </div>
         </div>
+        <div class="receipt-print-footer print-only" style="text-align: center; font-size: 9px; color: #888; margin-top: 6px;">
+            تم استخراج هذا الإيصال إلكترونياً — {{ now()->format('Y/m/d H:i') }}
+        </div>
     </div>
 
     <div class="no-print" style="position: fixed; bottom: 8px; left: 0; width: 100%; text-align: center; font-size: 9px; color: #888;">
         تم استخراج هذا الإيصال إلكترونياً من نظام المستشفى — {{ now()->format('Y/m/d H:i') }}
     </div>
-    <div style="position: fixed; bottom: 8px; left: 0; width: 100%; text-align: center; font-size: 9px; color: #888;" class="print-only">
-        تم استخراج هذا الإيصال إلكترونياً — {{ now()->format('Y/m/d H:i') }}
-    </div>
 
     @include('components.report-footer')
+
+    <script>
+        (function() {
+            var root = document.getElementById('receipt-print-root');
+            if (!root) return;
+
+            function fitReceiptToOnePage() {
+                root.classList.remove('print-fit-scale');
+                root.style.transform = '';
+                root.style.width = '';
+                var pageHeight = 1122;
+                var contentHeight = root.scrollHeight;
+                if (contentHeight > pageHeight - 8) {
+                    var scale = Math.min(1, (pageHeight - 8) / contentHeight);
+                    root.classList.add('print-fit-scale');
+                    root.style.transform = 'scale(' + scale + ')';
+                    root.style.width = (100 / scale) + '%';
+                }
+            }
+
+            function resetReceiptPrintScale() {
+                root.classList.remove('print-fit-scale');
+                root.style.transform = '';
+                root.style.width = '';
+            }
+
+            window.addEventListener('beforeprint', fitReceiptToOnePage);
+            window.addEventListener('afterprint', resetReceiptPrintScale);
+        })();
+    </script>
 </body>
 
 </html>

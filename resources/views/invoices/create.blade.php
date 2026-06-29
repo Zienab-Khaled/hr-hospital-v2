@@ -479,37 +479,70 @@
                             {{ app()->getLocale() === 'ar' ? 'تحصيل الرسوم ومستندات (ق-1) الرقمية' : 'Financial Collection & Digital (q-1) Docs' }}
                         </h3>
 
+                        <div class="relative z-10 mb-4">
+                            <label
+                                class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">{{ app()->getLocale() === 'ar' ? 'طرق الدفع (يمكن إضافة أكثر من طريقة — مجموع الأسطر = إجمالي التحصيل)' : 'Payment methods (add multiple lines — sum equals collection total)' }}</label>
+                            <div class="overflow-x-auto rounded-xl border-2 border-emerald-200 bg-white">
+                                <table class="w-full text-sm" id="create-split-payment-table">
+                                    <thead>
+                                        <tr class="bg-emerald-50 text-emerald-900">
+                                            <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'الطريقة' : 'Method' }}</th>
+                                            <th class="p-2 text-start font-bold w-32">{{ app()->getLocale() === 'ar' ? 'المبلغ' : 'Amount' }}</th>
+                                            <th class="p-2 text-start font-bold">{{ app()->getLocale() === 'ar' ? 'مرجع / شيك' : 'Ref.' }}</th>
+                                            <th class="p-2 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="create-split-rows-body">
+                                        <tr data-split-row>
+                                            <td class="p-2 align-top">
+                                                <select name="split_lines[0][payment_method]"
+                                                    class="create-split-method w-full rounded-lg border border-emerald-200 px-2 py-1.5 font-medium">
+                                                    <option value="">{{ app()->getLocale() === 'ar' ? '— بدون —' : '— None —' }}</option>
+                                                    <option value="cash" {{ old('split_lines.0.payment_method', old('collection_method')) === 'cash' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</option>
+                                                    <option value="card" {{ old('split_lines.0.payment_method', old('collection_method')) === 'card' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
+                                                    <option value="bank_transfer" {{ old('split_lines.0.payment_method', old('collection_method')) === 'bank_transfer' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank transfer' }}</option>
+                                                    <option value="cheque" {{ old('split_lines.0.payment_method', old('collection_method')) === 'cheque' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
+                                                    <option value="loyalty_points" {{ old('split_lines.0.payment_method') === 'loyalty_points' ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? 'نقاط بيع' : 'Loyalty points' }}</option>
+                                                    <option value="insurance" class="create-split-party-opt {{ in_array(old('patient_payment_type', $patient?->payment_type ?? ''), ['insurance']) ? '' : 'hidden' }}">{{ app()->getLocale() === 'ar' ? 'تأمين' : 'Insurance' }}</option>
+                                                    <option value="charity" class="create-split-party-opt {{ in_array(old('patient_payment_type', $patient?->payment_type ?? ''), ['charity']) ? '' : 'hidden' }}">{{ app()->getLocale() === 'ar' ? 'جمعية' : 'Charity' }}</option>
+                                                </select>
+                                            </td>
+                                            <td class="p-2 align-top">
+                                                <input type="number" name="split_lines[0][amount]" step="0.01" min="0"
+                                                    value="{{ old('split_lines.0.amount', old('collection_amount')) }}"
+                                                    class="create-split-amount w-full rounded-lg border border-emerald-200 px-2 py-1.5 font-bold text-emerald-800">
+                                            </td>
+                                            <td class="p-2 align-top">
+                                                <input type="text" name="split_lines[0][reference_number]"
+                                                    value="{{ old('split_lines.0.reference_number', old('collection_reference')) }}"
+                                                    placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}"
+                                                    class="w-full rounded-lg border border-emerald-200 px-2 py-1.5 text-xs">
+                                            </td>
+                                            <td class="p-2 align-top text-center">
+                                                <button type="button"
+                                                    class="create-btn-remove-split text-red-600 font-bold text-lg leading-none hidden"
+                                                    title="{{ app()->getLocale() === 'ar' ? 'حذف السطر' : 'Remove' }}">×</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" id="create-btn-add-split-row"
+                                class="mt-2 text-sm font-bold text-emerald-800 hover:text-emerald-950">
+                                + {{ app()->getLocale() === 'ar' ? 'إضافة طريقة دفع' : 'Add payment method' }}
+                            </button>
+                            <p id="create-split-sum-warning" class="mt-2 text-xs text-red-600 hidden"></p>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                             <div>
                                 <label
-                                    class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'المبلغ المحصل' : 'Collected Amount' }}</label>
+                                    class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'إجمالي المبلغ المحصل' : 'Total Collected Amount' }}</label>
                                 <input type="number" name="collection_amount" id="collection_amount" step="0.01"
-                                    value="{{ old('collection_amount') }}"
-                                    class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-lg font-black text-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                                <p class="text-[11px] text-emerald-800/90 mt-1 leading-snug">{{ app()->getLocale() === 'ar' ? 'يمكن أن يكون أقل من إجمالي الفاتورة (تحصيل جزئي)؛ اترك فارغاً أو صفراً مع «بدون تحصيل» إن لم يُحصّل شيء عند الإنشاء.' : 'Can be less than invoice total (partial collection); leave empty with «No collection» if nothing is collected at creation.' }}</p>
+                                    value="{{ old('collection_amount') }}" readonly
+                                    class="w-full rounded-xl border-2 border-emerald-200 bg-emerald-50/80 px-3 py-2 text-lg font-black text-emerald-800">
+                                <p class="text-[11px] text-emerald-800/90 mt-1 leading-snug">{{ app()->getLocale() === 'ar' ? 'يُحدَّث تلقائياً من مجموع أسطر طرق الدفع. يمكن أن يكون أقل من إجمالي الفاتورة (تحصيل جزئي)؛ اترك الأسطر فارغة إن لم يُحصّل شيء.' : 'Updates automatically from payment lines. Can be less than invoice total (partial); leave lines empty if no collection at creation.' }}</p>
                             </div>
-                            <div>
-                                <label
-                                    class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'طريقة التحصيل' : 'Collection Method' }}</label>
-                                <select name="collection_method"
-                                    class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500">
-                                    <option value="">
-                                        {{ app()->getLocale() === 'ar' ? '-- بدون تحصيل --' : '-- No collection --' }}
-                                    </option>
-                                    <option value="cash" {{ old('collection_method') === 'cash' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'كاش (نقدي)' : 'Cash' }}</option>
-                                    <option value="card" {{ old('collection_method') === 'card' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'شبكة / POS' : 'POS / Card' }}</option>
-                                    <option value="bank_transfer"
-                                        {{ old('collection_method') === 'bank_transfer' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'تحويل بنكي' : 'Bank Transfer' }}</option>
-                                    <option value="cheque" {{ old('collection_method') === 'cheque' ? 'selected' : '' }}>
-                                        {{ app()->getLocale() === 'ar' ? 'شيك' : 'Cheque' }}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 relative z-10">
                             <div>
                                 <label
                                     class="block text-[10px] font-black text-rose-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم الترقيم من الوزارة (يُطبع على إيصال التحصيل)' : 'Ministry receipt number (printed on q-1)' }}</label>
@@ -517,14 +550,6 @@
                                     value="{{ old('ministry_receipt_number') }}"
                                     class="w-full rounded-xl border-2 border-rose-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-500"
                                     placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: 5267859' : 'e.g. 5267859' }}">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">{{ app()->getLocale() === 'ar' ? 'رقم المرجع / الشيك' : 'Reference / Cheque Number' }}</label>
-                                <input type="text" name="collection_reference"
-                                    value="{{ old('collection_reference') }}"
-                                    class="w-full rounded-xl border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
-                                    placeholder="{{ app()->getLocale() === 'ar' ? 'اختياري' : 'Optional' }}">
                             </div>
                         </div>
 
@@ -663,14 +688,10 @@
 
             document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
 
-            // Pre-fill collection amount if not manually edited
-            const collectionInp = document.getElementById('collection_amount');
-            if (collectionInp && (!collectionInp.value || collectionInp.getAttribute('data-auto') === 'true')) {
-                collectionInp.value = grandTotal.toFixed(2);
-                collectionInp.setAttribute('data-auto', 'true');
-            }
-
             updateInsuranceTotals();
+            if (typeof window.validateCreateSplitSum === 'function') {
+                window.validateCreateSplitSum();
+            }
         }
 
         function toggleInsuranceColumns() {
@@ -749,11 +770,137 @@
             }
 
             const collectionInp = document.getElementById('collection_amount');
-            if (collectionInp) {
-                collectionInp.addEventListener('input', function() {
-                    this.setAttribute('data-auto', 'false');
+
+            function getCreateMaxCollection() {
+                const patientShareEl = document.getElementById('patient-share-total');
+                const grandEl = document.getElementById('grand-total');
+                if (patientShareEl && patientShareEl.textContent) {
+                    const ps = parseFloat(patientShareEl.textContent.replace(/,/g, '')) || 0;
+                    if (ps > 0) return ps;
+                }
+                if (grandEl && grandEl.textContent) {
+                    return parseFloat(grandEl.textContent.replace(/,/g, '')) || 0;
+                }
+                return 0;
+            }
+
+            function reindexCreateSplitRows() {
+                const body = document.getElementById('create-split-rows-body');
+                if (!body) return;
+                const rows = body.querySelectorAll('[data-split-row]');
+                rows.forEach(function(row, index) {
+                    row.querySelectorAll('select, input').forEach(function(el) {
+                        const n = el.getAttribute('name');
+                        if (n && n.indexOf('split_lines[') === 0) {
+                            el.setAttribute('name', n.replace(/split_lines\[\d+]/, 'split_lines[' + index + ']'));
+                        }
+                    });
+                    const rm = row.querySelector('.create-btn-remove-split');
+                    if (rm) rm.classList.toggle('hidden', rows.length <= 1);
                 });
             }
+
+            function sumCreateSplitAmounts() {
+                let s = 0;
+                document.querySelectorAll('#create-split-rows-body .create-split-amount').forEach(function(inp) {
+                    s += parseFloat(inp.value || 0) || 0;
+                });
+                return Math.round(s * 100) / 100;
+            }
+
+            function syncCreateCollectionTotal() {
+                if (!collectionInp) return;
+                const sum = sumCreateSplitAmounts();
+                collectionInp.value = sum > 0 ? sum.toFixed(2) : '';
+            }
+
+            function validateCreateSplitSum() {
+                const warn = document.getElementById('create-split-sum-warning');
+                if (!warn) return true;
+                const maxC = getCreateMaxCollection();
+                const sum = sumCreateSplitAmounts();
+                const hasMethod = Array.from(document.querySelectorAll('#create-split-rows-body .create-split-method')).some(function(sel) {
+                    return sel.value && parseFloat(sel.closest('tr')?.querySelector('.create-split-amount')?.value || 0) > 0;
+                });
+
+                if (sum > maxC + 0.02 && maxC > 0) {
+                    warn.textContent = isArabic
+                        ? ('مجموع أسطر الدفع (' + sum.toFixed(2) + ') يتجاوز إجمالي الفاتورة/حصة المريض (' + maxC.toFixed(2) + ').')
+                        : ('Sum of payment lines (' + sum.toFixed(2) + ') exceeds invoice/patient share (' + maxC.toFixed(2) + ').');
+                    warn.classList.remove('hidden');
+                    return false;
+                }
+                if (hasMethod && sum <= 0) {
+                    warn.textContent = isArabic ? 'أدخل مبلغاً في أسطر طرق الدفع.' : 'Enter an amount in payment lines.';
+                    warn.classList.remove('hidden');
+                    return false;
+                }
+                warn.classList.add('hidden');
+                return true;
+            }
+
+            function onCreateSplitAmountInput() {
+                syncCreateCollectionTotal();
+                validateCreateSplitSum();
+            }
+
+            function toggleCreatePartySplitOptions() {
+                const v = paymentTypeEl ? paymentTypeEl.value : '';
+                document.querySelectorAll('.create-split-party-opt').forEach(function(opt) {
+                    if (opt.value === 'insurance') opt.classList.toggle('hidden', v !== 'insurance');
+                    if (opt.value === 'charity') opt.classList.toggle('hidden', v !== 'charity');
+                });
+            }
+
+            function addCreateSplitRow() {
+                const body = document.getElementById('create-split-rows-body');
+                const first = body && body.querySelector('[data-split-row]');
+                if (!body || !first) return;
+                const clone = first.cloneNode(true);
+                clone.querySelectorAll('input').forEach(function(i) { i.value = ''; });
+                clone.querySelectorAll('select.create-split-method').forEach(function(s) { s.selectedIndex = 0; });
+                body.appendChild(clone);
+                reindexCreateSplitRows();
+                toggleCreatePartySplitOptions();
+                clone.querySelectorAll('.create-split-amount').forEach(function(el) {
+                    el.addEventListener('input', onCreateSplitAmountInput);
+                    el.addEventListener('change', onCreateSplitAmountInput);
+                });
+                clone.querySelectorAll('.create-split-method').forEach(function(el) {
+                    el.addEventListener('change', validateCreateSplitSum);
+                });
+                validateCreateSplitSum();
+            }
+
+            const createAddSplitBtn = document.getElementById('create-btn-add-split-row');
+            if (createAddSplitBtn) createAddSplitBtn.addEventListener('click', addCreateSplitRow);
+            const createSplitBody = document.getElementById('create-split-rows-body');
+            if (createSplitBody) {
+                createSplitBody.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('create-btn-remove-split')) {
+                        const rows = createSplitBody.querySelectorAll('[data-split-row]');
+                        if (rows.length <= 1) return;
+                        e.target.closest('[data-split-row]').remove();
+                        reindexCreateSplitRows();
+                        onCreateSplitAmountInput();
+                    }
+                });
+                createSplitBody.querySelectorAll('.create-split-amount').forEach(function(el) {
+                    el.addEventListener('input', onCreateSplitAmountInput);
+                    el.addEventListener('change', onCreateSplitAmountInput);
+                });
+                createSplitBody.querySelectorAll('.create-split-method').forEach(function(el) {
+                    el.addEventListener('change', validateCreateSplitSum);
+                });
+            }
+            if (paymentTypeEl) {
+                paymentTypeEl.addEventListener('change', toggleCreatePartySplitOptions);
+                toggleCreatePartySplitOptions();
+            }
+            syncCreateCollectionTotal();
+            validateCreateSplitSum();
+
+            window.validateCreateSplitSum = validateCreateSplitSum;
 
             const searchInput = document.getElementById('service-search-input');
             const searchBtn = document.getElementById('service-search-btn');
@@ -1060,6 +1207,10 @@
                 alert(
                     '{{ app()->getLocale() === 'ar' ? 'يجب إضافة خدمة واحدة على الأقل' : 'Please add at least one service' }}'
                     );
+                return false;
+            }
+            if (typeof window.validateCreateSplitSum === 'function' && !window.validateCreateSplitSum()) {
+                e.preventDefault();
                 return false;
             }
         });
