@@ -843,6 +843,9 @@
                     refreshPartyCoverageFlags();
                     if (charityTreatmentWrap) {
                         charityTreatmentWrap.classList.toggle('hidden', v !== 'charity');
+                        charityTreatmentWrap.querySelectorAll('input.charity-treatment-mode, input.charity-fallback-mode').forEach(function(inp) {
+                            inp.disabled = (v !== 'charity');
+                        });
                         if (v !== 'charity') {
                             const def = charityTreatmentWrap.querySelector('input.charity-treatment-mode[value="ahli_eligibility"]');
                             if (def) def.checked = true;

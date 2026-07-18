@@ -428,16 +428,6 @@
                     <span>{{ app()->getLocale() === 'ar' ? 'أمين الصندوق' : 'Treasury' }}</span>
                 </a>
             @endif
-            <a href="{{ route('revenue.daily-summary') }}"
-                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
-                   {{ request()->routeIs('revenue.daily-summary') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <span>{{ app()->getLocale() === 'ar' ? 'ملخص الإيرادات ' : 'Revenue Summary' }}</span>
-            </a>
             <a href="{{ route('reports.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('reports.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">

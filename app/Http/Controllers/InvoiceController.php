@@ -280,12 +280,10 @@ class InvoiceController extends Controller
                             : 'Select insurance company for this visit.',
                     ]);
                 }
-            } elseif ($charityMode !== '') {
-                throw ValidationException::withMessages([
-                    'charity_treatment_invoice_mode' => app()->getLocale() === 'ar'
-                        ? 'خيار فاتورة الجمعية يخص مرضى الجمعية فقط.'
-                        : 'Charity invoice options apply only to charity patients.',
-                ]);
+            } else {
+                // نقدي / تأمين / غيره: تجاهل خيارات فاتورة الجمعية لو اتبعتت من الفورم بالخطأ
+                $charityMode = '';
+                $charityFallback = '';
             }
 
             $invoicePaymentType = $finalPaymentType;
@@ -589,7 +587,8 @@ class InvoiceController extends Controller
                         return;
                     }
                     try {
-                        Mail::to($mailTo)->send(new ApprovalRequestMail($approval));
+                        // DISABLED: النظام لا يرسل إيميلات حالياً
+                        // Mail::to($mailTo)->send(new ApprovalRequestMail($approval));
                     } catch (\Throwable $e) {
                         Log::error('Failed to send approval email (after response): ' . $e->getMessage(), [
                             'approval_id' => $approvalId,
@@ -822,7 +821,8 @@ class InvoiceController extends Controller
             $pdfContent = $mpdf->Output('', 'S');
             Storage::disk('local')->put($pdfRelativePath, $pdfContent);
 
-            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail($partySend, $pdfRelativePath));
+            // DISABLED: النظام لا يرسل إيميلات حالياً
+            // Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail($partySend, $pdfRelativePath));
 
             $invoice->update([
                 'status' => $patient->payment_type === 'insurance' ? 'sent_to_insurance' : 'sent_to_charity',
@@ -1046,15 +1046,16 @@ class InvoiceController extends Controller
             $customIntro = $request->filled('custom_intro') ? $request->input('custom_intro') : null;
             $treatmentDuration = $request->filled('treatment_duration') ? $request->input('treatment_duration') : null;
 
-            Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail(
-                $partySend,
-                $pdfRelativePath,
-                $customSubject,
-                $customIntro,
-                $treatmentDuration,
-                $extraPaths,
-                $senderName
-            ));
+            // DISABLED: النظام لا يرسل إيميلات حالياً
+            // Mail::to($partySend->recipient_email)->send(new InvoiceToPartyMail(
+            //     $partySend,
+            //     $pdfRelativePath,
+            //     $customSubject,
+            //     $customIntro,
+            //     $treatmentDuration,
+            //     $extraPaths,
+            //     $senderName
+            // ));
 
             $invoice->update(['status' => 'sent_to_charity']);
             \App\Models\CharityClaim::updateOrCreate(
@@ -1147,7 +1148,8 @@ class InvoiceController extends Controller
         }
 
         try {
-            Mail::to($charityEntity->email)->send(new \App\Mail\CharityServicesCompletedMail($invoice));
+            // DISABLED: النظام لا يرسل إيميلات حالياً
+            // Mail::to($charityEntity->email)->send(new \App\Mail\CharityServicesCompletedMail($invoice));
 
             // Update tracking flag
             $invoice->update(['sent_to_charity_mail_at' => now()]);
@@ -1177,7 +1179,8 @@ class InvoiceController extends Controller
         }
 
         try {
-            Mail::to($charityEntity->email)->send(new \App\Mail\CharityPaymentReminderMail($invoice));
+            // DISABLED: النظام لا يرسل إيميلات حالياً
+            // Mail::to($charityEntity->email)->send(new \App\Mail\CharityPaymentReminderMail($invoice));
             ActivityLogger::log('Charity Payment Reminder Sent', 'Invoice', $invoice->id, 'Payment reminder sent to ' . $charityEntity->email, null, null);
             return back()->with('success', app()->getLocale() === 'ar' ? 'تم إرسال تذكير السداد للجمعية بنجاح.' : 'Payment reminder sent to charity.');
         } catch (\Throwable $e) {

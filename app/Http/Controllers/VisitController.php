@@ -584,7 +584,8 @@ class VisitController extends Controller
 
                     if ($recipientEmail) {
                         try {
-                            Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
+                            // DISABLED: النظام لا يرسل إيميلات حالياً
+                            // Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
                         } catch (\Exception $e) {
                             Log::error('Failed to send auto-approval email: ' . $e->getMessage());
                         }
@@ -798,7 +799,8 @@ class VisitController extends Controller
 
                 if ($recipientEmail) {
                     try {
-                        Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
+                        // DISABLED: النظام لا يرسل إيميلات حالياً
+                        // Mail::to($recipientEmail)->send(new ApprovalRequestMail($approval));
                     } catch (\Exception $e) {
                         Log::error('Failed to send approval email: '.$e->getMessage());
                     }
