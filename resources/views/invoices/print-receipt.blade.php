@@ -134,13 +134,21 @@
                 padding: 0;
             }
             body { padding: 4px 8px; font-size: 11px; }
-            @page { margin: 0.4cm; size: A4 portrait; }
+            @page { margin: 0.5cm 0.4cm 1cm 0.4cm; size: A4 portrait; }
             .moh-form {
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
             .moh-form.print-fit-scale {
                 transform-origin: top center;
+            }
+        }
+
+        @page {
+            @bottom-center {
+                content: counter(page);
+                font-size: 11px;
+                color: #333;
             }
         }
         @media print {

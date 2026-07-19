@@ -167,7 +167,15 @@
             @media print {
                 @page {
                     size: A4;
-                    margin: 8mm 10mm;
+                    margin: 8mm 10mm 14mm 10mm;
+                }
+
+                @page {
+                    @bottom-center {
+                        content: counter(page);
+                        font-size: 11px;
+                        color: #333;
+                    }
                 }
 
                 body {

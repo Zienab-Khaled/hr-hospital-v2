@@ -36,7 +36,16 @@
 
             @page {
                 margin: 1cm;
+                margin-bottom: 1.6cm;
                 size: A4;
+            }
+
+            @page {
+                @bottom-center {
+                    content: counter(page);
+                    font-size: 11px;
+                    color: #333;
+                }
             }
 
             * {

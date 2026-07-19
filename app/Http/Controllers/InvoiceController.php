@@ -691,18 +691,17 @@ class InvoiceController extends Controller
         return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
-    /** طباعة الفاتورة — نفس نموذج إيصال التحصيل (ق-1) */
+    /** طباعة الفاتورة المفصلة (فاتورة — ليست إيصال تحصيل) */
     public function printInvoice(Invoice $invoice)
     {
         $this->authorize('invoices.view');
         $invoice->load([
             'patient.insuranceCompany',
             'patient.charityEntity',
+            'patient.department',
             'items.service',
             'visit.department',
-            'payments.receipt.splits',
-            'payments.receipt.collectedBy',
-            'payments.receipt.patient',
+            'payments',
         ]);
 
         $settingsData = [
@@ -716,65 +715,11 @@ class InvoiceController extends Controller
             'financial_dept_name' => Setting::get('financial_dept_name', 'إدارة الموارد المالية'),
         ];
 
-        // لو فيه إيصال تحصيل مرتبط — اطبع نفس صفحة ق-1 حرفياً
-        $receipt = $invoice->payments
-            ->map(fn ($p) => $p->receipt)
-            ->filter()
-            ->sortByDesc(fn ($r) => $r->collected_at?->timestamp ?? $r->id)
-            ->first();
-
-        if ($receipt) {
-            $receipt->loadMissing(['payment.invoice.items.service', 'patient', 'collectedBy', 'splits']);
-            $rawItems = is_array($receipt->selected_items) ? $receipt->selected_items : [];
-            $displaySelectedItems = [];
-            foreach ($rawItems as $item) {
-                $name = trim((string) ($item['name'] ?? ''));
-                if ($name === '' || $name === '—') {
-                    $iid = isset($item['id']) ? (int) $item['id'] : 0;
-                    $invItem = $iid ? $invoice->items->firstWhere('id', $iid) : null;
-                    if (! $invItem && $iid) {
-                        $invItem = $invoice->items->firstWhere('service_id', $iid);
-                    }
-                    if ($invItem) {
-                        $name = trim((string) ($invItem->service?->name_ar ?? ''))
-                            ?: trim((string) ($invItem->service?->name ?? ''))
-                            ?: trim((string) ($invItem->description ?? ''));
-                    }
-                    if ($name === '') {
-                        $name = '—';
-                    }
-                }
-                $displaySelectedItems[] = array_merge($item, ['name' => $name]);
-            }
-            $manager = User::getManagerForSignature();
-            ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Invoice printed as q-1 receipt: '.$invoice->invoice_number, null, null);
-
-            return view('invoices.print-receipt', compact('receipt', 'invoice', 'settingsData', 'manager', 'displaySelectedItems'));
-        }
-
-        // بدون إيصال: نفس قالب ق-1 ببيانات الفاتورة
-        $displaySelectedItems = $invoice->items->map(function ($item) {
-            $name = trim((string) ($item->description ?? ''))
-                ?: trim((string) ($item->service?->name_ar ?? ''))
-                ?: trim((string) ($item->service?->name ?? ''))
-                ?: '—';
-
-            return [
-                'id' => $item->id,
-                'code' => $item->service?->code ?? '—',
-                'name' => $name,
-                'qty' => (int) $item->quantity,
-                'unit_price' => (float) $item->unit_price,
-                'total' => (float) $item->total_price,
-            ];
-        })->values()->all();
-
         $manager = User::getManagerForSignature();
-        $isInvoicePrint = true;
 
-        ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Invoice printed (q-1 layout): '.$invoice->invoice_number, null, null);
+        ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'تم طباعة الفاتورة: '.$invoice->invoice_number, null, null);
 
-        return view('invoices.print-receipt', compact('invoice', 'settingsData', 'manager', 'displaySelectedItems', 'isInvoicePrint'));
+        return view('invoices.print-invoice', compact('invoice', 'settingsData', 'manager'));
     }
 
     /** إرسال الفاتورة لشركة التأمين / الجمعية الخيرية */

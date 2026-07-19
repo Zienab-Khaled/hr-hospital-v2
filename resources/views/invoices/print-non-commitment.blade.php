@@ -53,7 +53,7 @@
             }
 
             .print-page-num::after {
-                content: "صفحة رقم " counter(page);
+                content: counter(page);
             }
 
             * {
@@ -70,7 +70,7 @@
 
         @page {
             @bottom-center {
-                content: "صفحة رقم " counter(page);
+                content: counter(page);
                 font-family: 'Segoe UI', Tahoma, sans-serif;
                 font-size: 11px;
                 color: #333;
@@ -768,7 +768,7 @@
         <span>{{ $invoice->invoice_number }} | {{ $invoice->invoice_date?->format('Y/m/d') }}</span>
     </div>
 
-    {{-- ترقيم الصفحات عند الطباعة (صفحة رقم ١، ٢، …) --}}
+    {{-- ترقيم الصفحات عند الطباعة (1، 2، …) --}}
     <div class="print-page-num" aria-hidden="true"></div>
 
     <!-- ====== PRINT JS ====== -->
