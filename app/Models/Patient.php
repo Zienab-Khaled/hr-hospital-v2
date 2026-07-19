@@ -19,7 +19,7 @@ class Patient extends Model implements HasMedia
         'file_number', 'name', 'name_ar', 'name_ar_first', 'name_ar_father', 'name_ar_family',
         'identity_type', 'identity_value', 'phone',
         'payment_type', 'insurance_company_id', 'charity_entity_id', 'department_id', 'notes', 'is_active',
-        'date_of_birth', 'age', 'gender', 'country_of_origin', 'sponsor_name', 'sponsor_phone',
+        'date_of_birth', 'age', 'gender', 'country_of_origin', 'profession', 'sponsor_name', 'sponsor_phone',
     ];
 
     protected function casts(): array

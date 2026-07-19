@@ -185,6 +185,7 @@ class InvoiceController extends Controller
             'patient_date_of_birth' => 'nullable|date|before_or_equal:today|after:1900-01-01',
             'patient_gender' => 'nullable|string|max:20',
             'patient_country_of_origin' => 'nullable|string|max:100',
+            'patient_profession' => 'nullable|string|max:255',
             'patient_sponsor_name' => 'nullable|string|max:255',
             'patient_sponsor_phone' => 'nullable|string|max:50',
             'patient_payment_type' => 'nullable|string|in:' . implode(',', Patient::paymentTypeKeys()),
@@ -228,6 +229,7 @@ class InvoiceController extends Controller
                 'date_of_birth' => ! empty($validated['patient_date_of_birth'] ?? null) ? $validated['patient_date_of_birth'] : null,
                 'gender' => in_array($gender, ['male', 'female'], true) ? $gender : null,
                 'country_of_origin' => $validated['patient_country_of_origin'] ?? null,
+                'profession' => $validated['patient_profession'] ?? null,
                 'sponsor_name' => $validated['patient_sponsor_name'] ?? null,
                 'sponsor_phone' => $validated['patient_sponsor_phone'] ?? null,
             ], fn ($v) => $v !== null && $v !== '');

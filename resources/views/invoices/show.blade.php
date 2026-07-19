@@ -344,6 +344,11 @@
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'الهاتف:' : 'Phone:' }}</span>
                             {{ $invoice->patient->phone }}</p>
                     @endif
+                    @if ($invoice->patient->profession)
+                        <p><span
+                                class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'المهنة:' : 'Profession:' }}</span>
+                            {{ $invoice->patient->profession }}</p>
+                    @endif
                     @if ($invoice->patient->identity_value)
                         <p><span
                                 class="text-slate-600 font-semibold">{{ app()->getLocale() === 'ar' ? 'رقم الهوية/الفيزا:' : 'ID/Visa:' }}</span>

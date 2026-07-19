@@ -183,6 +183,13 @@
                             </div>
                             <div>
                                 <label
+                                    class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'المهنة:' : 'Profession:' }}</label>
+                                <input type="text" name="patient_profession"
+                                    value="{{ old('patient_profession', $patient->profession) }}"
+                                    class="{{ $inputClass }}">
+                            </div>
+                            <div>
+                                <label
                                     class="block text-blue-700 font-semibold text-sm mb-1">{{ app()->getLocale() === 'ar' ? 'اسم الكفيل:' : 'Sponsor Name:' }}</label>
                                 <input type="text" name="patient_sponsor_name"
                                     value="{{ old('patient_sponsor_name', $patient->sponsor_name) }}"

@@ -47,7 +47,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'country_of_origin'],
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'country_of_origin', 'profession'],
             [
                 'payment_type' => 'payment_type',
                 'identity_type' => 'identity_type',
@@ -154,7 +154,7 @@ class PlaceholderController extends Controller
         $this->applyIndexFilters(
             $query,
             $request,
-            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'sponsor_name', 'country_of_origin'],
+            ['name', 'name_ar', 'file_number', 'identity_value', 'phone', 'sponsor_name', 'country_of_origin', 'profession'],
             $filters
         );
 
