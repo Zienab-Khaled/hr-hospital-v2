@@ -80,9 +80,9 @@
                         class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                         {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر تعهد' : 'Print commitment form' }}
                     </a>
-                    <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
+                    <a href="{{ route('invoices.print-non-commitment', $invoice) }}?print=1" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
-                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر إقرار بعدم التوقيع' : 'Print non-commitment form' }}
+                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم التوقيع' : 'Print non-signature report' }}
                     </a>
                     {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
                     @if (
@@ -166,7 +166,7 @@
                         <span
                             class="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-xs font-bold px-2 py-1 rounded border border-slate-300">
                             📄
-                            {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر إقرار بعدم التوقيع' : 'Non-commitment form printed' }}
+                            {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر عدم التوقيع' : 'Non-signature report printed' }}
                             ({{ $invoice->printed_non_commitment_at->format('Y-m-d H:i') }})
                         </span>
                     @endif

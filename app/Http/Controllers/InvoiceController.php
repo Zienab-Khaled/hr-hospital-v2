@@ -691,54 +691,90 @@ class InvoiceController extends Controller
         return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
-    /** طباعة الفاتورة التفصيلية */
+    /** طباعة الفاتورة — نفس نموذج إيصال التحصيل (ق-1) */
     public function printInvoice(Invoice $invoice)
     {
         $this->authorize('invoices.view');
-        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service', 'visit.department', 'payments']);
+        $invoice->load([
+            'patient.insuranceCompany',
+            'patient.charityEntity',
+            'items.service',
+            'visit.department',
+            'payments.receipt.splits',
+            'payments.receipt.collectedBy',
+            'payments.receipt.patient',
+        ]);
 
-        $visit = $invoice->visit;
-        if ($visit) {
-            $visit->load(['patient.insuranceCompany', 'department', 'shift']);
-            if (! $visit->department) {
-                $invoice->patient?->loadMissing('department');
-                if ($invoice->patient?->department) {
-                    $visit->setRelation('department', $invoice->patient->department);
+        $settingsData = [
+            'logo' => Setting::get('logo'),
+            'hospital_name' => Setting::get('hospital_name', 'مستشفى'),
+            'hospital_name_en' => Setting::get('hospital_name_en'),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'stamp' => Setting::get('stamp'),
+            'manager_name' => Setting::get('manager_name', ''),
+            'manager_signature' => Setting::get('manager_signature'),
+            'financial_dept_name' => Setting::get('financial_dept_name', 'إدارة الموارد المالية'),
+        ];
+
+        // لو فيه إيصال تحصيل مرتبط — اطبع نفس صفحة ق-1 حرفياً
+        $receipt = $invoice->payments
+            ->map(fn ($p) => $p->receipt)
+            ->filter()
+            ->sortByDesc(fn ($r) => $r->collected_at?->timestamp ?? $r->id)
+            ->first();
+
+        if ($receipt) {
+            $receipt->loadMissing(['payment.invoice.items.service', 'patient', 'collectedBy', 'splits']);
+            $rawItems = is_array($receipt->selected_items) ? $receipt->selected_items : [];
+            $displaySelectedItems = [];
+            foreach ($rawItems as $item) {
+                $name = trim((string) ($item['name'] ?? ''));
+                if ($name === '' || $name === '—') {
+                    $iid = isset($item['id']) ? (int) $item['id'] : 0;
+                    $invItem = $iid ? $invoice->items->firstWhere('id', $iid) : null;
+                    if (! $invItem && $iid) {
+                        $invItem = $invoice->items->firstWhere('service_id', $iid);
+                    }
+                    if ($invItem) {
+                        $name = trim((string) ($invItem->service?->name_ar ?? ''))
+                            ?: trim((string) ($invItem->service?->name ?? ''))
+                            ?: trim((string) ($invItem->description ?? ''));
+                    }
+                    if ($name === '') {
+                        $name = '—';
+                    }
                 }
+                $displaySelectedItems[] = array_merge($item, ['name' => $name]);
             }
-        } else {
-            $invoice->patient?->load(['insuranceCompany', 'department']);
-            $visit = new Visit([
-                'patient_id' => $invoice->patient_id,
-                'department_id' => $invoice->patient?->department_id,
-                'visit_date' => $invoice->invoice_date ?? now(),
-            ]);
-            $visit->setRelation('patient', $invoice->patient);
-            $visit->setRelation('department', $invoice->patient?->department);
+            $manager = User::getManagerForSignature();
+            ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Invoice printed as q-1 receipt: '.$invoice->invoice_number, null, null);
+
+            return view('invoices.print-receipt', compact('receipt', 'invoice', 'settingsData', 'manager', 'displaySelectedItems'));
         }
 
-        $services = $invoice->items->map(function ($item) {
-            $name = $item->description
-                ?: (app()->getLocale() === 'ar' ? ($item->service?->name_ar ?? $item->service?->name) : ($item->service?->name ?? $item->service?->name_ar))
+        // بدون إيصال: نفس قالب ق-1 ببيانات الفاتورة
+        $displaySelectedItems = $invoice->items->map(function ($item) {
+            $name = trim((string) ($item->description ?? ''))
+                ?: trim((string) ($item->service?->name_ar ?? ''))
+                ?: trim((string) ($item->service?->name ?? ''))
                 ?: '—';
 
             return [
-                'code' => $item->service?->code ?? '',
+                'id' => $item->id,
+                'code' => $item->service?->code ?? '—',
                 'name' => $name,
-                'qty' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total' => $item->total_price,
-                'insurance_coverage_type' => $item->insurance_coverage_type ?? '',
-                'insurance_coverage_value' => $item->insurance_coverage_value ?? 0,
+                'qty' => (int) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total' => (float) $item->total_price,
             ];
         })->values()->all();
 
         $manager = User::getManagerForSignature();
-        $printTitle = 'detailed_invoice';
+        $isInvoicePrint = true;
 
-        ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Detailed invoice printed: '.$invoice->invoice_number, null, null);
+        ActivityLogger::log('Print Invoice', 'Invoice', $invoice->id, 'Invoice printed (q-1 layout): '.$invoice->invoice_number, null, null);
 
-        return view('visits.price-inquiry-print', compact('visit', 'services', 'manager', 'printTitle', 'invoice'));
+        return view('invoices.print-receipt', compact('invoice', 'settingsData', 'manager', 'displaySelectedItems', 'isInvoicePrint'));
     }
 
     /** إرسال الفاتورة لشركة التأمين / الجمعية الخيرية */

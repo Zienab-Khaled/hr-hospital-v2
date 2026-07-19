@@ -2,11 +2,9 @@
 <html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
+    <title>محضر عدم التوقيع - {{ $invoice->invoice_number }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>إقرار بتلقي خدمة خارج التغطية التأمينية - {{ $invoice->invoice_number }}</title>
-    <!-- Signature Pad Library -->
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -42,14 +40,40 @@
                 display: none !important;
             }
 
-            @page {
-                margin: 1cm;
-                size: A4;
+            .print-page-num {
+                display: block !important;
+                position: fixed;
+                bottom: 0.4cm;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 11px;
+                color: #333;
+                z-index: 9999;
+            }
+
+            .print-page-num::after {
+                content: "صفحة رقم " counter(page);
             }
 
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+        }
+
+        @page {
+            margin: 1cm;
+            margin-bottom: 1.8cm;
+            size: A4;
+        }
+
+        @page {
+            @bottom-center {
+                content: "صفحة رقم " counter(page);
+                font-family: 'Segoe UI', Tahoma, sans-serif;
+                font-size: 11px;
+                color: #333;
             }
         }
 
@@ -143,13 +167,138 @@
         /* ====== TITLE ====== */
         .form-title {
             text-align: center;
-            font-size: 32px;
-            font-weight: bold;
-            margin: 20px 0 30px;
-            letter-spacing: 1px;
+            font-size: 22px;
+            font-weight: 900;
+            margin: 18px 0 22px;
+            text-decoration: underline;
+            text-underline-offset: 6px;
+            letter-spacing: 0.5px;
         }
 
-        /* ====== MAIN BOX ====== */
+        .report-meta {
+            margin: 0 0 22px;
+            max-width: 280px;
+            margin-right: auto;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .report-meta .meta-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .report-meta .meta-label {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .report-meta .meta-line {
+            flex: 1;
+            border-bottom: 1px dotted #333;
+            min-height: 20px;
+        }
+
+        .report-body {
+            font-size: 15px;
+            line-height: 2.15;
+            text-align: justify;
+            margin-bottom: 14px;
+        }
+
+        .report-body .blank-inline {
+            display: inline-block;
+            border-bottom: 1px dotted #333;
+            min-width: 240px;
+            height: 1.1em;
+            vertical-align: baseline;
+            margin: 0 4px;
+        }
+
+        .report-body .blank-inline.long {
+            min-width: 340px;
+        }
+
+        .report-field {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 10px 0;
+            font-size: 15px;
+        }
+
+        .report-field .fld-label {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .report-field .fld-line {
+            flex: 1;
+            max-width: 420px;
+            border-bottom: 1px dotted #333;
+            min-height: 22px;
+        }
+
+        .report-sigs-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .report-sigs-staff {
+            flex: 0 0 auto;
+            min-width: 240px;
+        }
+
+        .report-sig-line {
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.95;
+        }
+
+        .report-sig-line .role {
+            font-weight: 700;
+        }
+
+        .report-sig-line .sig-dots {
+            display: inline-block;
+            min-width: 150px;
+            border-bottom: 1px dotted #333;
+            margin-right: 6px;
+        }
+
+        .report-sigs-manager {
+            flex: 0 0 auto;
+            text-align: center;
+            min-width: 240px;
+            margin-top: 8px;
+        }
+
+        .report-sigs-manager .mgr-title {
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .report-sigs-manager .mgr-name {
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 28px;
+        }
+
+        .report-sigs-manager .mgr-sig-img img {
+            max-width: 140px;
+            max-height: 60px;
+            margin: 8px auto;
+            display: block;
+        }
+
+        /* ====== MAIN BOX (legacy unused) ====== */
         .pledge-box {
             border: 2px solid #000;
             padding: 18px 20px;
@@ -173,11 +322,32 @@
 
         .pledge-row .fill {
             flex: 1;
-            min-width: 120px;
+            min-width: 140px;
             border-bottom: 1px solid #555;
             height: 22px;
             display: inline-block;
             padding: 0 4px;
+        }
+
+        .pledge-blank {
+            display: inline-block;
+            border-bottom: 1px dotted #333;
+            min-width: 200px;
+            height: 1.2em;
+            vertical-align: baseline;
+            margin: 0 6px;
+        }
+
+        .pledge-blank.wide {
+            min-width: 280px;
+        }
+
+        .pledge-blank.amount {
+            min-width: 120px;
+        }
+
+        .print-page-num {
+            display: none;
         }
 
         .pledge-text {
@@ -233,8 +403,9 @@
         .fill-dots {
             display: inline-block;
             width: 100%;
-            min-height: 20px;
+            min-height: 22px;
             padding: 0 4px;
+            border-bottom: 1px solid #555;
         }
 
         /* Signature pad in table */
@@ -478,7 +649,7 @@
 
     <!-- Print Button -->
     <div class="no-print">
-        <button class="btn btn-dark" onclick="handlePrint()">🖨️ طباعة المحضر</button>
+        <button type="button" class="btn btn-dark" id="btn-print-report" onclick="window.print()">🖨️ طباعة المحضر</button>
         <a href="{{ route('invoices.show', $invoice) }}" style="color: #555; font-size: 14px; text-decoration: none;">←
             العودة للفاتورة</a>
     </div>
@@ -505,176 +676,79 @@
     </div>
 
     <!-- ====== TITLE ====== -->
-    <div class="form-title">إقرار بتلقي خدمة خارج التغطية التأمينية</div>
+    <div class="form-title">محضر عدم التوقيع</div>
 
-    <!-- ====== MAIN BOX ====== -->
-    <div class="pledge-box">
-
-        <!-- Line 1: نعم أنا المدعو / حامل إقامة رقم -->
-        <div class="pledge-row">
-            <span class="lbl">نعم أنا المدعو /</span>
-            <span class="fill">
-                @if ($invoice->patient)
-                    {{ $invoice->patient->fullArabicName() }}
-                @endif
-            </span>
-            <span class="lbl" style="margin-right: 10px;">حامل إقامة رقم /</span>
-            <span class="fill">
-                @if ($invoice->patient)
-                    {{ $invoice->patient->identity_value ?? '' }}
-                @endif
-            </span>
+    {{-- رقم المحضر / التاريخ / الوقت — فراغات للكتابة --}}
+    <div class="report-meta">
+        <div class="meta-row">
+            <span class="meta-label">رقم المحضر :</span>
+            <span class="meta-line"></span>
         </div>
-
-        <!-- Line 2: مصدرها -->
-        <div class="pledge-row">
-            <span class="lbl">مصدرها /</span>
-            <span class="fill">
-                @if ($invoice->patient)
-                    {{ $invoice->patient->country_of_origin ?? '' }}
-                @endif
-            </span>
+        <div class="meta-row">
+            <span class="meta-label">التاريخ :</span>
+            <span class="meta-line"></span>
         </div>
-
-        <!-- Body: تلقي خدمة خارج التغطية -->
-        @php
-            $serviceNames = $invoice->items
-                ? $invoice->items->map(fn ($item) => $item->service?->name_ar ?: $item->service?->name ?: $item->description)->filter()->implode('، ')
-                : '';
-            $serviceAmount = $invoice->total_amount !== null
-                ? number_format((float) $invoice->total_amount, 2)
-                : '';
-        @endphp
-        <div class="pledge-text">
-            أقر بأني تلقيت خدمة
-            <strong style="border-bottom: 1px dotted #333; padding: 0 8px; min-width: 180px; display: inline-block; text-align: center;">
-                {{ $serviceNames !== '' ? $serviceNames : '………………' }}
-            </strong>
-            وتم إخطاري بمبلغ الخدمة
-            @if ($serviceAmount !== '')
-                (<strong>{{ $serviceAmount }}</strong> ريال)
-            @else
-                <strong style="border-bottom: 1px dotted #333; padding: 0 12px;">………………</strong>
-            @endif
-            وأنها خارج نطاق التغطية التأمينية.
+        <div class="meta-row">
+            <span class="meta-label">الوقت :</span>
+            <span class="meta-line"></span>
         </div>
-
-        <!-- Closing -->
-        <div class="pledge-closing">والله الموفق ،،،،</div>
     </div>
 
-    <!-- ====== ACKNOWLEDGMENT TABLE: بيانات المريض الممتنع عن التوقيع ====== -->
-    <table class="ack-table">
-        <thead>
-            <tr>
-                <th colspan="2">بيانات المريض الممتنع عن التوقيع</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="row-label">الأسم :</td>
-                <td>
-                    <span class="fill-dots">
-                        @if ($invoice->patient)
-                            {{ $invoice->patient->fullArabicName() }}
-                        @endif
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <td class="row-label">الجنسية :</td>
-                <td>
-                    <span class="fill-dots">
-                        @if ($invoice->patient)
-                            {{ $invoice->patient->country_of_origin ?? '' }}
-                        @endif
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <td class="row-label">رقم الإقامة :</td>
-                <td>
-                    <span class="fill-dots">
-                        @if ($invoice->patient)
-                            {{ $invoice->patient->identity_value ?? '' }}
-                        @endif
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <td class="row-label">تاريخ المحضر :</td>
-                <td>
-                    <span
-                        class="fill-dots">{{ $invoice->invoice_date?->format('Y/m/d') ?? now()->format('Y/m/d') }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="row-label">توقيع الموظف المختص :</td>
-                <td class="sig-td">
-                    <div class="sig-img">
-                        @if (auth()->check() && auth()->user()->signature)
-                            <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
-                                alt="توقيع الموظف" style="max-width: 150px; max-height: 70px;">
-                        @endif
-                    </div>
-                    <div class="sig-name">
-                        {{ auth()->check() ? auth()->user()->name : '________________________________' }}</div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="report-body">
+        نقر نحن الموقعين أدناه بأنه تم شرح جميع التعهدات والسندات النظامية المتعلقة بتلقي الخدمات الصحية المدفوعة للمستفيد، وهي:
+        (<span class="blank-inline long"></span>)
+    </div>
 
-    <div class="file-ref">ص/ ملف المريض بالقسم .</div>
+    <div class="report-field">
+        <span class="fld-label">اسم المستفيد :</span>
+        <span class="fld-line"></span>
+    </div>
+    <div class="report-field">
+        <span class="fld-label">رقم الإقامة :</span>
+        <span class="fld-line"></span>
+    </div>
 
-    <!-- ====== EMPLOYEE / WITNESS SIGNATURES ====== -->
-    <div class="employee-section">
-        <div class="employee-label">الموظف المختص :-</div>
-        <div class="sig-row">
+    <div class="report-body">
+        وقد تم توضيح ما يترتب على هذه التعهدات والالتزامات المالية للمستفيد بصورة واضحة، إلا أنه رفض التوقيع عليها مع إبدائه رغبته بتلقي الخدمة.
+        وعليه تم تحرير هذا المحضر لإثبات واقعة رفض التوقيع وإحاطته بأن عدم التوقيع قد يترتب عليه إجراءات قانونية.
+        وتم إخطاري بمبلغ الخدمة وأنها خارج نطاق التغطية التأمينية.
+    </div>
 
-            {{-- Employee --}}
-            <div class="sig-block">
-                <div class="sig-title">توقيع الموظف</div>
-                <div class="sig-img">
-                    @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
-                            alt="توقيع الموظف">
-                    @endif
-                </div>
-                <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}
-                </div>
+    <div class="report-sigs-wrap">
+        <div class="report-sigs-staff">
+            <div class="report-sig-line">
+                <span class="role">المحصل :</span>
+                <span class="sig-dots"></span>
+                <br>
+                <span class="role">التوقيع :</span>
+                <span class="sig-dots"></span>
             </div>
-
-            {{-- Manager --}}
-            @if (isset($manager) && $manager)
-                <div class="sig-block">
-                    <div class="sig-title">توقيع مدير إدارة تنمية الإيرادات</div>
-                    <div class="sig-img">
-                        @if ($manager->signature)
-                            <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}"
-                                alt="توقيع مدير إدارة تنمية الإيرادات">
-                        @endif
-                    </div>
-                    <div class="sig-name">{{ $manager->name }}</div>
-                </div>
-            @endif
-
-            {{-- Seal --}}
-            <div class="seal-block">
-                <div class="seal-title">الختم</div>
-                <div class="seal-box">
-                    @php $seal = \App\Models\Setting::get('seal'); @endphp
-                    @if ($seal && \Illuminate\Support\Facades\Storage::disk('public')->exists($seal))
-                        <img src="{{ asset('storage/' . $seal) }}" alt="الختم">
-                    @endif
-                </div>
+            <div class="report-sig-line">
+                <span class="role">فني المتابعة :</span>
+                <span class="sig-dots"></span>
+                <br>
+                <span class="role">التوقيع :</span>
+                <span class="sig-dots"></span>
             </div>
+            <div class="report-sig-line">
+                <span class="role">المحاسب :</span>
+                <span class="sig-dots"></span>
+                <br>
+                <span class="role">التوقيع :</span>
+                <span class="sig-dots"></span>
+            </div>
+        </div>
 
-            {{-- Witness --}}
-            <!-- <div class="sig-block">
-                <div class="sig-title">توقيع الشاهد</div>
-                <div class="sig-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
-            </div> -->
-
+        <div class="report-sigs-manager">
+            <div class="mgr-title">مدير إدارة تنمية الإيرادات</div>
+            <div class="mgr-sig-img">
+                @if (isset($manager) && $manager && $manager->signature)
+                    <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" alt="توقيع المدير">
+                @endif
+            </div>
+            <div class="mgr-name">
+                {{ isset($manager) && $manager ? ($manager->name_ar ?? $manager->name) : (\App\Models\Setting::get('manager_name', 'جسار بن محمد الضويحي')) }}
+            </div>
         </div>
     </div>
 
@@ -694,130 +768,34 @@
         <span>{{ $invoice->invoice_number }} | {{ $invoice->invoice_date?->format('Y/m/d') }}</span>
     </div>
 
-    <!-- ====== SIGNATURE PAD JS ====== -->
+    {{-- ترقيم الصفحات عند الطباعة (صفحة رقم ١، ٢، …) --}}
+    <div class="print-page-num" aria-hidden="true"></div>
+
+    <!-- ====== PRINT JS ====== -->
     <script>
-        const canvas = document.getElementById('sigCanvas');
-        const preview = document.getElementById('sigPreview');
-
-        function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-            signaturePad.clear();
-        }
-
-        const signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgba(255,255,255,0)',
-            penColor: '#000'
-        });
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function clearSig() {
-            signaturePad.clear();
-            preview.src = '';
-            preview.style.display = 'none';
-        }
-
         function handlePrint() {
-            if (!signaturePad.isEmpty()) {
-                preview.src = signaturePad.toDataURL('image/png');
-                preview.style.display = 'block';
-            }
-            var fpImg = document.getElementById('fingerprintPreview');
-            if (fpImg && fpImg.src && fpImg.src.indexOf('data:') === 0) {
-                fpImg.classList.add('has-image');
-            }
-            setTimeout(() => window.print(), 150);
+            window.print();
         }
 
-        // البصمة الإلكترونية: رفع أو لصق
-        var fingerprintInput = document.getElementById('fingerprintInput');
-        var fingerprintPreview = document.getElementById('fingerprintPreview');
-        var fingerprintPasteZone = document.getElementById('fingerprintPasteZone');
-        if (fingerprintInput) {
-            fingerprintInput.addEventListener('change', function(e) {
-                var f = e.target.files[0];
-                if (f && f.type.indexOf('image') !== -1) {
-                    var r = new FileReader();
-                    r.onload = function() {
-                        fingerprintPreview.src = r.result;
-                        fingerprintPreview.classList.add('has-image');
-                    };
-                    r.readAsDataURL(f);
-                }
-            });
-        }
-        if (fingerprintPasteZone && fingerprintPreview) {
-            fingerprintPasteZone.addEventListener('paste', function(e) {
-                var items = e.clipboardData && e.clipboardData.items;
-                if (!items) return;
-                for (var i = 0; i < items.length; i++) {
-                    if (items[i].type.indexOf('image') !== -1) {
-                        e.preventDefault();
-                        var blob = items[i].getAsFile();
-                        var reader = new FileReader();
-                        reader.onload = function() {
-                            fingerprintPreview.src = reader.result;
-                            fingerprintPreview.classList.add('has-image');
-                        };
-                        reader.readAsDataURL(blob);
-                        break;
-                    }
-                }
-            });
-            fingerprintPasteZone.addEventListener('click', function() {
-                document.getElementById('fingerprintInput').click();
-            });
-        }
-        var btnPasteFingerprint = document.getElementById('btnPasteFingerprint');
-        if (btnPasteFingerprint && fingerprintPreview) {
-            btnPasteFingerprint.addEventListener('click', function() {
-                if (!navigator.clipboard || !navigator.clipboard.read) {
-                    if (fingerprintPasteZone) fingerprintPasteZone.focus();
-                    alert(
-                        'المتصفح لا يدعم جلب الصورة من الحافظة. استخدم اللصق يدوياً (Ctrl+V) في منطقة «أو الصق هنا».');
-                    return;
-                }
-                navigator.clipboard.read().then(function(items) {
-                    for (var i = 0; i < items.length; i++) {
-                        var types = items[i].types || [];
-                        for (var t = 0; t < types.length; t++) {
-                            if (types[t].indexOf('image') !== -1) {
-                                items[i].getType(types[t]).then(function(blob) {
-                                    var r = new FileReader();
-                                    r.onload = function() {
-                                        fingerprintPreview.src = r.result;
-                                        fingerprintPreview.classList.add('has-image');
-                                    };
-                                    r.readAsDataURL(blob);
-                                });
-                                return;
-                            }
-                        }
-                    }
-                    alert(
-                        'لا توجد صورة في الحافظة. اطلب من المريض البصم على الجهاز أولاً، ثم اضغط «جلب البصمة» مرة أخرى.');
-                }).catch(function(err) {
-                    if (err.name === 'NotAllowedError')
-                        alert(
-                            'السماح للموقع بالوصول إلى الحافظة (عند ظهور طلب الإذن)، ثم أعد الضغط على «جلب البصمة».'
-                            );
-                    else
-                        alert('جرّب اللصق يدوياً: اضغط في منطقة «أو الصق هنا» ثم Ctrl+V.');
+        // فتح نافذة الطباعة تلقائياً لو جت من زرار الفاتورة (?print=1)
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('print') === '1') {
+                window.addEventListener('load', function () {
+                    setTimeout(function () {
+                        window.print();
+                    }, 300);
                 });
-            });
-        }
-
-        function clearFingerprint() {
-            if (fingerprintPreview) {
-                fingerprintPreview.src = '';
-                fingerprintPreview.classList.remove('has-image');
             }
-            if (fingerprintInput) fingerprintInput.value = '';
-        }
+
+            var btn = document.getElementById('btn-print-report');
+            if (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    window.print();
+                });
+            }
+        })();
     </script>
 
     @include('components.report-footer')

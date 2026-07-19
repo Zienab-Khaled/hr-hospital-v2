@@ -1,38 +1,107 @@
 @php
     use App\Helpers\CurrencyHelper;
     use App\Models\PaymentReceipt;
-    $splitLines = $receipt->splitsForDisplay();
-    $nSplitLines = $splitLines->count();
-    $cashFromPatient = ($nSplitLines <= 1 && $receipt->patient_cash_amount && (float) $receipt->patient_cash_amount > 0)
-        ? (float) $receipt->patient_cash_amount
-        : null;
-    $displayAmount = $cashFromPatient !== null ? $cashFromPatient : (float) $receipt->amount;
-    $amountWords = CurrencyHelper::amountInArabicWords($displayAmount);
-    $patient = $receipt->patient;
-    $anyCash = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cash');
-    $anyCard = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'card');
-    $anyLoyaltyPoints = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points');
-    $anyBank = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
-    $anyCheque = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cheque');
-    $isCash = $anyCash;
-    $isCard = $anyCard;
-    $isLoyaltyPoints = $anyLoyaltyPoints;
-    $isBank = $anyBank;
-    $isCheque = $anyCheque;
-    $chequeLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'cheque');
-    $chequeRefFromSplit = $chequeLine ? (string) ($chequeLine->reference_number ?? '') : '';
-    $bankLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
-    $bankRefFromSplit = $bankLine ? (string) ($bankLine->reference_number ?? '') : '';
+    $isInvoicePrint = !empty($isInvoicePrint) || empty($receipt);
     $s = $settingsData ?? [];
-    $ministryNumber = $receipt->ministry_receipt_number ?? $receipt->receipt_number;
-    $rowsForTable = isset($displaySelectedItems) && is_array($displaySelectedItems) && count($displaySelectedItems) > 0
-        ? $displaySelectedItems
-        : ($receipt->selected_items ?? []);
-    $remainingToCollect = round((float) ($receipt->invoice_snapshot_remaining ?? 0), 2);
-    $snapInvoiceTotal = round((float) ($receipt->invoice_snapshot_total ?? 0), 2);
-    $snapPaidThisReceipt = round((float) ($receipt->amount ?? 0), 2);
-    $snapPaidCumulative = round((float) ($receipt->invoice_snapshot_paid ?? 0), 2);
-    $printRowCount = count($rowsForTable) + $nSplitLines;
+
+    if ($isInvoicePrint && empty($receipt)) {
+        $patient = $invoice->patient;
+        $rowsForTable = isset($displaySelectedItems) && is_array($displaySelectedItems) && count($displaySelectedItems) > 0
+            ? $displaySelectedItems
+            : [];
+        $snapInvoiceTotal = round((float) ($invoice->total_amount ?? 0), 2);
+        $snapPaidCumulative = round((float) ($invoice->paid_amount ?? 0), 2);
+        $remainingToCollect = round((float) ($invoice->remaining_amount ?? max(0, $snapInvoiceTotal - $snapPaidCumulative)), 2);
+        $snapPaidThisReceipt = $snapPaidCumulative;
+        $displayAmount = $snapInvoiceTotal;
+        $amountWords = CurrencyHelper::amountInArabicWords($displayAmount);
+        $ministryNumber = $invoice->invoice_number;
+        $docElectronicId = $invoice->id;
+        $docDate = $invoice->invoice_date?->format('d-m-Y') ?? now()->format('d-m-Y');
+        $formTitle = 'ايصال تحصيل';
+        $printButtonLabel = '🖨️ طباعة الفاتورة (ق-1)';
+        $footerNote = 'تم استخراج هذه الفاتورة إلكترونياً';
+        $collectorUser = auth()->user();
+        $paymentMethod = $invoice->payment_type ?? 'cash';
+        $splitLines = collect([
+            (object) [
+                'payment_method' => $paymentMethod,
+                'amount' => $snapPaidCumulative > 0 ? $snapPaidCumulative : $snapInvoiceTotal,
+                'reference_number' => null,
+            ],
+        ]);
+        // لو فيه دفعات فعلية نعرض طرقها
+        $paymentSplits = collect();
+        foreach ($invoice->payments ?? [] as $pay) {
+            $method = $pay->payment_type ?? $paymentMethod;
+            $paymentSplits->push((object) [
+                'payment_method' => $method,
+                'amount' => (float) ($pay->amount ?? 0),
+                'reference_number' => $pay->reference_no ?? null,
+            ]);
+        }
+        if ($paymentSplits->isNotEmpty()) {
+            $splitLines = $paymentSplits;
+        }
+        $nSplitLines = $splitLines->count();
+        $anyCash = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cash');
+        $anyCard = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'card');
+        $anyLoyaltyPoints = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points');
+        $anyBank = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
+        $anyCheque = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cheque');
+        $isCash = $anyCash || $paymentMethod === 'cash';
+        $isCard = $anyCard;
+        $isLoyaltyPoints = $anyLoyaltyPoints;
+        $isBank = $anyBank;
+        $isCheque = $anyCheque;
+        $chequeRefFromSplit = (string) ($splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'cheque')?->reference_number ?? '');
+        $bankRefFromSplit = (string) ($splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer')?->reference_number ?? '');
+        $showPaymentSplitsTable = $nSplitLines >= 1 && $snapPaidCumulative > 0;
+        $totalPaymentAmountExtra = 0;
+        $printRowCount = count($rowsForTable) + ($showPaymentSplitsTable ? $nSplitLines : 0);
+    } else {
+        $splitLines = $receipt->splitsForDisplay();
+        $nSplitLines = $splitLines->count();
+        $cashFromPatient = ($nSplitLines <= 1 && $receipt->patient_cash_amount && (float) $receipt->patient_cash_amount > 0)
+            ? (float) $receipt->patient_cash_amount
+            : null;
+        $displayAmount = $cashFromPatient !== null ? $cashFromPatient : (float) $receipt->amount;
+        $amountWords = CurrencyHelper::amountInArabicWords($displayAmount);
+        $patient = $receipt->patient;
+        $anyCash = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cash');
+        $anyCard = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'card');
+        $anyLoyaltyPoints = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points');
+        $anyBank = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
+        $anyCheque = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cheque');
+        $isCash = $anyCash;
+        $isCard = $anyCard;
+        $isLoyaltyPoints = $anyLoyaltyPoints;
+        $isBank = $anyBank;
+        $isCheque = $anyCheque;
+        $chequeLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'cheque');
+        $chequeRefFromSplit = $chequeLine ? (string) ($chequeLine->reference_number ?? '') : '';
+        $bankLine = $splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
+        $bankRefFromSplit = $bankLine ? (string) ($bankLine->reference_number ?? '') : '';
+        $ministryNumber = $receipt->ministry_receipt_number ?? $receipt->receipt_number;
+        $rowsForTable = isset($displaySelectedItems) && is_array($displaySelectedItems) && count($displaySelectedItems) > 0
+            ? $displaySelectedItems
+            : ($receipt->selected_items ?? []);
+        $remainingToCollect = round((float) ($receipt->invoice_snapshot_remaining ?? 0), 2);
+        $snapInvoiceTotal = round((float) ($receipt->invoice_snapshot_total ?? 0), 2);
+        $snapPaidThisReceipt = round((float) ($receipt->amount ?? 0), 2);
+        $snapPaidCumulative = round((float) ($receipt->invoice_snapshot_paid ?? 0), 2);
+        $docElectronicId = $receipt->id;
+        $docDate = $receipt->collected_at?->format('d-m-Y');
+        $formTitle = 'ايصال تحصيل';
+        $printButtonLabel = '🖨️ طباعة الإيصال (ق-1)';
+        $footerNote = 'تم استخراج هذا الإيصال إلكترونياً';
+        $collectorUser = $receipt->collectedBy;
+        $showPaymentSplitsTable = $nSplitLines >= 1 && (float) $receipt->amount > 0;
+        $totalPaymentAmountExtra = ($receipt->total_payment_amount ?? 0) > 0 && (float) $receipt->total_payment_amount !== (float) $displayAmount
+            ? (float) $receipt->total_payment_amount
+            : 0;
+        $printRowCount = count($rowsForTable) + $nSplitLines;
+    }
     $printDensityClass = $printRowCount > 14 ? 'print-density-tight' : ($printRowCount > 9 ? 'print-density-compact' : '');
 @endphp
 <!DOCTYPE html>
@@ -40,7 +109,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>إيصال تحصيل - {{ $receipt->receipt_number }}</title>
+    <title>{{ $isInvoicePrint && empty($receipt) ? 'فاتورة' : 'إيصال تحصيل' }} - {{ $ministryNumber }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -246,7 +315,7 @@
 </head>
 <body>
     <div class="no-print">
-        <button class="btn" onclick="window.print()">🖨️ طباعة الإيصال (ق-1)</button>
+        <button class="btn" onclick="window.print()">{{ $printButtonLabel }}</button>
         <a href="{{ route('invoices.show', $invoice) }}" style="text-decoration: none; color: #666;">← العودة للفاتورة</a>
         <p class="hint">يمكنك تعديل حقول «شيك رقم» و«إيداع في الحساب» و«على بنك» و«فرع» أدناه قبل الطباعة.</p>
     </div>
@@ -280,7 +349,7 @@
                 </div>
                 <div class="moh-en">Ministry of Health</div>
                 <div class="moh-ar">وزارة الصحة</div>
-                <div class="form-title-box">ايصال تحصيل</div>
+                <div class="form-title-box">{{ $formTitle }}</div>
             </div>
 
             {{-- يسار: نموذج (ق-1) + رقم / [ترقيم الوزارة] + الرقم الإلكتروني + بتاريخ + رقم الملف + رقم الهوية --}}
@@ -290,10 +359,10 @@
                     <label>رقم /</label>
                     <span class="val ministry-num">{{ $ministryNumber }}</span>
                 </div>
-                <div class="form-meta"><label>الرقم الإلكتروني:</label> <span class="val">{{ $receipt->id }}</span></div>
-                <div class="form-meta"><label>بتاريخ :</label> <span class="val">{{ $receipt->collected_at?->format('d-m-Y') }}</span></div>
+                <div class="form-meta"><label>الرقم الإلكتروني:</label> <span class="val">{{ $docElectronicId }}</span></div>
+                <div class="form-meta"><label>بتاريخ :</label> <span class="val">{{ $docDate }}</span></div>
                 <div class="form-meta"><label>رقم الملف :</label> <span class="val">{{ $patient->file_number ?? '—' }}</span></div>
-                <div class="form-meta"><label>رقم الهوية :</label> <span class="val">{{ $patient->identity_value ?? '—' }}</span></div>
+                <div class="form-meta"><label>رقم الإقامة :</label> <span class="val">{{ $patient->identity_value ?? '—' }}</span></div>
             </div>
         </div>
 
@@ -329,8 +398,12 @@
 
         <div class="receipt-money-summary">
             <div><strong>إجمالي الفاتورة:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapInvoiceTotal) }} ريال</div>
-            <div><strong>المدفوع في هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidThisReceipt) }} ريال</div>
-            <div><strong>إجمالي المسدد على الفاتورة بعد هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidCumulative) }} ريال</div>
+            @if (!empty($receipt))
+                <div><strong>المدفوع في هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidThisReceipt) }} ريال</div>
+                <div><strong>إجمالي المسدد على الفاتورة بعد هذا الإيصال:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidCumulative) }} ريال</div>
+            @else
+                <div><strong>إجمالي المسدد على الفاتورة:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($snapPaidCumulative) }} ريال</div>
+            @endif
             <div><strong>المتبقي للتحصيل على الفاتورة:</strong> {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($remainingToCollect) }} ريال</div>
         </div>
 
@@ -339,10 +412,10 @@
                 <span class="total-num">{{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $displayAmount) }} ريال</span>
                 <span class="total-words">{{ $amountWords }}</span>
             </div>
-            @if(($receipt->total_payment_amount ?? 0) > 0 && (float)$receipt->total_payment_amount !== (float)$displayAmount)
-            <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ \App\Helpers\CurrencyHelper::formatAmountDecimal((float) $receipt->total_payment_amount) }} ريال</div>
+            @if($totalPaymentAmountExtra > 0)
+            <div class="total-extra">إجمالي دفعة الفاتورة (كامل المبلغ المسجل): {{ \App\Helpers\CurrencyHelper::formatAmountDecimal($totalPaymentAmountExtra) }} ريال</div>
             @endif
-            @if ($nSplitLines >= 1 && (float) $receipt->amount > 0)
+            @if ($showPaymentSplitsTable)
                 <table class="services-table" style="margin-top: 10px;">
                     <thead>
                         <tr>
@@ -369,10 +442,10 @@
             <div class="section-label">نوع السداد</div>
             <div class="payment-row">
                 <label class="payment-opt"><input type="checkbox" {{ $isCash ? 'checked' : '' }} disabled> نقدي</label>
-                <label class="payment-opt inline-field">شيك رقم <input type="text" class="editable-print-input" id="cheque-no" value="{{ $chequeRefFromSplit !== '' ? $chequeRefFromSplit : ($isCheque ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
+                <label class="payment-opt inline-field">شيك رقم <input type="text" class="editable-print-input" id="cheque-no" value="{{ $chequeRefFromSplit !== '' ? $chequeRefFromSplit : (($isCheque && !empty($receipt)) ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
                 <label class="payment-opt"><input type="checkbox" {{ $isCard ? 'checked' : '' }} disabled> نقطة بيع / شبكة</label>
                 <label class="payment-opt"><input type="checkbox" {{ $isLoyaltyPoints ? 'checked' : '' }} disabled> نقاط بيع</label>
-                <label class="payment-opt inline-field">إيداع في الحساب رقم : <input type="text" class="editable-print-input" id="deposit-account" value="{{ $bankRefFromSplit !== '' ? $bankRefFromSplit : ($isBank ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
+                <label class="payment-opt inline-field">إيداع في الحساب رقم : <input type="text" class="editable-print-input" id="deposit-account" value="{{ $bankRefFromSplit !== '' ? $bankRefFromSplit : (($isBank && !empty($receipt)) ? ($receipt->reference_number ?? '') : '') }}" placeholder="—"></label>
             </div>
             <div class="bank-row">
                 <span>على بنك : <input type="text" class="editable-print-input" id="bank-name" value="" placeholder="—"></span>
@@ -385,12 +458,12 @@
             <div class="col">
                 <div class="col-title">المحصل</div>
                 <div class="col-content">
-                    @if($receipt->collectedBy && $receipt->collectedBy->signature)
-                        <div class="sig-img"><img src="{{ asset('storage/' . ltrim($receipt->collectedBy->signature ?? '', '/')) }}" alt="توقيع المحصل"></div>
+                    @if($collectorUser && $collectorUser->signature)
+                        <div class="sig-img"><img src="{{ asset('storage/' . ltrim($collectorUser->signature ?? '', '/')) }}" alt="توقيع المحصل"></div>
                     @else
                         <div style="min-height:36px;"></div>
                     @endif
-                    <div class="sig-line">{{ $receipt->collectedBy->name_ar ?? $receipt->collectedBy->name ?? '________________' }}</div>
+                    <div class="sig-line">{{ $collectorUser->name_ar ?? $collectorUser->name ?? '________________' }}</div>
                 </div>
             </div>
             <div class="col">
@@ -409,12 +482,12 @@
             </div>
         </div>
         <div class="receipt-print-footer print-only" style="text-align: center; font-size: 9px; color: #888; margin-top: 6px;">
-            تم استخراج هذا الإيصال إلكترونياً — {{ now()->format('Y/m/d H:i') }}
+            {{ $footerNote }} — {{ now()->format('Y/m/d H:i') }}
         </div>
     </div>
 
     <div class="no-print" style="position: fixed; bottom: 8px; left: 0; width: 100%; text-align: center; font-size: 9px; color: #888;">
-        تم استخراج هذا الإيصال إلكترونياً من نظام المستشفى — {{ now()->format('Y/m/d H:i') }}
+        {{ $footerNote }} من نظام المستشفى — {{ now()->format('Y/m/d H:i') }}
     </div>
 
     @include('components.report-footer')

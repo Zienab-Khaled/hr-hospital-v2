@@ -261,12 +261,6 @@
             @php
                 $patient = $visit->patient;
                 $identityLabel = $patient->identity_type_label;
-                $genderLabel = match ($patient->gender) {
-                    'male' => 'ذكر',
-                    'female' => 'أنثى',
-                    default => null,
-                };
-                $ageYears = $patient->ageInYears();
             @endphp
 
             <div class="info-row">
@@ -300,25 +294,6 @@
                 </div>
             @endif
 
-            @if ($genderLabel)
-                <div class="info-row">
-                    <div class="info-label">الجنس :</div>
-                    <div class="info-value">{{ $genderLabel }}</div>
-                </div>
-            @endif
-
-            @if ($patient->date_of_birth || $ageYears !== null)
-                <div class="info-row">
-                    <div class="info-label">تاريخ الميلاد :</div>
-                    <div class="info-value">
-                        {{ $patient->date_of_birth?->format('Y-m-d') ?? '—' }}
-                        @if ($ageYears !== null)
-                            <span style="color:#64748b; font-weight:600;">(العمر: {{ $ageYears }} سنة)</span>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
             @if ($patient->country_of_origin)
                 <div class="info-row">
                     <div class="info-label">الجنسية :</div>
@@ -330,18 +305,6 @@
                 <div class="info-row">
                     <div class="info-label">المهنة :</div>
                     <div class="info-value">{{ $patient->profession }}</div>
-                </div>
-            @endif
-
-            @if ($patient->sponsor_name)
-                <div class="info-row">
-                    <div class="info-label">اسم الكفيل :</div>
-                    <div class="info-value">
-                        {{ $patient->sponsor_name }}
-                        @if ($patient->sponsor_phone)
-                            <span style="color:#64748b;">— {{ $patient->sponsor_phone }}</span>
-                        @endif
-                    </div>
                 </div>
             @endif
 
@@ -404,7 +367,7 @@
                 </div>
 
                 <div class="sig-box">
-                    <div class="sig-label">مدير الايرادات :</div>
+                    <div class="sig-label">مدير إدارة تنمية الإيرادات :</div>
                     <div class="sig-name">{{ $manager->name ?? 'ناصر احمد الضويحي' }}</div>
                     @if ($manager && $manager->signature)
                         <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" class="sig-img" alt="Manager Signature">

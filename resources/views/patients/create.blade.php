@@ -280,8 +280,8 @@
                                 {{ app()->getLocale() === 'ar' ? 'المهنة' : 'Profession' }}
                             </label>
                             <input type="text" name="profession" value="{{ old('profession') }}"
-                                class="w-full rounded border border-slate-300 px-3 py-2"
-                                placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: موظف، طالب...' : 'e.g. Employee, Student...' }}">
+                                class="w-full rounded border border-slate-300 px-3 py-2">
+                                {{-- placeholder="{{ app()->getLocale() === 'ar' ? 'مثال: موظف، طالب...' : 'e.g. Employee, Student...' }}"> --}}
                         </div>
                         <div id="sponsor_name_field" style="display: none;">
                             <label class="block text-sm font-medium text-slate-700 mb-1">

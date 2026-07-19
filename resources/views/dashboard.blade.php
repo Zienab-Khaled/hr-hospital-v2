@@ -611,7 +611,10 @@
                 let url = type === 'commitment' ? "{{ route('invoices.print-commitment', ':id') }}" :
                     "{{ route('invoices.print-non-commitment', ':id') }}";
                 url = url.replace(':id', invoiceId);
-                window.location.href = url;
+                if (type === 'non_commitment') {
+                    url += (url.indexOf('?') >= 0 ? '&' : '?') + 'print=1';
+                }
+                window.open(url, '_blank');
                 return;
             }
 

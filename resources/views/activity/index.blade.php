@@ -34,15 +34,15 @@
                             </td>
                             <td class="p-3">
                                 <span class="inline-block px-2 py-1 rounded text-xs font-medium
-                                    @if(str_contains($log->action, 'created')) bg-green-100 text-green-800
-                                    @elseif(str_contains($log->action, 'updated') || str_contains($log->action, 'uploaded')) bg-blue-100 text-blue-800
-                                    @elseif(str_contains($log->action, 'deleted')) bg-red-100 text-red-800
+                                    @if(str_contains(strtolower($log->action), 'created') || str_contains($log->action, 'إنشاء')) bg-green-100 text-green-800
+                                    @elseif(str_contains(strtolower($log->action), 'updated') || str_contains(strtolower($log->action), 'uploaded') || str_contains($log->action, 'تعديل') || str_contains($log->action, 'رفع')) bg-blue-100 text-blue-800
+                                    @elseif(str_contains(strtolower($log->action), 'deleted') || str_contains($log->action, 'حذف')) bg-red-100 text-red-800
                                     @else bg-slate-100 text-slate-800
                                     @endif">
-                                    {{ $log->action }}
+                                    {{ $log->actionLabel() }}
                                 </span>
                             </td>
-                            <td class="p-3 max-w-md">{{ $log->description ?? '-' }}</td>
+                            <td class="p-3 max-w-md">{{ $log->descriptionLabel() }}</td>
                             <td class="p-3 text-xs text-slate-500">{{ $log->ip_address ?? '-' }}</td>
                         </tr>
                     @empty
