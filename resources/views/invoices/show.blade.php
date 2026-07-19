@@ -80,9 +80,13 @@
                         class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                         {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر تعهد' : 'Print commitment form' }}
                     </a>
-                    <a href="{{ route('invoices.print-non-commitment', $invoice) }}?print=1" target="_blank" rel="noopener"
+                    <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
                         {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم التوقيع' : 'Print non-signature report' }}
+                    </a>
+                    <a href="{{ route('invoices.print-out-of-coverage', $invoice) }}" target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 bg-white border-2 border-teal-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-teal-50 hover:border-teal-500">
+                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة إقرار خدمة خارج التغطية' : 'Print out-of-coverage declaration' }}
                     </a>
                     {{-- إرسال للجمعية: يظهر لجميع فواتير مرضى الجمعية (المريض مرتبط بجمعية خيرية) --}}
                     @if (

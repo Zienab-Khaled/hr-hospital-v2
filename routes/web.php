@@ -154,6 +154,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'printInvoice'])->name('invoices.print');
     Route::get('invoices/{invoice}/print-commitment', [InvoiceController::class, 'printCommitmentForm'])->name('invoices.print-commitment');
     Route::get('invoices/{invoice}/print-non-commitment', [InvoiceController::class, 'printNonCommitmentForm'])->name('invoices.print-non-commitment');
+    Route::get('invoices/{invoice}/print-out-of-coverage', [InvoiceController::class, 'printOutOfCoverageForm'])->name('invoices.print-out-of-coverage');
     Route::get('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'showExecuteService'])->name('invoices.execute-service.show');
     Route::post('invoices/{invoice}/execute-service/{item}', [App\Http\Controllers\InvoiceController::class, 'executeService'])->name('invoices.execute-service');
     Route::get('invoices/{invoice}/items/{item}/treatment-eligibility-print', [VisitController::class, 'treatmentEligibilityPrintForItem'])->name('invoices.items.treatment-eligibility-print');

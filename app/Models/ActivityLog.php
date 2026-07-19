@@ -43,6 +43,7 @@ class ActivityLog extends Model
             'Print Invoice' => 'طباعة فاتورة',
             'Print Commitment' => 'طباعة محضر تعهد',
             'Print Non-Commitment' => 'طباعة محضر عدم التوقيع',
+            'Print Out-of-Coverage' => 'طباعة إقرار خدمة خارج التغطية',
             'Print Eligibility' => 'طباعة أحقية العلاج',
             'Print Price Inquiry' => 'طباعة عرض سعر استعلامي',
             'Payment Recorded' => 'تسجيل دفعة',
@@ -105,6 +106,7 @@ class ActivityLog extends Model
         $patterns = [
             '/^Invoice created with (\d+) items?$/i' => 'تم إنشاء فاتورة بعدد $1 بند',
             '/^Non-commitment form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر عدم التوقيع للفاتورة: $1',
+            '/^تم طباعة إقرار خدمة خارج التغطية للفاتورة:\s*(.+)$/u' => 'تم طباعة إقرار خدمة خارج التغطية للفاتورة: $1',
             '/^Commitment form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر التعهد للفاتورة: $1',
             '/^Detailed invoice printed:\s*(.+)$/i' => 'تم طباعة الفاتورة التفصيلية: $1',
             '/^Invoice printed as q-1 receipt:\s*(.+)$/i' => 'تم طباعة الفاتورة (نموذج ق-1): $1',

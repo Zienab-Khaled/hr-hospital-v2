@@ -201,6 +201,28 @@
             min-height: 20px;
         }
 
+        /* فراغات قابلة للكتابة بالكيبورد */
+        .kb-input {
+            border: none;
+            border-bottom: 1px dotted #333;
+            background: #fefce8;
+            font: inherit;
+            color: #000;
+            padding: 2px 4px;
+            outline: none;
+            min-width: 120px;
+        }
+        .kb-input.flex-1 { flex: 1; width: 100%; max-width: 100%; }
+        .kb-input.long { min-width: 280px; width: 60%; }
+        .kb-input.inline { display: inline-block; vertical-align: baseline; margin: 0 4px; min-width: 200px; }
+        .kb-input.sig { min-width: 140px; }
+        @media print {
+            .kb-input {
+                background: transparent !important;
+                border-bottom: 1px solid #000;
+            }
+        }
+
         .report-body {
             font-size: 15px;
             line-height: 2.15;
@@ -652,6 +674,7 @@
         <button type="button" class="btn btn-dark" id="btn-print-report" onclick="window.print()">🖨️ طباعة المحضر</button>
         <a href="{{ route('invoices.show', $invoice) }}" style="color: #555; font-size: 14px; text-decoration: none;">←
             العودة للفاتورة</a>
+        <p style="width:100%;text-align:center;font-size:12px;color:#555;">عبّي الفراغات بالكيبورد ثم اضغط طباعة.</p>
     </div>
 
     <!-- ====== HEADER ====== -->
@@ -678,34 +701,34 @@
     <!-- ====== TITLE ====== -->
     <div class="form-title">محضر عدم التوقيع</div>
 
-    {{-- رقم المحضر / التاريخ / الوقت — فراغات للكتابة --}}
+    {{-- رقم المحضر / التاريخ / الوقت — قابلة للكتابة بالكيبورد --}}
     <div class="report-meta">
         <div class="meta-row">
             <span class="meta-label">رقم المحضر :</span>
-            <span class="meta-line"></span>
+            <input type="text" class="kb-input flex-1" name="report_no" autocomplete="off">
         </div>
         <div class="meta-row">
             <span class="meta-label">التاريخ :</span>
-            <span class="meta-line"></span>
+            <input type="text" class="kb-input flex-1" name="report_date" autocomplete="off">
         </div>
         <div class="meta-row">
             <span class="meta-label">الوقت :</span>
-            <span class="meta-line"></span>
+            <input type="text" class="kb-input flex-1" name="report_time" autocomplete="off">
         </div>
     </div>
 
     <div class="report-body">
         نقر نحن الموقعين أدناه بأنه تم شرح جميع التعهدات والسندات النظامية المتعلقة بتلقي الخدمات الصحية المدفوعة للمستفيد، وهي:
-        (<span class="blank-inline long"></span>)
+        (<input type="text" class="kb-input inline long" name="services_list" autocomplete="off">)
     </div>
 
     <div class="report-field">
         <span class="fld-label">اسم المستفيد :</span>
-        <span class="fld-line"></span>
+        <input type="text" class="kb-input flex-1" name="beneficiary_name" autocomplete="off" style="max-width:420px;">
     </div>
     <div class="report-field">
         <span class="fld-label">رقم الإقامة :</span>
-        <span class="fld-line"></span>
+        <input type="text" class="kb-input flex-1" name="iqama_no" autocomplete="off" style="max-width:420px;">
     </div>
 
     <div class="report-body">
@@ -718,24 +741,24 @@
         <div class="report-sigs-staff">
             <div class="report-sig-line">
                 <span class="role">المحصل :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="collector_name" autocomplete="off">
                 <br>
                 <span class="role">التوقيع :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="collector_sig" autocomplete="off">
             </div>
             <div class="report-sig-line">
                 <span class="role">فني المتابعة :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="followup_name" autocomplete="off">
                 <br>
                 <span class="role">التوقيع :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="followup_sig" autocomplete="off">
             </div>
             <div class="report-sig-line">
                 <span class="role">المحاسب :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="accountant_name" autocomplete="off">
                 <br>
                 <span class="role">التوقيع :</span>
-                <span class="sig-dots"></span>
+                <input type="text" class="kb-input sig" name="accountant_sig" autocomplete="off">
             </div>
         </div>
 

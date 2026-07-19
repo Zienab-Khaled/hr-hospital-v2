@@ -691,6 +691,25 @@ class InvoiceController extends Controller
         return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
     }
 
+    /** طباعة إقرار تلقي خدمة خارج التغطية التأمينية */
+    public function printOutOfCoverageForm(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.insuranceCompany', 'patient.charityEntity', 'items.service']);
+        $manager = \App\Models\User::getManagerForSignature();
+
+        ActivityLogger::log(
+            'Print Out-of-Coverage',
+            'Invoice',
+            $invoice->id,
+            'تم طباعة إقرار خدمة خارج التغطية للفاتورة: '.$invoice->invoice_number,
+            null,
+            null
+        );
+
+        return view('invoices.print-out-of-coverage', compact('invoice', 'manager'));
+    }
+
     /** طباعة الفاتورة المفصلة (فاتورة — ليست إيصال تحصيل) */
     public function printInvoice(Invoice $invoice)
     {
