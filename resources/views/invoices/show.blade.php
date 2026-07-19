@@ -391,7 +391,7 @@
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'المتبقي للمريض' : 'Patient share' }}</th>
                             @endif
-                            @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
+                            @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || \App\Support\RoleNav::canExecuteServices(auth()->user()))
                                 <th class="border border-slate-500 px-3 py-2 text-center text-sm font-bold text-slate-800">
                                     {{ app()->getLocale() === 'ar' ? 'التنفيذ' : 'Execution' }}</th>
                             @endif
@@ -438,7 +438,7 @@
                                         class="border border-slate-300 px-2 py-2 text-center text-sm text-amber-800 font-medium">
                                         @currencyInvoice($item->patient_amount)</td>
                                 @endif
-                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || auth()->user()->can('invoices.execute_services'))
+                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()) || \App\Support\RoleNav::canExecuteServices(auth()->user()))
                                     <td class="border border-slate-300 px-2 py-2 text-center text-sm">
                                         <div class="flex flex-col items-center gap-1">
                                             @if ($item->isCompleted())
@@ -454,12 +454,15 @@
                                                     <span
                                                         class="block text-xs text-slate-400">{{ $item->completedByUser->name ?? $item->completedByUser->username }}</span>
                                                 @endif
-                                            @elseif ($item->service_id)
+                                            @elseif ($item->service_id && \App\Support\RoleNav::canExecuteServices(auth()->user()))
                                                 <button type="button"
                                                     onclick="openExecuteModal({{ $item->id }}, '{{ route('invoices.execute-service', [$invoice, $item]) }}', '{{ addslashes(app()->getLocale() === 'ar' && $item->service?->name_ar ? $item->service->name_ar : $item->service?->name ?? '') }}')"
                                                     class="inline-flex items-center gap-1 bg-blue-600  text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 shadow-sm">
                                                     ▶ {{ app()->getLocale() === 'ar' ? 'تنفيذ' : 'Execute' }}
                                                 </button>
+                                            @elseif ($item->service_id)
+                                                <span
+                                                    class="text-slate-400 text-xs">{{ app()->getLocale() === 'ar' ? 'لم يُنفَّذ' : 'Pending' }}</span>
                                             @else
                                                 <span
                                                     class="text-slate-500 text-xs">{{ app()->getLocale() === 'ar' ? 'كشفية دخول' : 'Entry fee' }}</span>
@@ -489,7 +492,8 @@
             </div>
         </div>
 
-        {{-- Execute Service Modal --}}
+        {{-- Execute Service Modal — سوبر أدمن فقط --}}
+        @if (\App\Support\RoleNav::canExecuteServices(auth()->user()))
         <div id="execute-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
                 <h3 class="text-lg font-bold text-slate-800 mb-1">
@@ -533,6 +537,7 @@
                 if (e.target === this) closeExecuteModal();
             });
         </script>
+        @endif
 
         {{-- Recorded Payments Section --}}
         @if ($invoice->payments->isNotEmpty())

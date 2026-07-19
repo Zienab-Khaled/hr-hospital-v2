@@ -241,8 +241,8 @@
                 </div>
             </form>
 
-            {{-- ===== قسم تنفيذ الخدمات (خارج الفورم الرئيسي) ===== --}}
-            @can('invoices.edit')
+            {{-- ===== قسم تنفيذ الخدمات (خارج الفورم الرئيسي) — سوبر أدمن فقط ===== --}}
+            @if (\App\Support\RoleNav::canExecuteServices(auth()->user()))
                 <div class="mt-8 border-2 border-emerald-300 rounded-lg p-6 bg-gradient-to-br from-emerald-50 to-slate-50">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-bold text-slate-800">
@@ -318,7 +318,7 @@
                         </table>
                     </div>
                 </div>
-            @endcan
+            @endif
 
             {{-- Execute Service Modal --}}
             <div id="execute-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">

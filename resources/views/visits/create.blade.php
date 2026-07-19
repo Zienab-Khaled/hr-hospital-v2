@@ -352,7 +352,7 @@
                                 {{ app()->getLocale() === 'ar' ? 'تقديم خدمات وإنشاء فاتورة' : 'Add services & create invoice' }}
                             </h3>
                             <p class="text-sm text-slate-600 flex-1">
-                                {{ app()->getLocale() === 'ar' ? 'إضافة الخدمات ثم: فاتورة تفصيلية (إيراد) أو عرض سعر استعلامي (بدون إيراد).' : 'Add services then: detailed invoice (revenue) or price inquiry (no revenue).' }}
+                                {{ app()->getLocale() === 'ar' ? 'إضافة الخدمات ثم: عرض سعر استعلامي (بدون إيراد).' : 'Add services then: price inquiry (no revenue).' }}
                             </p>
                             @if (\App\Support\RoleNav::canCreateInvoiceWithServices(auth()->user()))
                                 <a href="{{ route('invoices.create', ['patient_id' => $patient->id, 'visit_id' => $visit?->id]) }}"
@@ -458,12 +458,14 @@
                         </div>
 
                         <div class="flex flex-wrap gap-3 items-center pt-2 border-t border-slate-200">
+                            {{-- DISABLED: فاتورة تفصيلية — معلّق مؤقتاً
                             <form id="revenue_invoice_form" method="POST" action="{{ route('visits.services-revenue-invoice', $visitForPrint) }}" target="_blank">
                                 @csrf
                                 <button type="button" id="revenue_invoice_btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'فاتورة تفصيلية' : 'Detailed invoice' }}
                                 </button>
                             </form>
+                            --}}
                             <form id="inquiry_invoice_form" method="POST" action="{{ route('visits.price-inquiry-print.submit', $visitForPrint) }}" target="_blank" class="inline">
                                 @csrf
                                 <input type="hidden" name="print_title" value="price_quotation">
@@ -472,7 +474,7 @@
                                 </button>
                             </form>
                             <p class="text-xs text-slate-500 w-full sm:w-auto">
-                                {{ app()->getLocale() === 'ar' ? 'تفصيلية: تُنشئ وتطبع وتُسجَّل في الإيرادات — استعلامي: للعرض فقط بدون إيراد' : 'Detailed: create, print & record — Inquiry: display only' }}
+                                {{ app()->getLocale() === 'ar' ? 'عرض سعر استعلامي: للعرض فقط بدون إيراد' : 'Inquiry: display only (no revenue)' }}
                             </p>
                         </div>
                     </div>

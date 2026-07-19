@@ -1095,18 +1095,14 @@ class InvoiceController extends Controller
     /** عرض نموذج تنفيذ الخدمة (GET) — نعيد توجيه لصفحة الفاتورة */
     public function showExecuteService(Invoice $invoice, \App\Models\InvoiceItem $item)
     {
-        if (!auth()->user()->can('invoices.edit') && !auth()->user()->can('invoices.execute_services')) {
-            abort(403);
-        }
+        abort_unless(RoleNav::canExecuteServices(auth()->user()), 403);
         return redirect()->route('invoices.show', $invoice);
     }
 
-    /** تنفيذ الخدمة: تحديد تاريخ التنفيذ وتغيير الحالة إلى مكتملة (المحصل أو من لديه تعديل فواتير) */
+    /** تنفيذ الخدمة: تحديد تاريخ التنفيذ وتغيير الحالة إلى مكتملة — سوبر أدمن فقط */
     public function executeService(Request $request, Invoice $invoice, \App\Models\InvoiceItem $item)
     {
-        if (!auth()->user()->can('invoices.edit') && !auth()->user()->can('invoices.execute_services')) {
-            abort(403);
-        }
+        abort_unless(RoleNav::canExecuteServices(auth()->user()), 403);
 
         if ($item->invoice_id !== $invoice->id) {
             abort(404);

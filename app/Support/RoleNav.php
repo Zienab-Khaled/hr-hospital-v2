@@ -130,6 +130,12 @@ final class RoleNav
         return self::hasSupervisorVisibility($user);
     }
 
+    /** تنفيذ الخدمة على بنود الفاتورة — سوبر أدمن فقط */
+    public static function canExecuteServices(?User $user): bool
+    {
+        return $user !== null && $user->hasRole('admin');
+    }
+
     /** مطابقة/رفض في غرفة التحكم — المحاسب فقط */
     public static function canAuditInControlRoom(?User $user): bool
     {

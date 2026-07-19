@@ -53,7 +53,7 @@
 
         .info-label {
             flex-shrink: 0;
-            width: 115px;
+            width: 140px;
             font-weight: 700;
             color: #475569;
             font-size: 14px;
@@ -258,15 +258,92 @@
         <div class="title-banner">أحقية العلاج</div>
 
         <div class="content-body">
+            @php
+                $patient = $visit->patient;
+                $identityLabel = $patient->identity_type_label;
+                $genderLabel = match ($patient->gender) {
+                    'male' => 'ذكر',
+                    'female' => 'أنثى',
+                    default => null,
+                };
+                $ageYears = $patient->ageInYears();
+            @endphp
+
             <div class="info-row">
                 <div class="info-label">المريض :</div>
-                <div class="info-value">{{ $visit->patient->fullArabicName() }}</div>
+                <div class="info-value">{{ $patient->fullArabicName() }}</div>
             </div>
+
+            @if ($patient->name && $patient->name !== $patient->fullArabicName())
+                <div class="info-row">
+                    <div class="info-label">الاسم (إنجليزي) :</div>
+                    <div class="info-value">{{ $patient->name }}</div>
+                </div>
+            @endif
 
             <div class="info-row">
                 <div class="info-label">رقم الملف :</div>
-                <div class="info-value">{{ $visit->patient->file_number }}</div>
+                <div class="info-value">{{ $patient->file_number }}</div>
             </div>
+
+            @if ($identityLabel || $patient->identity_value)
+                <div class="info-row">
+                    <div class="info-label">{{ $identityLabel ? $identityLabel . ' :' : 'رقم الهوية :' }}</div>
+                    <div class="info-value">{{ $patient->identity_value ?? '—' }}</div>
+                </div>
+            @endif
+
+            @if ($patient->phone)
+                <div class="info-row">
+                    <div class="info-label">الهاتف :</div>
+                    <div class="info-value" dir="ltr" style="text-align: right;">{{ $patient->phone }}</div>
+                </div>
+            @endif
+
+            @if ($genderLabel)
+                <div class="info-row">
+                    <div class="info-label">الجنس :</div>
+                    <div class="info-value">{{ $genderLabel }}</div>
+                </div>
+            @endif
+
+            @if ($patient->date_of_birth || $ageYears !== null)
+                <div class="info-row">
+                    <div class="info-label">تاريخ الميلاد :</div>
+                    <div class="info-value">
+                        {{ $patient->date_of_birth?->format('Y-m-d') ?? '—' }}
+                        @if ($ageYears !== null)
+                            <span style="color:#64748b; font-weight:600;">(العمر: {{ $ageYears }} سنة)</span>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            @if ($patient->country_of_origin)
+                <div class="info-row">
+                    <div class="info-label">الجنسية :</div>
+                    <div class="info-value">{{ $patient->country_of_origin }}</div>
+                </div>
+            @endif
+
+            @if ($patient->profession)
+                <div class="info-row">
+                    <div class="info-label">المهنة :</div>
+                    <div class="info-value">{{ $patient->profession }}</div>
+                </div>
+            @endif
+
+            @if ($patient->sponsor_name)
+                <div class="info-row">
+                    <div class="info-label">اسم الكفيل :</div>
+                    <div class="info-value">
+                        {{ $patient->sponsor_name }}
+                        @if ($patient->sponsor_phone)
+                            <span style="color:#64748b;">— {{ $patient->sponsor_phone }}</span>
+                        @endif
+                    </div>
+                </div>
+            @endif
 
             <div class="info-row">
                 <div class="info-label">الخدمة :</div>
@@ -288,14 +365,14 @@
                 <div class="info-value">
                     @if ($visit->case_type == 'emergency')
                         طوارئ
-                    @elseif($visit->patient->payment_type == 'insurance')
+                    @elseif($patient->payment_type == 'insurance')
                         تأمين
-                        ({{ $visit->patient->insuranceCompany->name_ar ?? ($visit->patient->insuranceCompany->name ?? '—') }})
-                    @elseif($visit->patient->payment_type == 'charity')
+                        ({{ $patient->insuranceCompany->name_ar ?? ($patient->insuranceCompany->name ?? '—') }})
+                    @elseif($patient->payment_type == 'charity')
                         جمعية خيرية
-                        ({{ $visit->patient->charityEntity->name_ar ?? ($visit->patient->charityEntity->name ?? '—') }})
-                    @elseif($visit->patient->payment_type == 'treatment_eligibility')
-                        {{ $visit->patient->payment_type_label }}
+                        ({{ $patient->charityEntity->name_ar ?? ($patient->charityEntity->name ?? '—') }})
+                    @elseif($patient->payment_type == 'treatment_eligibility')
+                        {{ $patient->payment_type_label }}
                     @else
                         شخصي (نقدي)
                     @endif
@@ -318,6 +395,9 @@
                 <div class="sig-box">
                     <div class="sig-label">الموظف :</div>
                     <div class="sig-name">{{ auth()->user()->name ?? '—' }}</div>
+                    @if (auth()->user()?->username)
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">{{ auth()->user()->username }}</div>
+                    @endif
                     @if (auth()->check() && auth()->user()->signature)
                         <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" class="sig-img" alt="Signature">
                     @endif
