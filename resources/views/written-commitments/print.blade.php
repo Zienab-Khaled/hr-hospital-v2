@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar-SA-u-nu-latn" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <title>تعهد خطي</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,10 +22,24 @@
         }
 
         @media print {
-            body { padding: 0; margin: 0; }
-            .no-print { display: none !important; }
-            @page { margin: 1cm; size: A4; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            @page {
+                margin: 1cm;
+                size: A4;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
 
         /* ====== HEADER ====== */
@@ -32,41 +51,53 @@
             padding-bottom: 15px;
             border-bottom: 2px solid #ccc;
         }
+
         .header-logo img {
             max-width: 90px;
             max-height: 90px;
         }
+
         .header-logo-placeholder {
-            width: 80px; height: 80px;
+            width: 80px;
+            height: 80px;
             border: 1px dashed #ccc;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
         }
+
         .header-info {
             text-align: center;
             flex: 1;
             padding: 0 20px;
         }
+
         .header-info .hospital-name-ar {
             font-size: 17px;
             font-weight: bold;
             margin-bottom: 3px;
         }
+
         .header-info .hospital-name-en {
             font-size: 13px;
             color: #333;
             margin-bottom: 3px;
         }
+
         .header-info .cluster-name {
             font-size: 12px;
             color: #555;
             margin-bottom: 3px;
         }
+
         .header-info .dept-name {
             font-size: 13px;
             font-weight: bold;
             margin-top: 4px;
         }
+
         .header-spacer {
             width: 80px;
         }
@@ -88,6 +119,7 @@
             line-height: 2.2;
             font-size: 14.5px;
         }
+
         .pledge-line {
             display: flex;
             align-items: baseline;
@@ -95,10 +127,12 @@
             gap: 4px;
             margin-bottom: 6px;
         }
+
         .pledge-line .label {
             font-weight: bold;
             white-space: nowrap;
         }
+
         .pledge-line .fill-line {
             flex: 1;
             min-width: 120px;
@@ -106,10 +140,12 @@
             height: 22px;
             display: inline-block;
         }
+
         .pledge-text-paragraph {
             margin-top: 8px;
             line-height: 2;
         }
+
         .pledge-closing {
             text-align: center;
             font-size: 15px;
@@ -121,12 +157,14 @@
         .ack-section {
             margin-bottom: 40px;
         }
+
         .ack-table {
             width: 55%;
             margin-right: auto;
             border-collapse: collapse;
             border: 2px solid #000;
         }
+
         .ack-table th {
             background-color: #e8e8e8 !important;
             text-align: center;
@@ -135,11 +173,13 @@
             font-weight: bold;
             border-bottom: 2px solid #000;
         }
+
         .ack-table td {
             padding: 9px 15px;
             border-bottom: 1px solid #aaa;
             vertical-align: middle;
         }
+
         .ack-table td:first-child {
             font-weight: bold;
             white-space: nowrap;
@@ -148,12 +188,15 @@
             text-align: right;
             width: 130px;
         }
+
         .ack-table td:last-child {
             min-width: 160px;
         }
+
         .ack-table tr:last-child td {
             border-bottom: none;
         }
+
         .ack-table .fill-dots {
             display: inline-block;
             width: 100%;
@@ -174,26 +217,31 @@
             margin-top: 50px;
             padding-top: 10px;
         }
+
         .employee-label {
             font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
             margin-bottom: 50px;
         }
+
         .employee-signature-area {
             display: flex;
             justify-content: flex-start;
             gap: 80px;
             margin-top: 20px;
         }
+
         .sig-block {
             text-align: center;
         }
+
         .sig-block .sig-title {
             font-weight: bold;
             margin-bottom: 50px;
             font-size: 14px;
         }
+
         .sig-block .sig-name {
             border-top: 1px solid #555;
             padding-top: 5px;
@@ -212,6 +260,7 @@
             pointer-events: none;
             overflow: hidden;
         }
+
         .bg-waves svg {
             position: absolute;
             bottom: 0;
@@ -239,6 +288,7 @@
             text-align: center;
             margin-bottom: 25px;
         }
+
         .print-btn {
             padding: 10px 28px;
             background: #1a1a2e;
@@ -249,16 +299,20 @@
             font-size: 15px;
             font-family: inherit;
         }
-        .print-btn:hover { background: #16213e; }
+
+        .print-btn:hover {
+            background: #16213e;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- Print Button -->
     <div class="no-print print-btn-wrap">
         <button class="print-btn" onclick="window.print()">🖨️ طباعة التعهد</button>
         <a href="{{ route('written-commitments.index') }}"
-           style="margin-right: 15px; color: #555; font-size: 14px; text-decoration: none;">
+            style="margin-right: 15px; color: #555; font-size: 14px; text-decoration: none;">
             ← رجوع للقائمة
         </a>
     </div>
@@ -268,7 +322,7 @@
     ============================================================ -->
     <div class="page-header">
         <div class="header-logo">
-            @if(isset($settings) && $settings && $settings->logo)
+            @if (isset($settings) && $settings && $settings->logo)
                 <img src="{{ asset('storage/' . $settings->logo) }}" alt="شعار المستشفى">
             @elseif(App\Models\Setting::get('logo'))
                 <img src="{{ asset('storage/' . App\Models\Setting::get('logo')) }}" alt="شعار المستشفى">
@@ -306,7 +360,7 @@
         <div class="pledge-line">
             <span class="label">نعم أنا المدعو /</span>
             <span class="fill-line" style="min-width: 180px;">
-                {{ $commitment->patient->fullArabicName() ?: ($commitment->patient->name ?? '') }}
+                {{ $commitment->patient->fullArabicName() ?: $commitment->patient->name ?? '' }}
             </span>
             <span class="label" style="margin-right: 10px;">حامل إقامة رقم /</span>
             <span class="fill-line" style="min-width: 140px;">
@@ -322,7 +376,7 @@
 
         <!-- Pledge paragraph -->
         <div class="pledge-text-paragraph">
-            أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية الإضافية التي تكون خارج نطاق التغطية التأمينية وعلى هذا يتم التوقيع .
+            أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية وعلى هذا يتم التوقيع .
         </div>
 
         <!-- Closing dua -->
@@ -345,7 +399,8 @@
                 <tr>
                     <td>الأسم :</td>
                     <td>
-                        <span class="fill-dots">{{ $commitment->patient->fullArabicName() ?: ($commitment->patient->name ?? '') }}</span>
+                        <span
+                            class="fill-dots">{{ $commitment->patient->fullArabicName() ?: $commitment->patient->name ?? '' }}</span>
                     </td>
                 </tr>
                 <tr>
@@ -380,7 +435,7 @@
         <div class="employee-label">الموظف المختص :-</div>
 
         <div class="employee-signature-area">
-            @if(isset($commitment->createdByUser) && $commitment->createdByUser)
+            @if (isset($commitment->createdByUser) && $commitment->createdByUser)
                 <div class="sig-block">
                     <div class="sig-title">اسم الموظف</div>
                     <div class="sig-name">{{ $commitment->createdByUser->name }}</div>
@@ -388,7 +443,9 @@
             @endif
             <div class="sig-block">
                 <div class="sig-title">التوقيع</div>
-                <div class="sig-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                <div class="sig-name">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </div>
             </div>
         </div>
     </div>
@@ -399,11 +456,11 @@
     <div class="bg-waves">
         <svg viewBox="0 0 1200 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             <!-- Back wave - lighter -->
-            <path d="M0,120 C200,200 400,20 600,100 C800,180 1000,30 1200,110 L1200,220 L0,220 Z"
-                  fill="#e8e8e8" opacity="0.5"/>
+            <path d="M0,120 C200,200 400,20 600,100 C800,180 1000,30 1200,110 L1200,220 L0,220 Z" fill="#e8e8e8"
+                opacity="0.5" />
             <!-- Front wave - slightly darker -->
-            <path d="M0,160 C150,100 350,200 550,140 C750,80 950,180 1200,150 L1200,220 L0,220 Z"
-                  fill="#d0d0d0" opacity="0.4"/>
+            <path d="M0,160 C150,100 350,200 550,140 C750,80 950,180 1200,150 L1200,220 L0,220 Z" fill="#d0d0d0"
+                opacity="0.4" />
         </svg>
     </div>
 
@@ -412,7 +469,7 @@
     ============================================================ -->
     <div class="page-footer-bar">
         <span>
-            📷 @{{ App\Models\Setting::get('social_handle', 'AljoufCluster') }}
+            📷 @{{ App\ Models\ Setting::get('social_handle', 'AljoufCluster') }}
         </span>
         <span>
             التاريخ: {{ \Carbon\Carbon::parse($commitment->commitment_date)->format('Y/m/d') }}
@@ -420,4 +477,5 @@
     </div>
 
 </body>
+
 </html>

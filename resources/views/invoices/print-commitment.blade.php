@@ -291,20 +291,66 @@
         }
 
         /* البصمة الإلكترونية */
-        .fingerprint-wrap { margin: 4px 0; max-width: 320px; }
-        .fingerprint-hint { font-size: 12px; color: #1e40af; font-weight: 600; margin-bottom: 8px; }
-        .fingerprint-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-        .fingerprint-wrap input[type="file"] { font-size: 12px; }
-        .fingerprint-paste {
-            border: 1px dashed #1e40af; border-radius: 4px; background: #eff6ff;
-            padding: 10px; margin-top: 6px; font-size: 11px; color: #1e40af; text-align: center;
-            min-height: 40px; cursor: pointer;
+        .fingerprint-wrap {
+            margin: 4px 0;
+            max-width: 320px;
         }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); }
-        .fingerprint-preview { display: none; max-width: 120px; max-height: 100px; }
+
+        .fingerprint-hint {
+            font-size: 12px;
+            color: #1e40af;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .fingerprint-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .fingerprint-wrap input[type="file"] {
+            font-size: 12px;
+        }
+
+        .fingerprint-paste {
+            border: 1px dashed #1e40af;
+            border-radius: 4px;
+            background: #eff6ff;
+            padding: 10px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #1e40af;
+            text-align: center;
+            min-height: 40px;
+            cursor: pointer;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        .fingerprint-preview {
+            display: none;
+            max-width: 120px;
+            max-height: 100px;
+        }
+
         @media print {
-            .fingerprint-preview.has-image { display: block !important; }
-            .fingerprint-wrap .no-print { display: none !important; }
+            .fingerprint-preview.has-image {
+                display: block !important;
+            }
+
+            .fingerprint-wrap .no-print {
+                display: none !important;
+            }
         }
 
         .file-ref {
@@ -466,7 +512,7 @@
             </span>
         </div>
         <div class="pledge-text">
-            أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية الإضافية التي تكون خارج نطاق التغطية التأمينية وعلى هذا يتم
+            أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية وعلى هذا يتم
             التوقيع .
         </div>
         <div class="pledge-closing">والله الموفق ،،،،</div>
@@ -521,11 +567,15 @@
                 <td class="sig-td">
                     <div class="fingerprint-wrap no-print">
                         <div class="fingerprint-actions no-print">
-                            <button type="button" class="btn btn-dark no-print" id="btnPasteFingerprint">جلب البصمة</button>
-                            <label class="btn btn-gray no-print" style="margin:0;">رفع<input type="file" id="fingerprintInput" accept="image/*" class="sr-only"></label>
-                            <button type="button" class="btn btn-gray no-print" onclick="clearFingerprint()">مسح</button>
+                            <button type="button" class="btn btn-dark no-print" id="btnPasteFingerprint">جلب
+                                البصمة</button>
+                            <label class="btn btn-gray no-print" style="margin:0;">رفع<input type="file"
+                                    id="fingerprintInput" accept="image/*" class="sr-only"></label>
+                            <button type="button" class="btn btn-gray no-print"
+                                onclick="clearFingerprint()">مسح</button>
                         </div>
-                        <div id="fingerprintPasteZone" class="fingerprint-paste no-print" tabindex="0" aria-label="البصمة"></div>
+                        <div id="fingerprintPasteZone" class="fingerprint-paste no-print" tabindex="0"
+                            aria-label="البصمة"></div>
                     </div>
                     <img id="fingerprintPreview" class="fingerprint-preview" src="" alt="البصمة">
                 </td>
@@ -543,7 +593,8 @@
                 <div class="sig-title">توقيع الموظف</div>
                 <div class="sig-img">
                     @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" alt="توقيع الموظف">
+                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
+                            alt="توقيع الموظف">
                     @endif
                 </div>
                 <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}
@@ -633,7 +684,10 @@
                 var f = e.target.files[0];
                 if (f && f.type.indexOf('image') !== -1) {
                     var r = new FileReader();
-                    r.onload = function() { fingerprintPreview.src = r.result; fingerprintPreview.classList.add('has-image'); };
+                    r.onload = function() {
+                        fingerprintPreview.src = r.result;
+                        fingerprintPreview.classList.add('has-image');
+                    };
                     r.readAsDataURL(f);
                 }
             });
@@ -647,20 +701,26 @@
                         e.preventDefault();
                         var blob = items[i].getAsFile();
                         var reader = new FileReader();
-                        reader.onload = function() { fingerprintPreview.src = reader.result; fingerprintPreview.classList.add('has-image'); };
+                        reader.onload = function() {
+                            fingerprintPreview.src = reader.result;
+                            fingerprintPreview.classList.add('has-image');
+                        };
                         reader.readAsDataURL(blob);
                         break;
                     }
                 }
             });
-            fingerprintPasteZone.addEventListener('click', function() { document.getElementById('fingerprintInput').click(); });
+            fingerprintPasteZone.addEventListener('click', function() {
+                document.getElementById('fingerprintInput').click();
+            });
         }
         var btnPasteFingerprint = document.getElementById('btnPasteFingerprint');
         if (btnPasteFingerprint && fingerprintPreview) {
             btnPasteFingerprint.addEventListener('click', function() {
                 if (!navigator.clipboard || !navigator.clipboard.read) {
                     fingerprintPasteZone.focus();
-                    alert('المتصفح لا يدعم جلب الصورة من الحافظة. استخدم اللصق يدوياً (Ctrl+V) في منطقة «أو الصق هنا».');
+                    alert(
+                        'المتصفح لا يدعم جلب الصورة من الحافظة. استخدم اللصق يدوياً (Ctrl+V) في منطقة «أو الصق هنا».');
                     return;
                 }
                 navigator.clipboard.read().then(function(items) {
@@ -670,28 +730,39 @@
                             if (types[t].indexOf('image') !== -1) {
                                 items[i].getType(types[t]).then(function(blob) {
                                     var r = new FileReader();
-                                    r.onload = function() { fingerprintPreview.src = r.result; fingerprintPreview.classList.add('has-image'); };
+                                    r.onload = function() {
+                                        fingerprintPreview.src = r.result;
+                                        fingerprintPreview.classList.add('has-image');
+                                    };
                                     r.readAsDataURL(blob);
                                 });
                                 return;
                             }
                         }
                     }
-                    alert('لا توجد صورة في الحافظة. اطلب من المريض البصم على الجهاز أولاً، ثم اضغط «جلب البصمة» مرة أخرى.');
+                    alert(
+                        'لا توجد صورة في الحافظة. اطلب من المريض البصم على الجهاز أولاً، ثم اضغط «جلب البصمة» مرة أخرى.');
                 }).catch(function(err) {
                     if (err.name === 'NotAllowedError')
-                        alert('السماح للموقع بالوصول إلى الحافظة (عند ظهور طلب الإذن)، ثم أعد الضغط على «جلب البصمة».');
+                        alert(
+                            'السماح للموقع بالوصول إلى الحافظة (عند ظهور طلب الإذن)، ثم أعد الضغط على «جلب البصمة».'
+                            );
                     else
                         alert('جرّب اللصق يدوياً: اضغط في منطقة «أو الصق هنا» ثم Ctrl+V.');
                 });
             });
         }
+
         function clearFingerprint() {
-            if (fingerprintPreview) { fingerprintPreview.src = ''; fingerprintPreview.classList.remove('has-image'); }
+            if (fingerprintPreview) {
+                fingerprintPreview.src = '';
+                fingerprintPreview.classList.remove('has-image');
+            }
             if (fingerprintInput) fingerprintInput.value = '';
         }
     </script>
 
     @include('components.report-footer')
 </body>
+
 </html>

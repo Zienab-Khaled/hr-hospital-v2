@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>إقرار بعدم التوقيع - {{ $invoice->invoice_number }}</title>
+    <title>إقرار بتلقي خدمة خارج التغطية التأمينية - {{ $invoice->invoice_number }}</title>
     <!-- Signature Pad Library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <style>
@@ -271,20 +271,66 @@
         }
 
         /* البصمة الإلكترونية */
-        .fingerprint-wrap { margin: 4px 0; max-width: 320px; }
-        .fingerprint-hint { font-size: 12px; color: #1e40af; font-weight: 600; margin-bottom: 8px; }
-        .fingerprint-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-        .fingerprint-wrap input[type="file"] { font-size: 12px; }
-        .fingerprint-paste {
-            border: 1px dashed #1e40af; border-radius: 4px; background: #eff6ff;
-            padding: 10px; margin-top: 6px; font-size: 11px; color: #1e40af; text-align: center;
-            min-height: 40px; cursor: pointer;
+        .fingerprint-wrap {
+            margin: 4px 0;
+            max-width: 320px;
         }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); }
-        .fingerprint-preview { display: none; max-width: 120px; max-height: 100px; }
+
+        .fingerprint-hint {
+            font-size: 12px;
+            color: #1e40af;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .fingerprint-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .fingerprint-wrap input[type="file"] {
+            font-size: 12px;
+        }
+
+        .fingerprint-paste {
+            border: 1px dashed #1e40af;
+            border-radius: 4px;
+            background: #eff6ff;
+            padding: 10px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #1e40af;
+            text-align: center;
+            min-height: 40px;
+            cursor: pointer;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        .fingerprint-preview {
+            display: none;
+            max-width: 120px;
+            max-height: 100px;
+        }
+
         @media print {
-            .fingerprint-preview.has-image { display: block !important; }
-            .fingerprint-wrap .no-print { display: none !important; }
+            .fingerprint-preview.has-image {
+                display: block !important;
+            }
+
+            .fingerprint-wrap .no-print {
+                display: none !important;
+            }
         }
 
         .btn-gray {
@@ -448,15 +494,18 @@
             @endif
         </div>
         <div class="header-info">
-            <div class="hospital-name-ar" style="font-size: 22px; font-weight: 900;">مستشفى الملك عبدالعزيز التخصصي بالجوف</div>
-            <div class="hospital-name-en" style="font-size: 15px; font-weight: 700;">King Abdulaziz Specialist Hospital - Aljouf</div>
-            <div class="dept-name" style="font-size: 16px; font-weight: 800; color: #1e40af; margin-top: 5px;">إدارة تنمية الإيرادات</div>
+            <div class="hospital-name-ar" style="font-size: 22px; font-weight: 900;">مستشفى الملك عبدالعزيز التخصصي
+                بالجوف</div>
+            <div class="hospital-name-en" style="font-size: 15px; font-weight: 700;">King Abdulaziz Specialist Hospital
+                - Aljouf</div>
+            <div class="dept-name" style="font-size: 16px; font-weight: 800; color: #1e40af; margin-top: 5px;">إدارة
+                تنمية الإيرادات</div>
         </div>
         <div class="header-spacer"></div>
     </div>
 
     <!-- ====== TITLE ====== -->
-    <div class="form-title">إقرار بعدم التوقيع</div>
+    <div class="form-title">إقرار بتلقي خدمة خارج التغطية التأمينية</div>
 
     <!-- ====== MAIN BOX ====== -->
     <div class="pledge-box">
@@ -487,12 +536,27 @@
             </span>
         </div>
 
-        <!-- Non-commitment paragraph -->
+        <!-- Body: تلقي خدمة خارج التغطية -->
+        @php
+            $serviceNames = $invoice->items
+                ? $invoice->items->map(fn ($item) => $item->service?->name_ar ?: $item->service?->name ?: $item->description)->filter()->implode('، ')
+                : '';
+            $serviceAmount = $invoice->total_amount !== null
+                ? number_format((float) $invoice->total_amount, 2)
+                : '';
+        @endphp
         <div class="pledge-text">
-            نفيدكم بأن المريض / <strong>{{ $invoice->patient->fullArabicName() }}</strong>
-            حامل هوية رقم / <strong>{{ $invoice->patient->identity_value }}</strong>
-            امتنع عن التوقيع على محضر التعهد الخطي بسداد كافة المصاريف العلاجية الإضافية التي تكون خارج
-            نطاق التغطية التأمينية.
+            أقر بأني تلقيت خدمة
+            <strong style="border-bottom: 1px dotted #333; padding: 0 8px; min-width: 180px; display: inline-block; text-align: center;">
+                {{ $serviceNames !== '' ? $serviceNames : '………………' }}
+            </strong>
+            وتم إخطاري بمبلغ الخدمة
+            @if ($serviceAmount !== '')
+                (<strong>{{ $serviceAmount }}</strong> ريال)
+            @else
+                <strong style="border-bottom: 1px dotted #333; padding: 0 12px;">………………</strong>
+            @endif
+            وأنها خارج نطاق التغطية التأمينية.
         </div>
 
         <!-- Closing -->
@@ -549,10 +613,12 @@
                 <td class="sig-td">
                     <div class="sig-img">
                         @if (auth()->check() && auth()->user()->signature)
-                            <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" alt="توقيع الموظف" style="max-width: 150px; max-height: 70px;">
+                            <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
+                                alt="توقيع الموظف" style="max-width: 150px; max-height: 70px;">
                         @endif
                     </div>
-                    <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}</div>
+                    <div class="sig-name">
+                        {{ auth()->check() ? auth()->user()->name : '________________________________' }}</div>
                 </td>
             </tr>
         </tbody>
@@ -570,7 +636,8 @@
                 <div class="sig-title">توقيع الموظف</div>
                 <div class="sig-img">
                     @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}" alt="توقيع الموظف">
+                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
+                            alt="توقيع الموظف">
                     @endif
                 </div>
                 <div class="sig-name">{{ auth()->check() ? auth()->user()->name : '________________________________' }}
@@ -580,10 +647,11 @@
             {{-- Manager --}}
             @if (isset($manager) && $manager)
                 <div class="sig-block">
-                    <div class="sig-title">توقيع المدير</div>
+                    <div class="sig-title">توقيع مدير إدارة تنمية الإيرادات</div>
                     <div class="sig-img">
                         @if ($manager->signature)
-                            <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" alt="توقيع المدير">
+                            <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}"
+                                alt="توقيع مدير إدارة تنمية الإيرادات">
                         @endif
                     </div>
                     <div class="sig-name">{{ $manager->name }}</div>
@@ -674,7 +742,10 @@
                 var f = e.target.files[0];
                 if (f && f.type.indexOf('image') !== -1) {
                     var r = new FileReader();
-                    r.onload = function() { fingerprintPreview.src = r.result; fingerprintPreview.classList.add('has-image'); };
+                    r.onload = function() {
+                        fingerprintPreview.src = r.result;
+                        fingerprintPreview.classList.add('has-image');
+                    };
                     r.readAsDataURL(f);
                 }
             });
@@ -688,20 +759,26 @@
                         e.preventDefault();
                         var blob = items[i].getAsFile();
                         var reader = new FileReader();
-                        reader.onload = function() { fingerprintPreview.src = reader.result; fingerprintPreview.classList.add('has-image'); };
+                        reader.onload = function() {
+                            fingerprintPreview.src = reader.result;
+                            fingerprintPreview.classList.add('has-image');
+                        };
                         reader.readAsDataURL(blob);
                         break;
                     }
                 }
             });
-            fingerprintPasteZone.addEventListener('click', function() { document.getElementById('fingerprintInput').click(); });
+            fingerprintPasteZone.addEventListener('click', function() {
+                document.getElementById('fingerprintInput').click();
+            });
         }
         var btnPasteFingerprint = document.getElementById('btnPasteFingerprint');
         if (btnPasteFingerprint && fingerprintPreview) {
             btnPasteFingerprint.addEventListener('click', function() {
                 if (!navigator.clipboard || !navigator.clipboard.read) {
                     if (fingerprintPasteZone) fingerprintPasteZone.focus();
-                    alert('المتصفح لا يدعم جلب الصورة من الحافظة. استخدم اللصق يدوياً (Ctrl+V) في منطقة «أو الصق هنا».');
+                    alert(
+                        'المتصفح لا يدعم جلب الصورة من الحافظة. استخدم اللصق يدوياً (Ctrl+V) في منطقة «أو الصق هنا».');
                     return;
                 }
                 navigator.clipboard.read().then(function(items) {
@@ -711,28 +788,39 @@
                             if (types[t].indexOf('image') !== -1) {
                                 items[i].getType(types[t]).then(function(blob) {
                                     var r = new FileReader();
-                                    r.onload = function() { fingerprintPreview.src = r.result; fingerprintPreview.classList.add('has-image'); };
+                                    r.onload = function() {
+                                        fingerprintPreview.src = r.result;
+                                        fingerprintPreview.classList.add('has-image');
+                                    };
                                     r.readAsDataURL(blob);
                                 });
                                 return;
                             }
                         }
                     }
-                    alert('لا توجد صورة في الحافظة. اطلب من المريض البصم على الجهاز أولاً، ثم اضغط «جلب البصمة» مرة أخرى.');
+                    alert(
+                        'لا توجد صورة في الحافظة. اطلب من المريض البصم على الجهاز أولاً، ثم اضغط «جلب البصمة» مرة أخرى.');
                 }).catch(function(err) {
                     if (err.name === 'NotAllowedError')
-                        alert('السماح للموقع بالوصول إلى الحافظة (عند ظهور طلب الإذن)، ثم أعد الضغط على «جلب البصمة».');
+                        alert(
+                            'السماح للموقع بالوصول إلى الحافظة (عند ظهور طلب الإذن)، ثم أعد الضغط على «جلب البصمة».'
+                            );
                     else
                         alert('جرّب اللصق يدوياً: اضغط في منطقة «أو الصق هنا» ثم Ctrl+V.');
                 });
             });
         }
+
         function clearFingerprint() {
-            if (fingerprintPreview) { fingerprintPreview.src = ''; fingerprintPreview.classList.remove('has-image'); }
+            if (fingerprintPreview) {
+                fingerprintPreview.src = '';
+                fingerprintPreview.classList.remove('has-image');
+            }
             if (fingerprintInput) fingerprintInput.value = '';
         }
     </script>
 
     @include('components.report-footer')
 </body>
+
 </html>
