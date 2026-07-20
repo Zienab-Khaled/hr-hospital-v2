@@ -140,6 +140,10 @@ Route::middleware('auth:web,api')->group(function () {
     Route::get('non-commitment-reports', [NonCommitmentReportController::class, 'index'])->name('non-commitment-reports.index');
     Route::get('non-commitment-reports/create', [NonCommitmentReportController::class, 'create'])->name('non-commitment-reports.create');
     Route::post('non-commitment-reports', [NonCommitmentReportController::class, 'store'])->name('non-commitment-reports.store');
+    Route::get('non-commitment-reports/{nonCommitmentReport}', [NonCommitmentReportController::class, 'show'])->name('non-commitment-reports.show');
+    Route::get('non-commitment-reports/{nonCommitmentReport}/print', [NonCommitmentReportController::class, 'print'])->name('non-commitment-reports.print');
+    Route::post('non-commitment-reports/{nonCommitmentReport}/advance', [NonCommitmentReportController::class, 'advance'])->name('non-commitment-reports.advance');
+    Route::patch('non-commitment-reports/{nonCommitmentReport}/report-number', [NonCommitmentReportController::class, 'updateReportNumber'])->name('non-commitment-reports.update-report-number');
 
     Route::get('debt-inventories', [DebtInventoryController::class, 'index'])->name('debt-inventories.index');
     Route::get('debt-inventories/create', [DebtInventoryController::class, 'create'])->name('debt-inventories.create');

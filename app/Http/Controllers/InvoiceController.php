@@ -674,7 +674,7 @@ class InvoiceController extends Controller
         return view('invoices.print-commitment', compact('invoice', 'settings', 'manager'));
     }
 
-    /** طباعة محضر إقرار بعدم التوقيع مرتبط بالفاتورة */
+    /** طباعة محضر رفض التوقيع مرتبط بالفاتورة + بدء مسار الإحالة */
     public function printNonCommitmentForm(Invoice $invoice)
     {
         $this->authorize('invoices.view');
@@ -682,13 +682,58 @@ class InvoiceController extends Controller
         $settings = \App\Models\Setting::first();
         $manager = \App\Models\User::getManagerForSignature();
 
-        // Update tracking flag
+        $report = \App\Models\NonCommitmentReport::query()
+            ->where('invoice_id', $invoice->id)
+            ->latest('id')
+            ->first();
+
+        $isNew = false;
+        if (! $report) {
+            $report = \App\Models\NonCommitmentReport::create([
+                'patient_id' => $invoice->patient_id,
+                'visit_id' => $invoice->visit_id,
+                'invoice_id' => $invoice->id,
+                'report_date' => now()->toDateString(),
+                'reported_at' => now(),
+                'workflow_status' => \App\Models\NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
+                'created_by' => auth()->id(),
+                'collector_id' => auth()->id(),
+            ]);
+            $isNew = true;
+        } elseif (! $report->reported_at) {
+            $report->update(['reported_at' => now()]);
+        }
+
         $invoice->update(['printed_non_commitment_at' => now()]);
 
-        // Log the action
-        ActivityLogger::log('Print Non-Commitment', 'Invoice', $invoice->id, 'Non-commitment form printed for invoice: ' . $invoice->invoice_number, null, null);
+        ActivityLogger::log(
+            'Print Refusal Sign',
+            'Invoice',
+            $invoice->id,
+            'Refusal-to-sign form printed for invoice: '.$invoice->invoice_number,
+            null,
+            null
+        );
 
-        return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager'));
+        if ($isNew) {
+            $users = \App\Models\User::role(['patient_follow_up'])->get();
+            if ($users->isNotEmpty()) {
+                $patientName = $invoice->patient?->fullArabicName() ?? $invoice->patient?->name ?? '#'.$invoice->id;
+                Notification::send($users, new SystemNotification([
+                    'title' => app()->getLocale() === 'ar' ? 'محضر رفض توقيع' : 'Refusal-to-sign report',
+                    'message' => app()->getLocale() === 'ar'
+                        ? "محضر رفض توقيع جديد للمريض {$patientName} من الفاتورة {$invoice->invoice_number} — بانتظار متابعة المرضى."
+                        : "New refusal-to-sign report for {$patientName} (invoice {$invoice->invoice_number}) — awaiting follow-up.",
+                    'action_url' => route('non-commitment-reports.show', $report),
+                    'type' => 'info',
+                    'metadata' => ['non_commitment_report_id' => $report->id, 'invoice_id' => $invoice->id],
+                ]));
+            }
+        }
+
+        $report->load(['patient', 'collector', 'followUpUser', 'accountant', 'manager']);
+
+        return view('invoices.print-non-commitment', compact('invoice', 'settings', 'manager', 'report'));
     }
 
     /** طباعة إقرار تلقي خدمة خارج التغطية التأمينية */

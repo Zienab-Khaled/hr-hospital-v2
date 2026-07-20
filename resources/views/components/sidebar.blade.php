@@ -217,6 +217,24 @@
             </a>
         @endif
 
+        {{-- محاضر رفض التوقيع --}}
+        @if (
+            $user->can('procedures.non_commitment')
+            || $user->hasAnyRole(['patient_follow_up', 'accountant', 'manager', 'admin', 'assistant_manager'])
+            || $isManager
+        )
+            <a href="{{ route('non-commitment-reports.index') }}"
+                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
+               {{ request()->routeIs('non-commitment-reports.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>{{ app()->getLocale() === 'ar' ? 'محاضر رفض التوقيع' : 'Refusal-to-Sign' }}</span>
+            </a>
+        @endif
+
         {{-- Claims (المطالبات) --}}
         @if (RoleNav::canSeeClaimsMenu($user))
             <a href="{{ route('charity-claims.index') }}"

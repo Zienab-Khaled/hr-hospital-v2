@@ -2,7 +2,7 @@
 <html lang="ar-SA-u-nu-latn" dir="rtl">
 
 <head>
-    <title>محضر عدم التوقيع - {{ $invoice->invoice_number }}</title>
+    <title>محضر رفض توقيع - {{ $invoice?->invoice_number ?? ($report->report_number ?? $report->id ?? '') }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -193,6 +193,22 @@
         .report-meta .meta-label {
             font-weight: 700;
             white-space: nowrap;
+        }
+
+        .report-meta .meta-value {
+            font-weight: 600;
+            border-bottom: 1px solid #cbd5e1;
+            flex: 1;
+            padding: 0 4px;
+            min-width: 100px;
+        }
+
+        .filled-text {
+            font-weight: 600;
+            border-bottom: 1px dotted #94a3b8;
+            padding: 0 4px;
+            display: inline-block;
+            min-width: 80px;
         }
 
         .report-meta .meta-line {
@@ -668,6 +684,13 @@
 </head>
 
 <body>
+@php
+    /** @var \App\Models\NonCommitmentReport|null $report */
+    $report = $report ?? null;
+    if (! $report && ! empty($invoice)) {
+        $report = \App\Models\NonCommitmentReport::where('invoice_id', $invoice->id)->latest('id')->first();
+    }
+@endphp
 
     <!-- Print Button -->
     <div class="no-print">
@@ -699,66 +722,95 @@
     </div>
 
     <!-- ====== TITLE ====== -->
-    <div class="form-title">محضر عدم التوقيع</div>
+    <div class="form-title">محضر رفض توقيع</div>
 
-    {{-- رقم المحضر / التاريخ / الوقت — قابلة للكتابة بالكيبورد --}}
+    @php
+        $patient = $report?->patient ?? $invoice?->patient ?? null;
+        $reportedAt = $report?->reported_at ?? now();
+        $servicesNames = ($invoice?->items ?? collect())->map(function ($item) {
+            return trim((string) ($item->description ?? ''))
+                ?: trim((string) ($item->service?->name_ar ?? ''))
+                ?: trim((string) ($item->service?->name ?? ''));
+        })->filter()->implode('، ');
+        $beneficiaryName = $patient?->fullArabicName() ?? $patient?->name ?? '';
+        $iqamaNo = $patient?->identity_value ?? '';
+        $reportNumber = $report?->report_number ?? '';
+        $saveNumberUrl = ($report && $report->id)
+            ? route('non-commitment-reports.update-report-number', $report)
+            : null;
+    @endphp
+
+    {{-- رقم المحضر يدوي — التاريخ والوقت من النظام --}}
     <div class="report-meta">
         <div class="meta-row">
             <span class="meta-label">رقم المحضر :</span>
-            <input type="text" class="kb-input flex-1" name="report_no" autocomplete="off">
+            <input type="text" class="kb-input flex-1" name="report_no" id="report_number_input"
+                value="{{ $reportNumber }}" autocomplete="off" placeholder="اكتب رقم المحضر">
         </div>
         <div class="meta-row">
             <span class="meta-label">التاريخ :</span>
-            <input type="text" class="kb-input flex-1" name="report_date" autocomplete="off">
+            <span class="meta-value">{{ western_digits($reportedAt->format('Y/m/d')) }}</span>
         </div>
         <div class="meta-row">
             <span class="meta-label">الوقت :</span>
-            <input type="text" class="kb-input flex-1" name="report_time" autocomplete="off">
+            <span class="meta-value">{{ western_digits($reportedAt->format('H:i')) }}</span>
         </div>
     </div>
 
     <div class="report-body">
-        نقر نحن الموقعين أدناه بأنه تم شرح جميع التعهدات والسندات النظامية المتعلقة بتلقي الخدمات الصحية المدفوعة للمستفيد، وهي:
-        (<input type="text" class="kb-input inline long" name="services_list" autocomplete="off">)
+        نقر نحن الموقعين أدناه بأنه قد تم شرح جميع التعهدات والسندات النظامية المتعلقة بتلقي الخدمات الصحية المدفوعة للمستفيد، وهي:
+        (<span class="filled-text">{{ $servicesNames ?: '—' }}</span>)
     </div>
 
     <div class="report-field">
         <span class="fld-label">اسم المستفيد :</span>
-        <input type="text" class="kb-input flex-1" name="beneficiary_name" autocomplete="off" style="max-width:420px;">
+        <span class="filled-text">{{ $beneficiaryName ?: '—' }}</span>
     </div>
     <div class="report-field">
         <span class="fld-label">رقم الإقامة :</span>
-        <input type="text" class="kb-input flex-1" name="iqama_no" autocomplete="off" style="max-width:420px;">
+        <span class="filled-text">{{ $iqamaNo ?: '—' }}</span>
     </div>
 
     <div class="report-body">
-        وقد تم توضيح ما يترتب على هذه التعهدات والالتزامات المالية للمستفيد بصورة واضحة، إلا أنه رفض التوقيع عليها مع إبدائه رغبته بتلقي الخدمة.
-        وعليه تم تحرير هذا المحضر لإثبات واقعة رفض التوقيع وإحاطته بأن عدم التوقيع قد يترتب عليه إجراءات قانونية.
-        وتم إخطاري بمبلغ الخدمة وأنها خارج نطاق التغطية التأمينية.
+        وقد تم توضيح ما يترتب على هذه التعهدات والالتزامات المالية للمستفيد بصورة واضحة، إلا أنه رفض التوقيع عليها مع إبدائه رغبته في تلقي الخدمة.
+        وعليه تم تحرير هذا المحضر لإثبات واقعة <strong>رفض التوقيع</strong>، وإحاطة المستفيد بأن رفض التوقيع قد يترتب عليه إجراءات نظامية.
     </div>
 
     <div class="report-sigs-wrap">
         <div class="report-sigs-staff">
             <div class="report-sig-line">
                 <span class="role">المحصل :</span>
-                <input type="text" class="kb-input sig" name="collector_name" autocomplete="off">
+                <span class="filled-text">{{ $report?->collector?->name ?? auth()->user()?->name ?? '________________' }}</span>
                 <br>
                 <span class="role">التوقيع :</span>
-                <input type="text" class="kb-input sig" name="collector_sig" autocomplete="off">
+                @if ($report?->collector?->signature ?? (auth()->check() && auth()->user()->signature))
+                    @php $colSig = $report?->collector?->signature ?? auth()->user()->signature; @endphp
+                    <img src="{{ asset('storage/' . ltrim($colSig, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
+                @else
+                    <input type="text" class="kb-input sig" name="collector_sig" autocomplete="off">
+                @endif
             </div>
             <div class="report-sig-line">
                 <span class="role">فني المتابعة :</span>
-                <input type="text" class="kb-input sig" name="followup_name" autocomplete="off">
+                <span class="filled-text">{{ $report?->followUpUser?->name ?? '________________' }}</span>
                 <br>
                 <span class="role">التوقيع :</span>
-                <input type="text" class="kb-input sig" name="followup_sig" autocomplete="off">
+                @if ($report?->followUpUser?->signature)
+                    <img src="{{ asset('storage/' . ltrim($report->followUpUser->signature, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
+                @else
+                    <input type="text" class="kb-input sig" name="followup_sig" autocomplete="off">
+                @endif
             </div>
             <div class="report-sig-line">
                 <span class="role">المحاسب :</span>
-                <input type="text" class="kb-input sig" name="accountant_name" autocomplete="off">
+                <span class="filled-text">{{ $report?->accountant?->name ?? '________________' }}</span>
                 <br>
                 <span class="role">التوقيع :</span>
-                <input type="text" class="kb-input sig" name="accountant_sig" autocomplete="off">
+                @if ($report?->accountant?->signature)
+                    <img src="{{ asset('storage/' . ltrim($report->accountant->signature, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
+                @else
+                    <input type="text" class="kb-input sig" name="accountant_sig" autocomplete="off">
+                @endif
             </div>
         </div>
 
@@ -788,7 +840,13 @@
     <!-- ====== PAGE FOOTER ====== -->
     <div class="page-footer">
         <span>📷 {{ App\Models\Setting::get('social_handle', 'AljoufCluster') }}</span>
-        <span>{{ $invoice->invoice_number }} | {{ $invoice->invoice_date?->format('Y/m/d') }}</span>
+        <span>
+            @if (!empty($invoice))
+                {{ $invoice->invoice_number }} | {{ $invoice->invoice_date?->format('Y/m/d') }}
+            @else
+                محضر #{{ $report->id ?? '—' }} | {{ western_digits(($report->reported_at ?? now())->format('Y/m/d')) }}
+            @endif
+        </span>
     </div>
 
     {{-- ترقيم الصفحات عند الطباعة (1، 2، …) --}}
@@ -800,7 +858,6 @@
             window.print();
         }
 
-        // فتح نافذة الطباعة تلقائياً لو جت من زرار الفاتورة (?print=1)
         (function () {
             var params = new URLSearchParams(window.location.search);
             if (params.get('print') === '1') {
@@ -816,6 +873,31 @@
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     window.print();
+                });
+            }
+
+            var input = document.getElementById('report_number_input');
+            var saveUrl = @json($saveNumberUrl);
+            var csrf = @json(csrf_token());
+            if (input && saveUrl) {
+                var timer = null;
+                function persistNumber() {
+                    fetch(saveUrl, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ report_number: input.value })
+                    }).catch(function () {});
+                }
+                input.addEventListener('change', persistNumber);
+                input.addEventListener('blur', persistNumber);
+                input.addEventListener('input', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(persistNumber, 800);
                 });
             }
         })();

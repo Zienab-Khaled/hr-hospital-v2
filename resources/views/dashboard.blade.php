@@ -337,7 +337,7 @@
 
         const templates = {
             commitment: "{{ app()->getLocale() === 'ar' ? 'أتعهد بأنني سوف أقوم بدفع كافة المصاريف العلاجية  وعلى هذا يتم التوقيع .' : 'I pledge that I will pay all additional therapeutic expenses that are outside the scope of insurance coverage, and this is signed.' }}",
-            non_commitment: "{{ app()->getLocale() === 'ar' ? 'أقر بأني تلقيت خدمة ……………… وتم إخطاري بمبلغ الخدمة وأنها خارج نطاق التغطية التأمينية.' : 'I declare that I received a service …… and was notified of the service amount and that it is outside the scope of insurance coverage.' }}"
+            non_commitment: "{{ app()->getLocale() === 'ar' ? 'تم شرح التعهدات للمستفيد ورفض التوقيع عليها مع رغبته في تلقي الخدمة.' : 'Commitments were explained; the beneficiary refused to sign while wishing to receive the service.' }}"
         };
 
         function openDashboardModal(type, data = null) {
@@ -461,7 +461,7 @@
                     </div>
                 `;
             } else if (type === 'non_commitment') {
-                modalTitle.innerText = isAr ? '⚠️ إضافة محضر عدم التوقيع' : '⚠️ Add Non-Commitment Report';
+                modalTitle.innerText = isAr ? '⚠️ إضافة محضر رفض توقيع' : '⚠️ Add Refusal-to-Sign Report';
                 dynamicFields.innerHTML = `
                     <div class="mb-4">
                         <label class="block text-sm font-bold text-slate-700 mb-1">${isAr ? 'ملاحظات' : 'Notes'}</label>

@@ -113,7 +113,7 @@
                                 @endif
                                 @if ($inv->printed_non_commitment_at)
                                     <span
-                                        title="{{ app()->getLocale() === 'ar' ? 'تم طباعة إقرار بعدم التوقيع: ' . $inv->printed_non_commitment_at : 'Non-commitment form printed: ' . $inv->printed_non_commitment_at }}"
+                                        title="{{ app()->getLocale() === 'ar' ? 'تم طباعة محضر رفض التوقيع: ' . $inv->printed_non_commitment_at : 'Refusal-to-sign form printed: ' . $inv->printed_non_commitment_at }}"
                                         class="cursor-help">📝</span>
                                 @endif
                             </div>

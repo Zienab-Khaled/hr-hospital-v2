@@ -61,7 +61,7 @@ class DashboardApiController extends Controller
     }
 
     /**
-     * Store a new Non-Commitment Report
+     * Store a new Refusal-to-Sign Report (محضر رفض توقيع)
      */
     public function storeNonCommitmentReport(Request $request)
     {
@@ -70,14 +70,39 @@ class DashboardApiController extends Controller
         $valid = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'notes' => 'nullable|string',
+            'invoice_id' => 'nullable|exists:invoices,id',
         ]);
 
-        $valid['report_date'] = now();
-        $valid['created_by'] = auth()->id();
+        $report = NonCommitmentReport::create([
+            'patient_id' => $valid['patient_id'],
+            'invoice_id' => $valid['invoice_id'] ?? null,
+            'notes' => $valid['notes'] ?? null,
+            'report_date' => now()->toDateString(),
+            'reported_at' => now(),
+            'workflow_status' => NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
+            'created_by' => auth()->id(),
+            'collector_id' => auth()->id(),
+        ]);
 
-        NonCommitmentReport::create($valid);
+        $users = \App\Models\User::role(['patient_follow_up'])->get();
+        if ($users->isNotEmpty()) {
+            $patientName = $report->patient?->fullArabicName() ?? $report->patient?->name ?? '#'.$report->id;
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\SystemNotification([
+                'title' => app()->getLocale() === 'ar' ? 'محضر رفض توقيع' : 'Refusal-to-sign report',
+                'message' => app()->getLocale() === 'ar'
+                    ? "محضر رفض توقيع جديد للمريض {$patientName} — بانتظار متابعة المرضى."
+                    : "New refusal-to-sign report for {$patientName} — awaiting follow-up.",
+                'action_url' => route('non-commitment-reports.show', $report),
+                'type' => 'info',
+                'metadata' => ['non_commitment_report_id' => $report->id],
+            ]));
+        }
 
-        return response()->json(['success' => true, 'message' => __('Report saved successfully.')]);
+        return response()->json([
+            'success' => true,
+            'message' => app()->getLocale() === 'ar' ? 'تم حفظ محضر رفض التوقيع وإحالته لمتابعة المرضى.' : 'Refusal-to-sign report saved and sent to follow-up.',
+            'id' => $report->id,
+        ]);
     }
 
     /**

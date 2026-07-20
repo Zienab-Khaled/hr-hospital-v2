@@ -82,7 +82,7 @@
                     </a>
                     <a href="{{ route('invoices.print-non-commitment', $invoice) }}" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 bg-white border-2 border-slate-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-slate-100 hover:border-slate-500">
-                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر عدم التوقيع' : 'Print non-signature report' }}
+                        {{ app()->getLocale() === 'ar' ? '🖨️ طباعة محضر رفض توقيع' : 'Print refusal-to-sign report' }}
                     </a>
                     <a href="{{ route('invoices.print-out-of-coverage', $invoice) }}" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 bg-white border-2 border-teal-400 text-slate-800 px-4 py-2 rounded-lg font-semibold hover:bg-teal-50 hover:border-teal-500">
@@ -163,7 +163,7 @@
                         <span
                             class="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-xs font-bold px-2 py-1 rounded border border-slate-300">
                             📄
-                            {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر عدم التوقيع' : 'Non-signature report printed' }}
+                            {{ app()->getLocale() === 'ar' ? 'تم طباعة محضر رفض التوقيع' : 'Refusal-to-sign report printed' }}
                             ({{ $invoice->printed_non_commitment_at->format('Y-m-d H:i') }})
                         </span>
                     @endif

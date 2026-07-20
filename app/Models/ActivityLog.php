@@ -42,7 +42,9 @@ class ActivityLog extends Model
             'Invoice Auto-Created' => 'إنشاء فاتورة تلقائي',
             'Print Invoice' => 'طباعة فاتورة',
             'Print Commitment' => 'طباعة محضر تعهد',
-            'Print Non-Commitment' => 'طباعة محضر عدم التوقيع',
+            'Print Non-Commitment' => 'طباعة محضر رفض توقيع',
+            'Print Refusal Sign' => 'طباعة محضر رفض توقيع',
+            'Refusal Sign Advanced' => 'إحالة محضر رفض توقيع',
             'Print Out-of-Coverage' => 'طباعة إقرار خدمة خارج التغطية',
             'Print Eligibility' => 'طباعة أحقية العلاج',
             'Print Price Inquiry' => 'طباعة عرض سعر استعلامي',
@@ -106,7 +108,9 @@ class ActivityLog extends Model
         // أنماط أوصاف ديناميكية شائعة
         $patterns = [
             '/^Invoice created with (\d+) items?$/i' => 'تم إنشاء فاتورة بعدد $1 بند',
-            '/^Non-commitment form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر عدم التوقيع للفاتورة: $1',
+            '/^Non-commitment form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر رفض التوقيع للفاتورة: $1',
+            '/^Refusal-to-sign form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر رفض التوقيع للفاتورة: $1',
+            '/^Refusal-to-sign report advanced to (.+)$/i' => 'تمت إحالة محضر رفض التوقيع إلى: $1',
             '/^تم طباعة إقرار خدمة خارج التغطية للفاتورة:\s*(.+)$/u' => 'تم طباعة إقرار خدمة خارج التغطية للفاتورة: $1',
             '/^Commitment form printed for invoice:\s*(.+)$/i' => 'تم طباعة محضر التعهد للفاتورة: $1',
             '/^Detailed invoice printed:\s*(.+)$/i' => 'تم طباعة الفاتورة التفصيلية: $1',

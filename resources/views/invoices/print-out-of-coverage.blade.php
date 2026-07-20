@@ -197,42 +197,6 @@
         <div class="pledge-closing">والله الموفق ،،،،</div>
     </div>
 
-    <table class="ack-table">
-        <thead>
-            <tr>
-                <th colspan="2">بيانات المريض</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="row-label">الأسم :</td>
-                <td><input type="text" class="kb-input" name="tbl_name" autocomplete="off"></td>
-            </tr>
-            <tr>
-                <td class="row-label">الجنسية :</td>
-                <td><input type="text" class="kb-input" name="tbl_nationality" autocomplete="off"></td>
-            </tr>
-            <tr>
-                <td class="row-label">رقم الإقامة :</td>
-                <td><input type="text" class="kb-input" name="tbl_iqama" autocomplete="off"></td>
-            </tr>
-            <tr>
-                <td class="row-label">تاريخ المحضر :</td>
-                <td><input type="text" class="kb-input" name="tbl_date" autocomplete="off"></td>
-            </tr>
-            <tr>
-                <td class="row-label">توقيع الموظف المختص :</td>
-                <td>
-                    @if (auth()->check() && auth()->user()->signature)
-                        <img src="{{ asset('storage/' . ltrim(auth()->user()->signature ?? '', '/')) }}"
-                            alt="توقيع" style="max-width:140px;max-height:55px;display:block;margin-bottom:4px;">
-                    @endif
-                    <div style="font-size:12px;font-weight:600;">{{ auth()->user()->name ?? '' }}</div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
     <div class="file-ref">ص/ ملف المريض بالقسم .</div>
 
     <div class="sigs">
