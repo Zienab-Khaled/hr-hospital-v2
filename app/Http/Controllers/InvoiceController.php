@@ -35,12 +35,12 @@ class InvoiceController extends Controller
     /** @var list<string> */
     private const COLLECTION_SPLIT_METHODS = ['cash', 'card', 'bank_transfer', 'cheque', 'loyalty_points', 'insurance', 'charity'];
 
-    protected function authorizeInvoiceEdit(): void
+    protected function authorizeInvoiceEdit(?Invoice $invoice = null): void
     {
-        if (! RoleNav::canEditInvoices(auth()->user())) {
+        if (! RoleNav::canEditInvoices(auth()->user(), $invoice)) {
             abort(403, app()->getLocale() === 'ar'
-                ? 'المحاسب وأمين الصندوق لا يمكنهم تعديل الفاتورة.'
-                : 'Accountants and cashiers cannot edit invoices.');
+                ? 'تعديل الفاتورة للمدير فقط، أو للمحاسب/أمين الصندوق خلال ساعة من التحصيل.'
+                : 'Invoice editing is for managers only, or accountant/cashier within one hour of collection.');
         }
     }
 
@@ -1126,7 +1126,7 @@ class InvoiceController extends Controller
     /** إرسال إيميل للجمعية بعد اكتمال تنفيذ جميع الخدمات */
     public function notifyCharityCompleted(Invoice $invoice)
     {
-        $this->authorizeInvoiceEdit();
+        $this->authorizeInvoiceEdit($invoice);
 
         $invoice->load(['patient.charityEntity', 'items.service', 'items.completedByUser']);
 
@@ -1160,7 +1160,71 @@ class InvoiceController extends Controller
         }
     }
 
-    /** إرسال تذكير بالسداد للجمعية من صفحة الفاتورة */
+    /** طباعة عرض السعر للجمعية (PDF) — بدون إرسال إيميل */
+    public function printPriceOffer(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient.charityEntity', 'items.service', 'visit']);
+
+        $patient = $invoice->patient;
+        if (! $patient || $patient->payment_type !== 'charity' || ! $patient->charityEntity) {
+            return back()->withErrors([
+                'error' => app()->getLocale() === 'ar' ? 'الفاتورة غير مرتبطة بمريض جمعية.' : 'Invoice is not linked to a charity patient.',
+            ]);
+        }
+
+        $charityEntity = $patient->charityEntity;
+        $recipientName = app()->getLocale() === 'ar' && ! empty($charityEntity->name_ar)
+            ? $charityEntity->name_ar
+            : $charityEntity->name;
+
+        $settings = [
+            'hospital_name' => Setting::get('hospital_name', ''),
+            'hospital_name_en' => Setting::get('hospital_name_en', ''),
+            'health_cluster_name' => Setting::get('health_cluster_name', ''),
+            'health_cluster_name_en' => Setting::get('health_cluster_name_en', ''),
+            'manager_name' => Setting::get('manager_name', ''),
+            'logo' => Setting::get('logo', ''),
+            'bank_name' => Setting::get('bank_name', ''),
+            'account_number' => Setting::get('account_number', ''),
+            'iban_number' => Setting::get('iban_number', ''),
+            'manager_signature' => Setting::get('manager_signature', ''),
+            'department_manager_name' => Setting::get('department_manager_name', ''),
+            'department_manager_signature' => Setting::get('department_manager_signature', ''),
+        ];
+
+        $attachmentPaths = $invoice->getAttachmentPathsForPdf();
+        $senderName = auth()->user()?->name ?? Setting::get('department_manager_name', '');
+
+        $html = view('invoices.price-offer-pdf', [
+            'invoice' => $invoice,
+            'recipientName' => $recipientName,
+            'settings' => $settings,
+            'attachmentPaths' => $attachmentPaths,
+            'senderName' => $senderName,
+        ])->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font_size' => 11,
+            'margin_left' => 15,
+            'margin_right' => 15,
+            'margin_top' => 16,
+            'margin_bottom' => 16,
+        ]);
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+
+        ActivityLogger::log('Print Price Offer', 'Invoice', $invoice->id, 'تم طباعة عرض السعر: '.$invoice->invoice_number, null, null);
+
+        return response($mpdf->Output('', 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="price-offer-'.$invoice->invoice_number.'.pdf"',
+        ]);
+    }
+
+    /** تسجيل أن تذكير السداد للجمعية تم إرساله (بدون إيميل آلي) */
     public function sendCharityPaymentReminder(Invoice $invoice)
     {
         $this->authorize('invoices.view');
@@ -1172,25 +1236,22 @@ class InvoiceController extends Controller
         }
 
         $charityEntity = $invoice->patient->charityEntity;
-        if (!$charityEntity || !$charityEntity->email) {
-            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا يوجد بريد إلكتروني مسجل للجمعية.' : 'No email registered for the charity entity.']);
+        if (!$charityEntity) {
+            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'لا توجد جمعية مرتبطة بالمريض.' : 'No charity linked to this patient.']);
         }
 
-        try {
-            // DISABLED: النظام لا يرسل إيميلات حالياً
-            // Mail::to($charityEntity->email)->send(new \App\Mail\CharityPaymentReminderMail($invoice));
-            ActivityLogger::log('Charity Payment Reminder Sent', 'Invoice', $invoice->id, 'Payment reminder sent to ' . $charityEntity->email, null, null);
-            return back()->with('success', app()->getLocale() === 'ar' ? 'تم إرسال تذكير السداد للجمعية بنجاح.' : 'Payment reminder sent to charity.');
-        } catch (\Throwable $e) {
-            Log::error('Charity payment reminder failed: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
-            return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'فشل إرسال الإيميل. حاول مرة أخرى.' : 'Failed to send email. Please try again.']);
-        }
+        $partyLabel = $charityEntity->email ?: ($charityEntity->name_ar ?: $charityEntity->name);
+        ActivityLogger::log('Charity Payment Reminder Sent', 'Invoice', $invoice->id, 'Payment reminder sent to ' . $partyLabel, null, null);
+
+        return back()->with('success', app()->getLocale() === 'ar'
+            ? 'تم تسجيل أنك أرسلت تذكير السداد للجمعية.'
+            : 'Recorded that you sent a payment reminder to the charity.');
     }
 
     public function edit(Invoice $invoice)
 
     {
-        $this->authorizeInvoiceEdit();
+        $this->authorizeInvoiceEdit($invoice);
         if (auth()->user()->hasRole('insurance_clerk') && $invoice->patient && $invoice->patient->payment_type !== 'insurance') {
             abort(403);
         }
@@ -1208,7 +1269,7 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-        $this->authorizeInvoiceEdit();
+        $this->authorizeInvoiceEdit($invoice);
 
         $oldValues = $invoice->toArray();
 
@@ -1274,7 +1335,7 @@ class InvoiceController extends Controller
 
     public function uploadSignedDocument(Request $request, Invoice $invoice)
     {
-        $this->authorizeInvoiceEdit();
+        $this->authorizeInvoiceEdit($invoice);
 
         $request->validate([
             'document_type' => 'required|string|in:signed_commitment,signed_non_commitment,signed_other',
@@ -1304,7 +1365,7 @@ class InvoiceController extends Controller
 
     public function deleteSignedDocument(Invoice $invoice, $mediaId)
     {
-        $this->authorizeInvoiceEdit();
+        $this->authorizeInvoiceEdit($invoice);
 
         $media = $invoice->media()->findOrFail($mediaId);
         $media->delete();

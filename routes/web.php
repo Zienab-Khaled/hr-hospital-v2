@@ -187,6 +187,7 @@ Route::middleware('auth:web,api')->group(function () {
     Route::match(['get', 'post'], 'invoices/{invoice}/charity-email-preview', [InvoiceController::class, 'previewCharityEmail'])->name('invoices.charity-email-preview');
     Route::get('invoices/{invoice}/charity-email-compose', [InvoiceController::class, 'composeCharityEmail'])->name('invoices.charity-email-compose');
     Route::post('invoices/{invoice}/send-charity-price-offer', [InvoiceController::class, 'sendCharityPriceOffer'])->name('invoices.send-charity-price-offer');
+    Route::get('invoices/{invoice}/print-price-offer', [InvoiceController::class, 'printPriceOffer'])->name('invoices.print-price-offer');
     Route::post('invoices/{invoice}/notify-charity-completed', [InvoiceController::class, 'notifyCharityCompleted'])->name('invoices.notify-charity-completed');
     Route::post('invoices/{invoice}/send-charity-payment-reminder', [InvoiceController::class, 'sendCharityPaymentReminder'])->name('invoices.send-charity-payment-reminder');
     Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');

@@ -104,7 +104,42 @@ class RevenueWorkflowController extends Controller
             'pending_amount' => (float) $invoices->where('audit_status', 'under_review')->sum('paid_amount'),
         ];
 
-        return view('revenue.control-room', compact('invoices', 'shifts', 'date', 'shiftId', 'totalCollectedToday', 'controlRoomStats'));
+        // تقسيم دورة الإيراد عمودياً (محصل → محاسب → أمين صندوق)
+        $collectorInvoices = $invoices->values();
+        $accountantInvoices = $invoices->filter(fn ($inv) => in_array($inv->audit_status, ['under_review', 'rejected'], true))->values();
+        $matchedInvoices = $invoices->where('audit_status', 'matched')->values();
+        $readyForDepositInvoices = $invoices->where('audit_status', 'ready_for_deposit')->values();
+        $managerConfirmedInvoices = $invoices->where('audit_status', 'manager_confirmed')->values();
+        $depositedInvoices = $invoices->where('audit_status', 'deposited')->values();
+
+        // إيداعات اليوم قد تكون بتاريخ deposited_at وليس received_date
+        $extraDeposited = Invoice::where('audit_status', 'deposited')
+            ->whereDate('deposited_at', $date)
+            ->when($shiftId, function ($q) use ($shiftId) {
+                $q->whereHas('visit', fn ($vq) => $vq->where('shift_id', $shiftId));
+            })
+            ->with(['patient', 'visit.shift', 'items.service', 'payments.receivedByUser', 'media', 'payments.receipt'])
+            ->latest('deposited_at')
+            ->get();
+        $depositedInvoices = $depositedInvoices->merge($extraDeposited)->unique('id')->values();
+
+        $showFullCycle = RoleNav::hasSupervisorVisibility(auth()->user());
+
+        return view('revenue.control-room', compact(
+            'invoices',
+            'collectorInvoices',
+            'accountantInvoices',
+            'matchedInvoices',
+            'readyForDepositInvoices',
+            'managerConfirmedInvoices',
+            'depositedInvoices',
+            'shifts',
+            'date',
+            'shiftId',
+            'totalCollectedToday',
+            'controlRoomStats',
+            'showFullCycle'
+        ));
     }
 
     public function match(Invoice $invoice)

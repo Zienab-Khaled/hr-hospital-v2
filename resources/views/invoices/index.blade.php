@@ -132,7 +132,7 @@
                                         </svg>
                                     </a>
                                 @endcan
-                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user()))
+                                @if (\App\Support\RoleNav::canEditInvoices(auth()->user(), $inv))
                                     <a href="{{ route('invoices.edit', $inv) }}"
                                         title="{{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}"
                                         class="text-amber-600 hover:text-amber-800 p-1 rounded hover:bg-amber-50">

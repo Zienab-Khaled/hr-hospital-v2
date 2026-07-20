@@ -2,13 +2,18 @@
 
 namespace App\Support;
 
+use App\Models\Invoice;
 use App\Models\User;
+use Carbon\Carbon;
 
 /**
  * قواعد ظهور القوائم واللوحة حسب الدور (كل قسم يرى عمله فقط).
  */
 final class RoleNav
 {
+    /** نافذة تعديل الفاتورة للمحاسب / أمين الصندوق (بالدقائق) */
+    public const INVOICE_EDIT_GRACE_MINUTES = 60;
+
     public static function isAdministration(?User $user): bool
     {
         return $user !== null && $user->hasAnyRole(['admin', 'manager']);
@@ -26,7 +31,7 @@ final class RoleNav
         return self::isAdministration($user);
     }
 
-    /** محاسب / أمين صندوق — لا يعدّلون بنود الفاتورة (خدمات/أسعار) */
+    /** محاسب / أمين صندوق — لا يعدّلون بنود الفاتورة إلا ضمن نافذة الساعة */
     public static function cannotEditInvoiceContent(?User $user): bool
     {
         if (! $user || self::isAdministration($user)) {
@@ -34,6 +39,26 @@ final class RoleNav
         }
 
         return $user->hasAnyRole(['accountant', 'cashier']);
+    }
+
+    /** هل ما زالت نافذة الساعة مفتوحة لتعديل هذه الفاتورة؟ */
+    public static function isWithinInvoiceEditGrace(Invoice $invoice): bool
+    {
+        $anchor = null;
+
+        if ($invoice->relationLoaded('payments') && $invoice->payments->isNotEmpty()) {
+            $anchor = $invoice->payments->max('created_at');
+        } else {
+            $anchor = $invoice->payments()->latest('created_at')->value('created_at');
+        }
+
+        $anchor = $anchor ? Carbon::parse($anchor) : ($invoice->created_at ? Carbon::parse($invoice->created_at) : null);
+
+        if (! $anchor) {
+            return false;
+        }
+
+        return $anchor->greaterThan(now()->subMinutes(self::INVOICE_EDIT_GRACE_MINUTES));
     }
 
     /** مساعد المدير — إشراف على دورة الإيراد كاملة */
@@ -219,13 +244,31 @@ final class RoleNav
         return true;
     }
 
-    /** تعديل الفاتورة (إضافة خدمات/أسعار) — ممنوع على قسم الإيرادات المالية */
-    public static function canEditInvoices(?User $user): bool
+    /**
+     * تعديل الفاتورة (خدمات/أسعار):
+     * - المدير / الأدمن: دائماً
+     * - مساعد المدير: لا
+     * - محاسب / أمين صندوق: خلال ساعة من آخر تحصيل فقط
+     * - باقي الأدوار بصلاحية edit: نعم
+     */
+    public static function canEditInvoices(?User $user, ?Invoice $invoice = null): bool
     {
-        if (! $user || self::cannotEditInvoiceContent($user)) {
+        if (! $user || ! $user->can('invoices.edit')) {
             return false;
         }
 
-        return $user->can('invoices.edit');
+        if (self::isAdministration($user)) {
+            return true;
+        }
+
+        if (self::isAssistantManager($user)) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['accountant', 'cashier'])) {
+            return $invoice instanceof Invoice && self::isWithinInvoiceEditGrace($invoice);
+        }
+
+        return true;
     }
 }
