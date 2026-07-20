@@ -674,7 +674,49 @@ class InvoiceController extends Controller
         return view('invoices.print-commitment', compact('invoice', 'settings', 'manager'));
     }
 
-    /** طباعة محضر رفض التوقيع مرتبط بالفاتورة + بدء مسار الإحالة */
+    /** بدء محضر رفض التوقيع من الفاتورة → شاشة المسار (إرسال إلكتروني) */
+    public function startRefusalSign(Invoice $invoice)
+    {
+        $this->authorize('invoices.view');
+        $invoice->load(['patient']);
+
+        $report = \App\Models\NonCommitmentReport::query()
+            ->where('invoice_id', $invoice->id)
+            ->latest('id')
+            ->first();
+
+        if (! $report) {
+            $report = \App\Models\NonCommitmentReport::create([
+                'patient_id' => $invoice->patient_id,
+                'visit_id' => $invoice->visit_id,
+                'invoice_id' => $invoice->id,
+                'report_date' => now()->toDateString(),
+                'reported_at' => now(),
+                'workflow_status' => \App\Models\NonCommitmentReport::STATUS_DRAFT,
+                'created_by' => auth()->id(),
+                'collector_id' => auth()->id(),
+            ]);
+
+            ActivityLogger::log(
+                'Refusal Sign Started',
+                'Invoice',
+                $invoice->id,
+                'Refusal-to-sign draft created for invoice: '.$invoice->invoice_number,
+                null,
+                null
+            );
+
+            return redirect()
+                ->route('non-commitment-reports.show', $report)
+                ->with('success', app()->getLocale() === 'ar'
+                    ? 'تم إنشاء محضر رفض التوقيع. راجع البيانات ثم اضغط «إرسال لمتابعة المرضى» بتوقيعك الإلكتروني.'
+                    : 'Refusal-to-sign draft created. Review then send to follow-up with your e-signature.');
+        }
+
+        return redirect()->route('non-commitment-reports.show', $report);
+    }
+
+    /** طباعة محضر رفض التوقيع المرتبط بالفاتورة */
     public function printNonCommitmentForm(Invoice $invoice)
     {
         $this->authorize('invoices.view');
@@ -687,21 +729,8 @@ class InvoiceController extends Controller
             ->latest('id')
             ->first();
 
-        $isNew = false;
         if (! $report) {
-            $report = \App\Models\NonCommitmentReport::create([
-                'patient_id' => $invoice->patient_id,
-                'visit_id' => $invoice->visit_id,
-                'invoice_id' => $invoice->id,
-                'report_date' => now()->toDateString(),
-                'reported_at' => now(),
-                'workflow_status' => \App\Models\NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
-                'created_by' => auth()->id(),
-                'collector_id' => auth()->id(),
-            ]);
-            $isNew = true;
-        } elseif (! $report->reported_at) {
-            $report->update(['reported_at' => now()]);
+            return redirect()->route('invoices.refusal-sign', $invoice);
         }
 
         $invoice->update(['printed_non_commitment_at' => now()]);
@@ -714,22 +743,6 @@ class InvoiceController extends Controller
             null,
             null
         );
-
-        if ($isNew) {
-            $users = \App\Models\User::role(['patient_follow_up'])->get();
-            if ($users->isNotEmpty()) {
-                $patientName = $invoice->patient?->fullArabicName() ?? $invoice->patient?->name ?? '#'.$invoice->id;
-                Notification::send($users, new SystemNotification([
-                    'title' => app()->getLocale() === 'ar' ? 'محضر رفض توقيع' : 'Refusal-to-sign report',
-                    'message' => app()->getLocale() === 'ar'
-                        ? "محضر رفض توقيع جديد للمريض {$patientName} من الفاتورة {$invoice->invoice_number} — بانتظار متابعة المرضى."
-                        : "New refusal-to-sign report for {$patientName} (invoice {$invoice->invoice_number}) — awaiting follow-up.",
-                    'action_url' => route('non-commitment-reports.show', $report),
-                    'type' => 'info',
-                    'metadata' => ['non_commitment_report_id' => $report->id, 'invoice_id' => $invoice->id],
-                ]));
-            }
-        }
 
         $report->load(['patient', 'collector', 'followUpUser', 'accountant', 'manager']);
 

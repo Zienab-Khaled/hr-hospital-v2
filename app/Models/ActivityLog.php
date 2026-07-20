@@ -44,6 +44,7 @@ class ActivityLog extends Model
             'Print Commitment' => 'طباعة محضر تعهد',
             'Print Non-Commitment' => 'طباعة محضر رفض توقيع',
             'Print Refusal Sign' => 'طباعة محضر رفض توقيع',
+            'Refusal Sign Started' => 'بدء محضر رفض توقيع',
             'Refusal Sign Advanced' => 'إحالة محضر رفض توقيع',
             'Print Out-of-Coverage' => 'طباعة إقرار خدمة خارج التغطية',
             'Print Eligibility' => 'طباعة أحقية العلاج',

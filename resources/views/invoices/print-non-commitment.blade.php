@@ -211,6 +211,13 @@
             min-width: 80px;
         }
 
+        .sig-time {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            margin-right: 8px;
+        }
+
         .report-meta .meta-line {
             flex: 1;
             border-bottom: 1px dotted #333;
@@ -780,36 +787,44 @@
         <div class="report-sigs-staff">
             <div class="report-sig-line">
                 <span class="role">المحصل :</span>
-                <span class="filled-text">{{ $report?->collector?->name ?? auth()->user()?->name ?? '________________' }}</span>
+                <span class="filled-text">{{ $report?->collector?->name ?? '________________' }}</span>
+                @if ($report?->reported_at && $report?->workflow_status !== 'draft')
+                    <span class="sig-time">{{ western_digits($report->reported_at->format('Y/m/d H:i')) }}</span>
+                @endif
                 <br>
-                <span class="role">التوقيع :</span>
-                @if ($report?->collector?->signature ?? (auth()->check() && auth()->user()->signature))
-                    @php $colSig = $report?->collector?->signature ?? auth()->user()->signature; @endphp
-                    <img src="{{ asset('storage/' . ltrim($colSig, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
+                <span class="role">التوقيع الإلكتروني :</span>
+                @if ($report?->workflow_status !== 'draft' && $report?->collector?->signature)
+                    <img src="{{ asset('storage/' . ltrim($report->collector->signature, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
                 @else
-                    <input type="text" class="kb-input sig" name="collector_sig" autocomplete="off">
+                    <span class="filled-text" style="color:#64748b;">بانتظار الإرسال والتوقيع الإلكتروني</span>
                 @endif
             </div>
             <div class="report-sig-line">
                 <span class="role">فني المتابعة :</span>
                 <span class="filled-text">{{ $report?->followUpUser?->name ?? '________________' }}</span>
+                @if ($report?->follow_up_at)
+                    <span class="sig-time">{{ western_digits($report->follow_up_at->format('Y/m/d H:i')) }}</span>
+                @endif
                 <br>
-                <span class="role">التوقيع :</span>
-                @if ($report?->followUpUser?->signature)
+                <span class="role">التوقيع الإلكتروني :</span>
+                @if ($report?->followUpUser?->signature && $report?->follow_up_id)
                     <img src="{{ asset('storage/' . ltrim($report->followUpUser->signature, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
                 @else
-                    <input type="text" class="kb-input sig" name="followup_sig" autocomplete="off">
+                    <span class="filled-text" style="color:#64748b;">بانتظار الإرسال والتوقيع الإلكتروني</span>
                 @endif
             </div>
             <div class="report-sig-line">
                 <span class="role">المحاسب :</span>
                 <span class="filled-text">{{ $report?->accountant?->name ?? '________________' }}</span>
+                @if ($report?->accountant_at)
+                    <span class="sig-time">{{ western_digits($report->accountant_at->format('Y/m/d H:i')) }}</span>
+                @endif
                 <br>
-                <span class="role">التوقيع :</span>
-                @if ($report?->accountant?->signature)
+                <span class="role">التوقيع الإلكتروني :</span>
+                @if ($report?->accountant?->signature && $report?->accountant_id)
                     <img src="{{ asset('storage/' . ltrim($report->accountant->signature, '/')) }}" alt="توقيع" style="max-height:40px;vertical-align:middle;">
                 @else
-                    <input type="text" class="kb-input sig" name="accountant_sig" autocomplete="off">
+                    <span class="filled-text" style="color:#64748b;">بانتظار الإرسال والتوقيع الإلكتروني</span>
                 @endif
             </div>
         </div>
@@ -817,13 +832,26 @@
         <div class="report-sigs-manager">
             <div class="mgr-title">مدير إدارة تنمية الإيرادات</div>
             <div class="mgr-sig-img">
-                @if (isset($manager) && $manager && $manager->signature)
+                @if ($report?->manager?->signature && $report?->manager_id)
+                    <img src="{{ asset('storage/' . ltrim($report->manager->signature, '/')) }}" alt="توقيع المدير">
+                @elseif (isset($manager) && $manager && $manager->signature && $report?->workflow_status === 'completed')
                     <img src="{{ asset('storage/' . ltrim($manager->signature ?? '', '/')) }}" alt="توقيع المدير">
+                @else
+                    <div style="font-size:11px;color:#64748b;padding-top:12px;">بانتظار اعتماد المدير</div>
                 @endif
             </div>
             <div class="mgr-name">
-                {{ isset($manager) && $manager ? ($manager->name_ar ?? $manager->name) : (\App\Models\Setting::get('manager_name', 'جسار بن محمد الضويحي')) }}
+                @if ($report?->manager)
+                    {{ $report->manager->name_ar ?? $report->manager->name }}
+                @elseif (isset($manager) && $manager)
+                    {{ $manager->name_ar ?? $manager->name }}
+                @else
+                    {{ \App\Models\Setting::get('manager_name', 'جسار بن محمد الضويحي') }}
+                @endif
             </div>
+            @if ($report?->manager_at)
+                <div style="font-size:11px;font-weight:700;margin-top:4px;">{{ western_digits($report->manager_at->format('Y/m/d H:i')) }}</div>
+            @endif
         </div>
     </div>
 

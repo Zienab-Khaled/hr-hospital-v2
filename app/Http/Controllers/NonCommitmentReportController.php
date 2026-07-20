@@ -53,6 +53,13 @@ class NonCommitmentReportController extends Controller
             $query->where('workflow_status', NonCommitmentReport::STATUS_PENDING_ACCOUNTANT);
         } elseif ($user->hasRole('manager')) {
             $query->where('workflow_status', NonCommitmentReport::STATUS_PENDING_MANAGER);
+        } elseif ($user->can('procedures.non_commitment')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('workflow_status', NonCommitmentReport::STATUS_DRAFT)
+                    ->where(function ($q2) use ($user) {
+                        $q2->where('collector_id', $user->id)->orWhere('created_by', $user->id);
+                    });
+            });
         }
 
         $reports = $query->paginate(20);
@@ -101,16 +108,16 @@ class NonCommitmentReportController extends Controller
             'notes' => $valid['notes'] ?? null,
             'report_number' => $valid['report_number'] ?? null,
             'reported_at' => now(),
-            'workflow_status' => NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
+            'workflow_status' => NonCommitmentReport::STATUS_DRAFT,
             'created_by' => auth()->id(),
             'collector_id' => auth()->id(),
         ]);
 
-        $this->notifyNextStage($report, NonCommitmentReport::STATUS_PENDING_FOLLOW_UP);
-
         return redirect()
             ->route('non-commitment-reports.show', $report)
-            ->with('success', app()->getLocale() === 'ar' ? 'تم إنشاء محضر رفض التوقيع وإحالته لمتابعة المرضى.' : 'Refusal-to-sign report created and sent to patient follow-up.');
+            ->with('success', app()->getLocale() === 'ar'
+                ? 'تم إنشاء المسودة. راجع المحضر ثم اضغط إرسال لمتابعة المرضى (بتوقيعك الإلكتروني).'
+                : 'Draft created. Review then send to follow-up with your electronic signature.');
     }
 
     public function updateReportNumber(Request $request, NonCommitmentReport $nonCommitmentReport)
@@ -143,16 +150,32 @@ class NonCommitmentReportController extends Controller
                 : 'You cannot advance this report at the current stage.');
         }
 
+        if (empty($user->signature)) {
+            // التوقيع الإلكتروني = تسجيل المستخدم + الوقت؛ صورة التوقيع مفضّلة وليست مانعة للإرسال
+        }
+
         $status = $nonCommitmentReport->workflow_status;
 
-        if ($status === NonCommitmentReport::STATUS_PENDING_FOLLOW_UP) {
+        if ($status === NonCommitmentReport::STATUS_DRAFT) {
+            $nonCommitmentReport->update([
+                'workflow_status' => NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
+                'collector_id' => $user->id,
+                'reported_at' => $nonCommitmentReport->reported_at ?? now(),
+            ]);
+            $this->notifyNextStage($nonCommitmentReport->fresh(), NonCommitmentReport::STATUS_PENDING_FOLLOW_UP);
+            $msg = app()->getLocale() === 'ar'
+                ? 'تم الإرسال. وصل إشعار لفني متابعة المرضى.'
+                : 'Sent. Patient follow-up was notified.';
+        } elseif ($status === NonCommitmentReport::STATUS_PENDING_FOLLOW_UP) {
             $nonCommitmentReport->update([
                 'workflow_status' => NonCommitmentReport::STATUS_PENDING_ACCOUNTANT,
                 'follow_up_id' => $user->id,
                 'follow_up_at' => now(),
             ]);
             $this->notifyNextStage($nonCommitmentReport->fresh(), NonCommitmentReport::STATUS_PENDING_ACCOUNTANT);
-            $msg = app()->getLocale() === 'ar' ? 'تم التأكيد وإحالة المحضر للمحاسب.' : 'Confirmed and forwarded to accountant.';
+            $msg = app()->getLocale() === 'ar'
+                ? 'تم الإرسال. وصل إشعار للمحاسب.'
+                : 'Sent. Accountant was notified.';
         } elseif ($status === NonCommitmentReport::STATUS_PENDING_ACCOUNTANT) {
             $nonCommitmentReport->update([
                 'workflow_status' => NonCommitmentReport::STATUS_PENDING_MANAGER,
@@ -160,7 +183,9 @@ class NonCommitmentReportController extends Controller
                 'accountant_at' => now(),
             ]);
             $this->notifyNextStage($nonCommitmentReport->fresh(), NonCommitmentReport::STATUS_PENDING_MANAGER);
-            $msg = app()->getLocale() === 'ar' ? 'تم التأكيد وإحالة المحضر للمدير.' : 'Confirmed and forwarded to manager.';
+            $msg = app()->getLocale() === 'ar'
+                ? 'تم الإرسال. وصل إشعار للمدير.'
+                : 'Sent. Manager was notified.';
         } elseif ($status === NonCommitmentReport::STATUS_PENDING_MANAGER) {
             $nonCommitmentReport->update([
                 'workflow_status' => NonCommitmentReport::STATUS_COMPLETED,
@@ -168,7 +193,9 @@ class NonCommitmentReportController extends Controller
                 'manager_at' => now(),
             ]);
             $this->notifyNextStage($nonCommitmentReport->fresh(), NonCommitmentReport::STATUS_COMPLETED);
-            $msg = app()->getLocale() === 'ar' ? 'تم اعتماد المحضر من المدير.' : 'Report approved by manager.';
+            $msg = app()->getLocale() === 'ar'
+                ? 'تم اعتماد المحضر من المدير.'
+                : 'Manager approved the report.';
         } else {
             return back()->withErrors(['error' => app()->getLocale() === 'ar' ? 'المحضر مكتمل مسبقاً.' : 'Report already completed.']);
         }
@@ -182,7 +209,9 @@ class NonCommitmentReportController extends Controller
             null
         );
 
-        return back()->with('success', $msg);
+        return redirect()
+            ->route('non-commitment-reports.index')
+            ->with('success', $msg);
     }
 
     public function print(NonCommitmentReport $nonCommitmentReport)
@@ -222,16 +251,16 @@ class NonCommitmentReportController extends Controller
 
         $messages = [
             NonCommitmentReport::STATUS_PENDING_FOLLOW_UP => [
-                'ar' => "محضر رفض توقيع جديد للمريض {$patientName} — بانتظار تأكيد متابعة المرضى.",
-                'en' => "New refusal-to-sign report for {$patientName} — awaiting patient follow-up.",
+                'ar' => "وصلك محضر رفض توقيع للمريض {$patientName}. افتحه ثم اضغط «إرسال إلى المحاسب».",
+                'en' => "Refusal-to-sign report for {$patientName}. Open it and click Send to accountant.",
             ],
             NonCommitmentReport::STATUS_PENDING_ACCOUNTANT => [
-                'ar' => "محضر رفض توقيع للمريض {$patientName} أُحيل للمحاسب.",
-                'en' => "Refusal-to-sign report for {$patientName} forwarded to accountant.",
+                'ar' => "وصلك محضر رفض توقيع للمريض {$patientName}. افتحه ثم اضغط «إرسال إلى المدير».",
+                'en' => "Refusal-to-sign report for {$patientName}. Open it and click Send to manager.",
             ],
             NonCommitmentReport::STATUS_PENDING_MANAGER => [
-                'ar' => "محضر رفض توقيع للمريض {$patientName} بانتظار اعتماد المدير.",
-                'en' => "Refusal-to-sign report for {$patientName} awaiting manager approval.",
+                'ar' => "وصلك محضر رفض توقيع للمريض {$patientName}. افتحه ثم اضغط «اعتماد المدير».",
+                'en' => "Refusal-to-sign report for {$patientName}. Open it and click Manager approve.",
             ],
             NonCommitmentReport::STATUS_COMPLETED => [
                 'ar' => "اكتمل مسار محضر رفض التوقيع للمريض {$patientName}.",
@@ -243,10 +272,10 @@ class NonCommitmentReportController extends Controller
         $msg = $messages[$status][$locale] ?? $messages[$status]['ar'];
 
         Notification::send($users, new SystemNotification([
-            'title' => $ar ? 'محضر رفض توقيع' : 'Refusal-to-sign report',
+            'title' => $ar ? 'محضر رفض توقيع — يلزم إجراء' : 'Refusal-to-sign — action needed',
             'message' => $msg,
             'action_url' => $url,
-            'type' => 'info',
+            'type' => $status === NonCommitmentReport::STATUS_COMPLETED ? 'success' : 'warning',
             'metadata' => ['non_commitment_report_id' => $report->id, 'status' => $status],
         ]));
     }

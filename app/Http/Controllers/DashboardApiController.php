@@ -79,29 +79,18 @@ class DashboardApiController extends Controller
             'notes' => $valid['notes'] ?? null,
             'report_date' => now()->toDateString(),
             'reported_at' => now(),
-            'workflow_status' => NonCommitmentReport::STATUS_PENDING_FOLLOW_UP,
+            'workflow_status' => NonCommitmentReport::STATUS_DRAFT,
             'created_by' => auth()->id(),
             'collector_id' => auth()->id(),
         ]);
 
-        $users = \App\Models\User::role(['patient_follow_up'])->get();
-        if ($users->isNotEmpty()) {
-            $patientName = $report->patient?->fullArabicName() ?? $report->patient?->name ?? '#'.$report->id;
-            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\SystemNotification([
-                'title' => app()->getLocale() === 'ar' ? 'محضر رفض توقيع' : 'Refusal-to-sign report',
-                'message' => app()->getLocale() === 'ar'
-                    ? "محضر رفض توقيع جديد للمريض {$patientName} — بانتظار متابعة المرضى."
-                    : "New refusal-to-sign report for {$patientName} — awaiting follow-up.",
-                'action_url' => route('non-commitment-reports.show', $report),
-                'type' => 'info',
-                'metadata' => ['non_commitment_report_id' => $report->id],
-            ]));
-        }
-
         return response()->json([
             'success' => true,
-            'message' => app()->getLocale() === 'ar' ? 'تم حفظ محضر رفض التوقيع وإحالته لمتابعة المرضى.' : 'Refusal-to-sign report saved and sent to follow-up.',
+            'message' => app()->getLocale() === 'ar'
+                ? 'تم إنشاء مسودة محضر رفض التوقيع. افتحه من القائمة وأرسله لمتابعة المرضى بتوقيعك الإلكتروني.'
+                : 'Refusal-to-sign draft created. Open it and send to follow-up with your e-signature.',
             'id' => $report->id,
+            'redirect' => route('non-commitment-reports.show', $report),
         ]);
     }
 

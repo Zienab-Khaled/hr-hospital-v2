@@ -223,6 +223,21 @@
             || $user->hasAnyRole(['patient_follow_up', 'accountant', 'manager', 'admin', 'assistant_manager'])
             || $isManager
         )
+            @php
+                $refusalPendingCount = 0;
+                if ($user->hasRole('patient_follow_up')) {
+                    $refusalPendingCount = \App\Models\NonCommitmentReport::where('workflow_status', 'pending_follow_up')->count();
+                } elseif ($user->hasRole('accountant')) {
+                    $refusalPendingCount = \App\Models\NonCommitmentReport::where('workflow_status', 'pending_accountant')->count();
+                } elseif ($user->hasAnyRole(['manager', 'admin'])) {
+                    $refusalPendingCount = \App\Models\NonCommitmentReport::where('workflow_status', 'pending_manager')->count();
+                } elseif ($user->can('procedures.non_commitment')) {
+                    $refusalPendingCount = \App\Models\NonCommitmentReport::where('workflow_status', 'draft')
+                        ->where(function ($q) use ($user) {
+                            $q->where('collector_id', $user->id)->orWhere('created_by', $user->id);
+                        })->count();
+                }
+            @endphp
             <a href="{{ route('non-commitment-reports.index') }}"
                 class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                {{ request()->routeIs('non-commitment-reports.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -231,7 +246,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>{{ app()->getLocale() === 'ar' ? 'محاضر رفض التوقيع' : 'Refusal-to-Sign' }}</span>
+                <span class="flex-1">{{ app()->getLocale() === 'ar' ? 'محاضر رفض التوقيع' : 'Refusal-to-Sign' }}</span>
+                @if ($refusalPendingCount > 0)
+                    <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">
+                        {{ $refusalPendingCount }}
+                    </span>
+                @endif
             </a>
         @endif
 

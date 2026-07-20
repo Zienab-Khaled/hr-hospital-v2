@@ -61,6 +61,7 @@
                         <td class="p-3">
                             <span class="inline-flex px-2 py-1 rounded-full text-[11px] font-bold
                                 @if ($r->workflow_status === 'completed') bg-emerald-100 text-emerald-800
+                                @elseif ($r->workflow_status === 'draft') bg-slate-100 text-slate-700
                                 @elseif ($r->workflow_status === 'pending_manager') bg-violet-100 text-violet-800
                                 @elseif ($r->workflow_status === 'pending_accountant') bg-amber-100 text-amber-800
                                 @else bg-blue-100 text-blue-800 @endif">
@@ -68,10 +69,21 @@
                             </span>
                         </td>
                         <td class="p-3">
-                            <a href="{{ route('non-commitment-reports.show', $r) }}"
-                                class="text-blue-600 hover:underline font-semibold">
-                                {{ app()->getLocale() === 'ar' ? 'عرض' : 'View' }}
-                            </a>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="{{ route('non-commitment-reports.show', $r) }}"
+                                    class="text-blue-600 hover:underline font-semibold">
+                                    {{ app()->getLocale() === 'ar' ? 'فتح' : 'Open' }}
+                                </a>
+                                @if ($r->canAdvance(auth()->user()))
+                                    <form method="POST" action="{{ route('non-commitment-reports.advance', $r) }}" class="inline"
+                                        onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'تأكيد الإرسال؟' : 'Confirm send?' }}');">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-black hover:bg-emerald-700">
+                                            📤 {{ $r->nextStageLabel() }}
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
