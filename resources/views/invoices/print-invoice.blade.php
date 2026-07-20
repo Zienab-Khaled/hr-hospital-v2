@@ -1,17 +1,35 @@
 @php
     use App\Helpers\CurrencyHelper;
+    use App\Models\PaymentReceipt;
     $s = $settingsData ?? [];
     $patient = $invoice->patient;
     $rows = $invoice->items ?? collect();
     $total = round((float) ($invoice->total_amount ?? 0), 2);
     $paid = round((float) ($invoice->paid_amount ?? 0), 2);
     $remaining = round((float) ($invoice->remaining_amount ?? max(0, $total - $paid)), 2);
-    $amountWords = CurrencyHelper::amountInArabicWords($total);
     $printRowCount = $rows->count();
     $printDensityClass = $printRowCount > 14 ? 'print-density-tight' : ($printRowCount > 9 ? 'print-density-compact' : '');
     $paymentTypeLabel = $invoice->payment_type
         ? (\App\Models\Patient::paymentTypeOptions()[$invoice->payment_type]['ar'] ?? $invoice->payment_type)
         : ($patient->payment_type_label ?? '—');
+
+    $splitLines = collect();
+    foreach ($invoice->payments ?? [] as $pay) {
+        $splitLines->push((object) [
+            'payment_method' => $pay->payment_type ?? 'cash',
+            'amount' => (float) ($pay->amount ?? 0),
+            'reference_number' => $pay->reference_no ?? null,
+        ]);
+    }
+    $showPaymentSplits = $splitLines->isNotEmpty() && $paid > 0;
+    $isCash = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cash')
+        || ($splitLines->isEmpty() && ($invoice->payment_type ?? 'cash') === 'cash');
+    $isCard = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'card');
+    $isLoyaltyPoints = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'loyalty_points');
+    $isBank = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer');
+    $isCheque = $splitLines->contains(fn ($l) => ($l->payment_method ?? null) === 'cheque');
+    $chequeRef = (string) ($splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'cheque')?->reference_number ?? '');
+    $bankRef = (string) ($splitLines->first(fn ($l) => ($l->payment_method ?? null) === 'bank_transfer')?->reference_number ?? '');
 @endphp
 <!DOCTYPE html>
 <html lang="ar-SA-u-nu-latn" dir="rtl">
@@ -41,6 +59,7 @@
             @page { margin: 0.5cm 0.4cm 1cm 0.4cm; size: A4 portrait; }
             .invoice-form { page-break-inside: avoid; break-inside: avoid; }
             .invoice-form.print-fit-scale { transform-origin: top center; }
+            .editable-print-input { background: transparent; border-bottom: 1px solid #000; border-top: none; border-left: none; border-right: none; }
         }
 
         @page {
@@ -156,10 +175,27 @@
         }
         .money-summary div { font-weight: 600; }
         .money-summary strong { font-weight: 800; color: #0f172a; }
-        .total-section { margin-bottom: 14px; }
-        .total-section .total-inline { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
-        .total-section .total-num { font-size: 17px; font-weight: 700; }
-        .total-section .total-words { font-size: 12px; line-height: 1.6; }
+        .money-summary .debt-line {
+            margin-top: 4px;
+            padding-top: 6px;
+            border-top: 1px dashed #94a3b8;
+            font-size: 13px;
+            font-weight: 800;
+            color: #9a3412;
+        }
+        .money-summary .debt-line strong { color: #9a3412; }
+        .money-summary .splits-table { margin-top: 8px; margin-bottom: 0; font-size: 11px; }
+        .payment-type-section { margin-bottom: 18px; }
+        .payment-type-section .section-label { font-weight: 700; margin-bottom: 6px; font-size: 12px; }
+        .payment-type-section .payment-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+        .payment-type-section .payment-opt { display: flex; align-items: center; gap: 4px; }
+        .payment-type-section .payment-opt input[type="checkbox"] { width: 14px; height: 14px; }
+        .payment-type-section .payment-opt.inline-field { gap: 4px; }
+        .payment-type-section .payment-opt.inline-field input[type="text"] { width: 95px; padding: 2px 5px; border: 1px solid #999; font-size: 11px; }
+        .payment-type-section .bank-row { margin-top: 6px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .payment-type-section .bank-row span { font-size: 12px; }
+        .payment-type-section .bank-row input { width: 100px; padding: 2px 5px; border: 1px solid #999; font-size: 11px; }
+        .editable-print-input { background: #fefce8; border: 1px solid #ca8a04; }
         .footer-sigs { margin-top: 22px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
         .footer-sigs .col { flex: 1; min-width: 120px; max-width: 180px; text-align: center; }
         .footer-sigs .col-title { font-weight: 700; margin-bottom: 6px; font-size: 12px; }
@@ -265,16 +301,47 @@
             </tbody>
         </table>
 
+        {{-- ملخص مالي داخل المربع فقط (تفاصيل الإيصال: طرق الدفع + الدين) --}}
         <div class="money-summary">
             <div><strong>إجمالي الفاتورة:</strong> {{ CurrencyHelper::formatAmountDecimal($total) }} ريال</div>
             <div><strong>المسدد:</strong> {{ CurrencyHelper::formatAmountDecimal($paid) }} ريال</div>
-            <div><strong>المتبقي:</strong> {{ CurrencyHelper::formatAmountDecimal($remaining) }} ريال</div>
+            @if ($showPaymentSplits)
+                <table class="services-table splits-table">
+                    <thead>
+                        <tr>
+                            <th class="col-desc">طريقة الدفع</th>
+                            <th class="col-amount">المبلغ</th>
+                            <th class="col-code">مرجع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($splitLines as $line)
+                            <tr>
+                                <td class="col-desc" style="text-align: right;">{{ PaymentReceipt::paymentMethodLabel($line->payment_method ?? '') }}</td>
+                                <td class="col-amount">{{ CurrencyHelper::formatAmountDecimal((float) ($line->amount ?? 0)) }}</td>
+                                <td class="col-code">{{ $line->reference_number ?: '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+            <div class="debt-line">
+                <strong>الدين (المتبقي):</strong> {{ CurrencyHelper::formatAmountDecimal($remaining) }} ريال
+            </div>
         </div>
 
-        <div class="total-section">
-            <div class="total-inline">
-                <span class="total-num">{{ CurrencyHelper::formatAmountDecimal($total) }} ريال</span>
-                <span class="total-words">{{ $amountWords }}</span>
+        <div class="payment-type-section">
+            <div class="section-label">نوع السداد</div>
+            <div class="payment-row">
+                <label class="payment-opt"><input type="checkbox" {{ $isCash ? 'checked' : '' }} disabled> نقدي</label>
+                <label class="payment-opt inline-field">شيك رقم <input type="text" class="editable-print-input" value="{{ $chequeRef }}" placeholder="—"></label>
+                <label class="payment-opt"><input type="checkbox" {{ $isCard ? 'checked' : '' }} disabled> نقطة بيع / شبكة</label>
+                <label class="payment-opt"><input type="checkbox" {{ $isLoyaltyPoints ? 'checked' : '' }} disabled> نقاط بيع</label>
+                <label class="payment-opt inline-field">إيداع في الحساب رقم : <input type="text" class="editable-print-input" value="{{ $bankRef }}" placeholder="—"></label>
+            </div>
+            <div class="bank-row">
+                <span>على بنك : <input type="text" class="editable-print-input" value="" placeholder="—"></span>
+                <span>فرع <input type="text" class="editable-print-input" value="" placeholder="—"></span>
             </div>
         </div>
 
