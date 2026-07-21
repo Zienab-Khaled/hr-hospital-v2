@@ -13,11 +13,6 @@ use Illuminate\Support\Facades\Notification;
 
 class NonCommitmentReportController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     protected function authorizeWorkflowAccess(): void
     {
         $user = auth()->user();

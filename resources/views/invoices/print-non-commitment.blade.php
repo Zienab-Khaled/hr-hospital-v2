@@ -739,8 +739,13 @@
                 ?: trim((string) ($item->service?->name_ar ?? ''))
                 ?: trim((string) ($item->service?->name ?? ''));
         })->filter()->implode('، ');
-        $beneficiaryName = $patient?->fullArabicName() ?? $patient?->name ?? '';
-        $iqamaNo = $patient?->identity_value ?? '';
+        {{-- fullArabicName() قد يرجع '' (فارغ). نحتاج fallback فعلي لو فارغ --}}
+        $beneficiaryName = ($patient?->fullArabicName() && trim($patient?->fullArabicName()) !== '')
+            ? $patient->fullArabicName()
+            : ($patient?->name ?? '');
+        $iqamaNo = ($patient?->identity_value && trim((string) $patient?->identity_value) !== '')
+            ? $patient->identity_value
+            : '';
         $reportNumber = $report?->report_number ?? '';
         $saveNumberUrl = ($report && $report->id)
             ? route('non-commitment-reports.update-report-number', $report)
@@ -766,7 +771,17 @@
 
     <div class="report-body">
         نقر نحن الموقعين أدناه بأنه قد تم شرح جميع التعهدات والسندات النظامية المتعلقة بتلقي الخدمات الصحية المدفوعة للمستفيد، وهي:
-        (<span class="filled-text">{{ $servicesNames ?: '—' }}</span>)
+        (
+            <span class="filled-text">اسم الخدمة:</span>
+            <input
+                type="text"
+                class="kb-input inline long"
+                name="service_name"
+                autocomplete="off"
+                placeholder="{{ $servicesNames ?: (app()->getLocale() === 'ar' ? 'اسم الخدمة' : 'Service name') }}"
+                value=""
+            />
+        )
     </div>
 
     <div class="report-field">
