@@ -124,7 +124,7 @@ class RevenueStaffSeeder extends Seeder
         $user->syncRoles(['accountant']);
         $credentials[] = ['name_ar' => $accountantRow['name_ar'], 'username' => $accountantRow['username'], 'password' => $accountantRow['password'], 'role_ar' => 'محاسب'];
 
-        // —— مساعد المدير ——
+        // —— عبدالله: أدمن كامل ——
         $assistantRow = ['username' => 'rev_acc_2', 'name_ar' => 'عبدالله هزاع العتيبي', 'password' => 'Abd@llh#Acc2!Rev2025'];
         $user = User::updateOrCreate(
             ['username' => $assistantRow['username']],
@@ -134,13 +134,13 @@ class RevenueStaffSeeder extends Seeder
                 'email' => 'rev.acc.2@hospital.sa',
                 'password' => Hash::make($assistantRow['password']),
                 'department_id' => $financeId,
-                'job_title' => 'Assistant Manager',
-                'job_title_ar' => 'مساعد المدير',
+                'job_title' => 'Admin',
+                'job_title_ar' => 'أدمن',
                 'status' => 'active',
             ]
         );
-        $user->syncRoles(['assistant_manager']);
-        $credentials[] = ['name_ar' => $assistantRow['name_ar'], 'username' => $assistantRow['username'], 'password' => $assistantRow['password'], 'role_ar' => 'مساعد المدير'];
+        $user->syncRoles(['admin']);
+        $credentials[] = ['name_ar' => $assistantRow['name_ar'], 'username' => $assistantRow['username'], 'password' => $assistantRow['password'], 'role_ar' => 'أدمن'];
 
         // —— أمين الصندوق ——
         $cashRow = ['username' => 'rev_cash_1', 'name_ar' => 'ناصر علي الرويلي', 'password' => 'N@ser#Cash1!Rev2025'];
