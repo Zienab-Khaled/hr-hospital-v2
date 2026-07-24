@@ -379,7 +379,12 @@
                     <div id="eligibility_workspace" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                         @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
                             <div id="entry_fee_block" class="mb-5 pb-5 border-b border-slate-200">
-                                <h4 class="text-sm font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'كشفية الدخول (قسم الكشفية — مش تخصص الزيارة)' : 'Entry fee (fee desk — not visit specialty)' }}</h4>
+                                <h4 class="text-sm font-bold text-slate-800 mb-1">{{ app()->getLocale() === 'ar' ? 'كشفية الدخول' : 'Entry fee' }}</h4>
+                                <p class="text-xs text-slate-600 mb-3">
+                                    {{ app()->getLocale() === 'ar'
+                                        ? 'لو اخترتي قسم متخصص (عيون / مختبر / باطنية…) راح ينحسب عليه في التقارير. «العيادات الخارجية» كشفية عامة فقط وما تغيّر التخصص.'
+                                        : 'A specialized department (Eye / Lab / …) is counted in reports. “Outpatient clinics” is only a generic fee desk.' }}
+                                </p>
                                 <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) وطباعة الأحقية؟' : 'Create entry fee invoice and print eligibility?' }}');">
                                     @csrf
                                     <div class="flex flex-wrap items-end gap-3">

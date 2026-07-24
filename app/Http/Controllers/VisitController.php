@@ -302,24 +302,37 @@ class VisitController extends Controller
             $deptName = $department->name_ar ?? $department->name;
             $description = (app()->getLocale() === 'ar' ? 'كشفية ' : 'Entry fee ') . $deptName;
 
-            // انسب الإيراد للتخصص الطبي للزيارة (تنويم باطنية…) حتى لو الكشفية من «العيادات الخارجية».
-            // مسار الدخول يبقى كما هو — لا نلمسه هنا.
             $visit->loadMissing('department');
-            $specialtyDept = $visit->department;
-            $attributionDepartmentId = (
-                $visit->department_id
-                && $specialtyDept
-                && $specialtyDept->category === 'medical'
-                && ! $specialtyDept->isGenericEntryDepartment()
-            ) ? (int) $visit->department_id : (int) $department->id;
+            $currentDept = $visit->department;
+            $currentIsSpecialized = $visit->department_id
+                && $currentDept
+                && $currentDept->category === 'medical'
+                && ! $currentDept->isGenericEntryDepartment();
+            $entryIsSpecialized = $department->category === 'medical'
+                && ! $department->isGenericEntryDepartment();
 
-            $preservedDepartmentId = $visit->department_id;
-            $preservedAdmission = $visit->admission_entry_source;
-            $preservedCaseType = $visit->case_type;
+            $preservedAdmission = $visit->admission_entry_source
+                ?: Visit::normalizeAdmissionEntrySource(
+                    $request->input('admission_entry_source'),
+                    $currentIsSpecialized ? $currentDept : $department
+                );
+
+            // لو اختاروا قسم متخصص في الكشفية (عيون / مختبر…) → ثبّته كتخصص الزيارة.
+            // لو اختاروا عيادات/طوارئ (مسار كشفية عام) → احتفظ بالتخصص الحالي وما تستبدلهوش.
+            if ($entryIsSpecialized) {
+                $specialtyId = (int) $department->id;
+                $specialtyCase = $deptName;
+            } elseif ($currentIsSpecialized) {
+                $specialtyId = (int) $visit->department_id;
+                $specialtyCase = $visit->case_type ?: ($currentDept->name_ar ?? $currentDept->name);
+            } else {
+                $specialtyId = (int) $department->id;
+                $specialtyCase = $deptName;
+            }
 
             $invoice->items()->create([
                 'service_id' => null,
-                'department_id' => $attributionDepartmentId,
+                'department_id' => $specialtyId,
                 'quantity' => 1,
                 'unit_price' => $entryAmount,
                 'total_price' => $entryAmount,
@@ -331,32 +344,14 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
-            // ثبّت قسم الأحقية للكشفية فقط — بدون استبدال التخصص أو مسار الدخول
-            if (! $visit->eligibility_print_department_id) {
-                $visit->update(['eligibility_print_department_id' => $department->id]);
-            }
+            $visit->update([
+                'department_id' => $specialtyId,
+                'case_type' => $specialtyCase,
+                'eligibility_print_department_id' => $department->id,
+                'admission_entry_source' => $preservedAdmission,
+            ]);
+            $patient->update(['department_id' => $specialtyId]);
 
-            // ضمان: الكشفية لا تمسح التخصص ولا مسار الدخول أبداً
-            $restore = [];
-            if ($preservedDepartmentId && (int) $visit->fresh()->department_id !== (int) $preservedDepartmentId) {
-                $restore['department_id'] = $preservedDepartmentId;
-                $restore['case_type'] = $preservedCaseType;
-            }
-            if ($preservedAdmission && $visit->fresh()->admission_entry_source !== $preservedAdmission) {
-                $restore['admission_entry_source'] = $preservedAdmission;
-            }
-            if (! $visit->fresh()->admission_entry_source) {
-                $restore['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
-                    $request->input('admission_entry_source') ?? $preservedAdmission,
-                    $specialtyDept
-                );
-            }
-            if ($restore !== []) {
-                $visit->update($restore);
-            }
-            if ($preservedDepartmentId) {
-                $patient->update(['department_id' => $preservedDepartmentId]);
-            }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
             if ($isTreatmentEligibility) {
@@ -531,29 +526,41 @@ class VisitController extends Controller
             $visitUpdate['eligibility_notes'] = $eligibilityNotes !== '' ? $eligibilityNotes : null;
             $visitUpdate['eligibility_print_department_id'] = $printDepartmentId;
             $visitUpdate['eligibility_without_department'] = $withoutDepartment;
-            // قسم طباعة الأحقية ≠ القسم الطبي للزيارة.
-            // لا تستبدل القسم المختار (باطنية نساء…) بقسم الأحقية/الكشفية (عيادات).
-            if ($printDepartmentId && ! $visit->department_id) {
-                $printDept = Department::find($printDepartmentId);
+
+            $printDept = $printDepartmentId ? Department::find($printDepartmentId) : null;
+            $printIsSpecialized = $printDept
+                && $printDept->category === 'medical'
+                && ! $printDept->isGenericEntryDepartment();
+            $visit->loadMissing('department');
+            $visitIsSpecialized = $visit->department_id
+                && $visit->department
+                && $visit->department->category === 'medical'
+                && ! $visit->department->isGenericEntryDepartment();
+
+            // تخصص جديد من الأحقية (عيون…) يحدّث الزيارة.
+            // قسم عام (عيادات) لا يستبدل تخصص موجود.
+            if ($printIsSpecialized) {
+                $visitUpdate['department_id'] = $printDepartmentId;
+                $visitUpdate['case_type'] = $printDept->name_ar ?? $printDept->name;
+            } elseif ($printDepartmentId && ! $visitIsSpecialized) {
                 $visitUpdate['department_id'] = $printDepartmentId;
                 if ($printDept) {
                     $visitUpdate['case_type'] = $printDept->name_ar ?? $printDept->name;
                 }
             }
-            // لا تمسح مسار الدخول؛ وإن كان فاضي ثبّته عشان يظهر في مكتب الدخول
+
             if (! $visit->admission_entry_source) {
                 $visitUpdate['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
                     $request->input('admission_entry_source'),
-                    $printDepartmentId ? Department::find($printDepartmentId) : $visit->department
+                    $visitIsSpecialized ? $visit->department : $printDept
                 );
             }
         }
         $visit->update($visitUpdate);
-        // حدّث قسم المريض فقط من القسم الطبي الثابت للزيارة — مش من قسم الأحقية
+        $visit->refresh();
+
         if ($visit->department_id) {
             $visit->patient?->update(['department_id' => (int) $visit->department_id]);
-        } elseif ($printDepartmentId) {
-            $visit->patient?->update(['department_id' => $printDepartmentId]);
         }
         $visit->refresh();
 
