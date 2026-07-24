@@ -382,7 +382,9 @@
                                             <select name="department_id" required class="{{ $inputClass }} text-sm">
                                                 <option value="">{{ app()->getLocale() === 'ar' ? '— قسم الكشفية —' : '— Entry department —' }}</option>
                                                 @foreach ($entryFeeDepartments as $d)
-                                                    <option value="{{ $d->id }}">{{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)</option>
+                                                    <option value="{{ $d->id }}" @selected((string) old('department_id', $visitForPrint->department_id) === (string) $d->id)>
+                                                        {{ (app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name) }} — @currency($d->entry_fee ?? 0)
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>

@@ -10,10 +10,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * إحصائيات الإيرادات — نسبة التحصيل للأقسام الطبية بشكل صحيح.
+ * إحصائيات الإيرادات — نسبة التحصيل للأقسام الطبية.
  *
- * الزيارات غالباً تُسجَّل على قسم المحصل (استقبال/دخول)، بينما القسم الطبي
- * يكون في بنود الفاتورة أو مسار الدخول (عيادات/طوارئ).
+ * الأولوية: قسم الزيارة المختار صراحةً (أورام / مختبر / …)
+ * ثم التحويل / الأحقية / بنود الفاتورة، ومسار الدخول (عيادات/طوارئ) آخر حل فقط.
  */
 final class RevenueStats
 {
@@ -121,8 +121,24 @@ final class RevenueStats
         }
 
         $medicalLookup = array_fill_keys($medicalIds, true);
+        $visit = $invoice->relationLoaded('visit') ? $invoice->visit : $invoice->visit;
 
-        // 1) بنود الفاتورة (كشفية دخول / خدمات) — الأدق
+        // 1) قسم الزيارة المختار صراحةً (أورام / مختبر / صيدلية…) — المصدر الأساسي
+        if ($visit?->department_id && isset($medicalLookup[(int) $visit->department_id])) {
+            return (int) $visit->department_id;
+        }
+
+        // 2) تحويل أو قسم طباعة الأحقية
+        foreach ([
+            $visit?->transferred_department_id,
+            $visit?->eligibility_print_department_id,
+        ] as $candidate) {
+            if ($candidate && isset($medicalLookup[(int) $candidate])) {
+                return (int) $candidate;
+            }
+        }
+
+        // 3) بنود الفاتورة / الخدمات
         $byDept = [];
         $items = $invoice->relationLoaded('items') ? $invoice->items : $invoice->items()->with('service')->get();
         foreach ($items as $item) {
@@ -143,37 +159,27 @@ final class RevenueStats
             return (int) array_key_first($byDept);
         }
 
-        $visit = $invoice->relationLoaded('visit') ? $invoice->visit : $invoice->visit;
-
-        // 2) تحويل / قسم طباعة الأحقية / قسم الزيارة إن كان طبياً
-        foreach ([
-            $visit?->transferred_department_id,
-            $visit?->eligibility_print_department_id,
-            $visit?->department_id,
-        ] as $candidate) {
-            if ($candidate && isset($medicalLookup[(int) $candidate])) {
-                return (int) $candidate;
+        // 4) case_type إن كان اسم قسم طبي معروف
+        $case = trim((string) ($visit?->case_type ?? ''));
+        if ($case !== '') {
+            $matched = Department::query()
+                ->whereIn('id', $medicalIds)
+                ->where(function ($q) use ($case) {
+                    $q->where('name_ar', $case)->orWhere('name', $case);
+                })
+                ->value('id');
+            if ($matched) {
+                return (int) $matched;
             }
         }
 
-        // 3) مسار الدخول: عيادات خارجية / طوارئ
+        // 5) آخر حل فقط: مسار مكتب الدخول (عيادات / طوارئ)
         $source = $visit?->admission_entry_source;
         if ($source === Visit::ADMISSION_EMERGENCY && $emergencyDeptId) {
             return $emergencyDeptId;
         }
         if ($source === Visit::ADMISSION_OUTPATIENT_CLINICS && $clinicsDeptId) {
             return $clinicsDeptId;
-        }
-
-        // 4) case_type كنص (أحياناً اسم القسم)
-        $case = mb_strtolower(trim((string) ($visit?->case_type ?? '')));
-        if ($case !== '') {
-            if ($emergencyDeptId && self::blobHasAny($case, ['طوارئ', 'طوارى', 'emergency', 'e.r'])) {
-                return $emergencyDeptId;
-            }
-            if ($clinicsDeptId && self::blobHasAny($case, ['عيادات', 'clinic', 'outpatient'])) {
-                return $clinicsDeptId;
-            }
         }
 
         return null;
