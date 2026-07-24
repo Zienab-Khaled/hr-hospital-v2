@@ -155,6 +155,10 @@
                             </script>
 
                             @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $defaultAdmissionSource ?? \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS])
+                            @include('visits.partials.medical-department-select', [
+                                'medicalDepartments' => $departments ?? collect(),
+                                'fieldId' => 'visit_department_id_search',
+                            ])
 
                             <button type="submit" id="visit_go_btn" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-slate-50 font-semibold text-sm hover:bg-blue-700 shadow">
                                 {{ app()->getLocale() === 'ar' ? 'متابعة ← تسجيل دخول القسم' : 'Continue → Register to department' }}
@@ -240,17 +244,21 @@
                     </div>
                 @endif
 
-                @if (!$visit && $myDepartment)
+                @if (!$visit && isset($departments) && $departments->isNotEmpty())
                     <form action="{{ route('visits.store') }}" method="POST" class="mb-6">
                         @csrf
                         <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                         @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $defaultAdmissionSource ?? \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS])
-                        <button type="submit" class="bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
+                        @include('visits.partials.medical-department-select', [
+                            'medicalDepartments' => $departments,
+                            'fieldId' => 'visit_department_id_main',
+                            'selectedDepartmentId' => old('department_id', $patient->department_id),
+                        ])
+                        <button type="submit" class="mt-3 bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
                             @if (isset($activeVisits) && $activeVisits->isNotEmpty())
                                 {{ app()->getLocale() === 'ar' ? 'إنشاء زيارة جديدة (إضافية)' : 'Create New Visit (Additional)' }}
                             @else
-                                {{ app()->getLocale() === 'ar' ? 'تسجيل دخول المريض إلى القسم:' : 'Register patient entry to department:' }}
-                                {{ app()->getLocale() === 'ar' && $myDepartment->name_ar ? $myDepartment->name_ar : $myDepartment->name }}
+                                {{ app()->getLocale() === 'ar' ? 'تسجيل دخول المريض للقسم المختار' : 'Register patient to selected department' }}
                             @endif
                         </button>
                     </form>
@@ -310,14 +318,14 @@
 
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-800 mb-1">{{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}</label>
-                                    <select id="eligibility_department_id" class="{{ $inputClass }}">
+                                    <label class="block text-sm font-bold text-slate-800 mb-1">
+                                        {{ app()->getLocale() === 'ar' ? 'القسم' : 'Department' }}
+                                        <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="eligibility_department_id" required class="{{ $inputClass }}">
                                         <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
-                                        <option value="none" @selected(old('department_id', $visitForPrint->eligibility_without_department ? 'none' : '') === 'none')>
-                                            {{ app()->getLocale() === 'ar' ? 'بدون قسم' : 'No department' }}
-                                        </option>
                                         @foreach ($eligibilityDepartments as $d)
-                                            <option value="{{ $d->id }}" @selected((string) old('department_id', $visitForPrint->eligibility_print_department_id ?? '') === (string) $d->id)>
+                                            <option value="{{ $d->id }}" @selected((string) old('department_id', $visitForPrint->eligibility_print_department_id ?? $visitForPrint->department_id ?? '') === (string) $d->id)>
                                                 {{ app()->getLocale() === 'ar' && $d->name_ar ? $d->name_ar : $d->name }}
                                             </option>
                                         @endforeach
@@ -328,9 +336,6 @@
                                         {{ app()->getLocale() === 'ar' ? 'ملاحظة الأحقية' : 'Eligibility note' }}
                                     </label>
                                     <textarea id="eligibility_notes" rows="2" class="{{ $inputClass }} text-sm">{{ old('eligibility_notes', $visitForPrint->eligibility_notes ?? '') }}</textarea>
-                                    <p id="eligibility_notes_hint" class="text-xs text-slate-500 mt-1 hidden">
-                                        {{ app()->getLocale() === 'ar' ? 'إلزامي عند اختيار «بدون قسم»' : 'Required when «No department» is selected' }}
-                                    </p>
                                 </div>
                                 <form id="eligibility_print_form" method="POST" action="{{ route('visits.treatment-eligibility-print.submit', $visitForPrint) }}" target="_blank" class="pt-1">
                                     @csrf
@@ -931,17 +936,12 @@
             // Handle Print Button
             if (printBtn && printForm) {
                 printBtn.addEventListener('click', function() {
-                    var notesEl = document.getElementById('eligibility_notes');
                     var deptValue = deptSelect ? deptSelect.value : '';
                     var isAr = document.documentElement.lang === 'ar';
 
-                    if (!deptValue) {
-                        alert(isAr ? 'يرجى اختيار القسم أو «بدون قسم».' : 'Please select a department or «No department».');
-                        return;
-                    }
-                    if (deptValue === 'none' && notesEl && !notesEl.value.trim()) {
-                        alert(isAr ? 'ملاحظة الأحقية إلزامية عند اختيار «بدون قسم».' : 'Eligibility note is required for «No department».');
-                        if (notesEl) notesEl.focus();
+                    if (!deptValue || deptValue === 'none') {
+                        alert(isAr ? 'يرجى اختيار القسم.' : 'Please select a department.');
+                        if (deptSelect) deptSelect.focus();
                         return;
                     }
 
@@ -988,29 +988,6 @@
                     printForm.submit();
                 });
             }
-
-            // ملاحظات الأحقية: إلزامية عند «بدون قسم»
-            (function() {
-                var notesEl = document.getElementById('eligibility_notes');
-                var notesLabel = document.getElementById('eligibility_notes_label');
-                var notesHint = document.getElementById('eligibility_notes_hint');
-                var isAr = document.documentElement.lang === 'ar';
-
-                function syncNotesRequired() {
-                    if (!deptSelect || !notesEl) return;
-                    var withoutDept = deptSelect.value === 'none';
-                    notesEl.required = withoutDept;
-                    if (notesLabel) {
-                        notesLabel.textContent = withoutDept
-                            ? (isAr ? 'ملاحظة الأحقية *' : 'Eligibility note *')
-                            : (isAr ? 'ملاحظة الأحقية' : 'Eligibility note');
-                    }
-                    if (notesHint) notesHint.classList.toggle('hidden', !withoutDept);
-                }
-
-                if (deptSelect) deptSelect.addEventListener('change', syncNotesRequired);
-                syncNotesRequired();
-            })();
 
             // Handle Reload Last Eligibility Services
             var reloadBtn = document.getElementById('btn_reload_eligibility');

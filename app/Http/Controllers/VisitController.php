@@ -69,26 +69,7 @@ class VisitController extends Controller
                 $visit = null;
             }
 
-            // إنشاء الزيارة تلقائياً عند الدخول بمريض:
-            // 1. لا توجد زيارة محددة ($visit null)
-            // 2. لا توجد قائمة زيارات للاختيار منها ($activeVisits empty) أو طلب المستخدم زيارة جديدة explicitely
-            $shouldCreate = $patient && !$visit && $myDepartment && $currentShift && ($activeVisits->isEmpty() || $request->boolean('new_visit'));
-
-            if ($shouldCreate) {
-                $visit = Visit::create([
-                    'patient_id' => $patient->id,
-                    'department_id' => $myDepartment->id,
-                    'admission_entry_source' => Visit::inferAdmissionEntryFromDepartment($myDepartment),
-                    'visit_date' => today(),
-                    'shift_id' => $currentShift->id,
-                    'case_type' => $myDepartment->name_ar ?? $myDepartment->name ?? 'clinics',
-                    'notes' => null,
-                    'registered_by' => auth()->user()->id,
-                ]);
-                $patient->update(['department_id' => $myDepartment->id]);
-                $registered = true;
-                session()->flash('success', app()->getLocale() === 'ar' ? 'تم إنشاء الزيارة وتسجيل دخول المريض للقسم.' : 'Visit created and patient registered to department.');
-            }
+            // لا ننشئ زيارة تلقائياً — لازم اختيار القسم الطبي صراحةً من الفورم
         }
 
         $eligibilityDepartments = Department::where('is_active', true)
@@ -124,6 +105,21 @@ class VisitController extends Controller
         $validationRules = [
             'patient_id' => 'required|exists:patients,id',
             'admission_entry_source' => 'required|in:outpatient_clinics,emergency',
+            'department_id' => [
+                'required',
+                'exists:departments,id',
+                function ($attribute, $value, $fail) {
+                    $ok = Department::where('id', $value)
+                        ->where('is_active', true)
+                        ->where('category', 'medical')
+                        ->exists();
+                    if (! $ok) {
+                        $fail(app()->getLocale() === 'ar'
+                            ? 'يجب اختيار قسم طبي صالح للزيارة.'
+                            : 'A valid medical department is required for the visit.');
+                    }
+                },
+            ],
         ];
         if ($patient->payment_type === 'charity') {
             $validationRules['charity_approval_document'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
@@ -131,20 +127,15 @@ class VisitController extends Controller
         $request->validate($validationRules);
 
         $user = auth()->user();
-        $departmentId = $user?->department_id;
+        $departmentId = (int) $request->input('department_id');
         $currentShift = Shift::currentAt();
 
-        if (!$departmentId) {
-            return back()->withErrors(['patient_id' => app()->getLocale() === 'ar'
-                ? 'يجب أن يكون الموظف مرتبطاً بقسم لتسجيل زيارة.'
-                : 'Employee must be assigned to a department.'])->withInput();
-        }
-
-        $dept = Department::find($departmentId);
+        $dept = Department::findOrFail($departmentId);
         $visit = Visit::create([
             'patient_id' => $patient->id,
             'department_id' => $departmentId,
             'admission_entry_source' => $request->input('admission_entry_source'),
+            'eligibility_print_department_id' => $departmentId,
             'visit_date' => today(),
             'shift_id' => $currentShift?->id,
             'case_type' => $dept->name_ar ?? $dept->name ?? 'clinics',
@@ -369,25 +360,31 @@ class VisitController extends Controller
         }
 
         $deptInput = $request->input('department_id');
-        $withoutDepartment = $deptInput === 'none';
         $eligibilityNotes = trim((string) $request->input('eligibility_notes', ''));
 
         if ($request->isMethod('post')) {
-            if ($withoutDepartment) {
-                $request->validate([
-                    'eligibility_notes' => 'required|string|min:2|max:2000',
-                ]);
-            } elseif ($request->filled('department_id') && $deptInput !== 'none') {
-                $request->validate([
-                    'department_id' => 'exists:departments,id',
-                ]);
-            }
+            $request->validate([
+                'department_id' => [
+                    'required',
+                    'exists:departments,id',
+                    function ($attribute, $value, $fail) {
+                        $ok = Department::where('id', $value)
+                            ->where('is_active', true)
+                            ->where('category', 'medical')
+                            ->exists();
+                        if (! $ok) {
+                            $fail(app()->getLocale() === 'ar'
+                                ? 'يجب اختيار قسم طبي للأحقية.'
+                                : 'A medical department is required for eligibility.');
+                        }
+                    },
+                ],
+                'eligibility_notes' => 'nullable|string|max:2000',
+            ]);
         }
 
-        $printDepartmentId = null;
-        if (! $withoutDepartment && $request->filled('department_id') && $deptInput !== 'none') {
-            $printDepartmentId = (int) $deptInput;
-        }
+        $withoutDepartment = false;
+        $printDepartmentId = $request->filled('department_id') ? (int) $deptInput : null;
 
         // Default manager: System Manager or Revenue Manager
         $manager = User::getManagerForSignature();
