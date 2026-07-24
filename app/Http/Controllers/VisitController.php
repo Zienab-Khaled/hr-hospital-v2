@@ -917,13 +917,21 @@ class VisitController extends Controller
 
         if (!$isAdmin) {
             $deptId = $user->department_id;
-            if ($deptId && $currentShift) {
-                // الموظف يرى زيارات شيفت اليوم في قسمه فقط
-                $query->where('department_id', $deptId)
+            $userId = $user->getKey();
+            if ($currentShift) {
+                // زيارات شيفت اليوم التي تخص قسم الموظف أو التي سجّلها الموظف نفسه.
+                // موظف مكتب الدخول يسجّل المرضى في أقسام طبية مختلفة عن قسمه،
+                // فلا بد أن يرى ما سجّله حتى لو كان القسم الطبي مختلفاً عن قسمه.
+                $query->whereDate('visit_date', today())
                     ->where('shift_id', $currentShift->id)
-                    ->whereDate('visit_date', today());
+                    ->where(function ($q) use ($deptId, $userId) {
+                        if ($deptId) {
+                            $q->where('department_id', $deptId);
+                        }
+                        $q->orWhere('registered_by', $userId);
+                    });
             } else {
-                // إذا لم يكن مرتبطاً بقسم أو لا يوجد شيفت حالي، لا يرى شيئاً (أو يمكن تعديله ليرى زياراته فقط)
+                // لا يوجد شيفت حالي — لا يرى شيئاً
                 $query->whereRaw('1 = 0');
             }
         } else {
