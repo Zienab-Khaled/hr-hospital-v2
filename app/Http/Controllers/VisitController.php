@@ -951,12 +951,27 @@ class VisitController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'shift_id' => 'nullable|exists:shifts,id',
             'visit_date' => 'nullable|date',
-            'case_type' => 'required|string',
+            'case_type' => 'nullable|string',
             'notes' => 'nullable|string',
             'admission_entry_source' => 'nullable|in:outpatient_clinics,emergency',
         ];
         if ($request->boolean('redirect_to_create')) {
             $rules['admission_entry_source'] = 'required|in:outpatient_clinics,emergency';
+            $rules['department_id'] = [
+                'required',
+                'exists:departments,id',
+                function ($attribute, $value, $fail) {
+                    $ok = Department::where('id', $value)
+                        ->where('is_active', true)
+                        ->where('category', 'medical')
+                        ->exists();
+                    if (! $ok) {
+                        $fail(app()->getLocale() === 'ar'
+                            ? 'يجب اختيار قسم طبي صالح للزيارة.'
+                            : 'A valid medical department is required for the visit.');
+                    }
+                },
+            ];
         }
 
         $valid = $request->validate($rules);
@@ -964,8 +979,21 @@ class VisitController extends Controller
         $oldValues = $visit->getOriginal();
 
         // Filter out null values to prevent overwriting with null if only partial update
-        $updateData = array_filter($valid, fn($v) => !is_null($v));
+        $updateData = array_filter($valid, fn ($v) => ! is_null($v));
+
+        if (! empty($updateData['department_id'])) {
+            $dept = Department::find($updateData['department_id']);
+            if ($dept) {
+                $updateData['case_type'] = $dept->name_ar ?? $dept->name ?? ($updateData['case_type'] ?? $visit->case_type);
+                $updateData['eligibility_print_department_id'] = (int) $updateData['department_id'];
+            }
+        }
+
         $visit->update($updateData);
+
+        if (! empty($updateData['department_id'])) {
+            $visit->patient?->update(['department_id' => (int) $updateData['department_id']]);
+        }
 
         ActivityLogger::log('Visit Updated', 'Visit', $visit->id, 'Visit details updated', $oldValues, $visit->toArray());
 

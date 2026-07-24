@@ -287,7 +287,7 @@
                         </div>
                     @endif
 
-                    {{-- مسار الدخول + حفظ --}}
+                    {{-- مسار الدخول + القسم الطبي + حفظ --}}
                         <div class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                             <form action="{{ route('visits.update', $visitForPrint ?? $visit) }}" method="POST">
                                 @csrf
@@ -300,6 +300,11 @@
                                 @endphp
                                 <input type="hidden" name="case_type" value="{{ old('case_type', $vAdmission->case_type ?? '') }}">
                                 @include('visits.partials.admission-entry-radios', ['defaultAdmission' => $admDefault])
+                                @include('visits.partials.medical-department-select', [
+                                    'medicalDepartments' => $departments ?? collect(),
+                                    'fieldId' => 'visit_department_id_update',
+                                    'selectedDepartmentId' => old('department_id', $vAdmission->department_id),
+                                ])
                                 <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow text-sm">
                                     {{ app()->getLocale() === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
                                 </button>
