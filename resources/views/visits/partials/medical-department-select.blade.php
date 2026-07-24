@@ -8,11 +8,6 @@
         {{ app()->getLocale() === 'ar' ? 'القسم الطبي للزيارة' : 'Visit medical department' }}
         <span class="text-rose-600">*</span>
     </label>
-    <p class="text-xs text-emerald-900/80 mb-3 leading-relaxed">
-        {{ app()->getLocale() === 'ar'
-            ? 'اختَر القسم اللي المريض رايحله (عيادة، صيدلية، أشعة، طوارئ…). مطلوب.'
-            : 'Select the department the patient is going to (clinic, pharmacy, radiology…). Required.' }}
-    </p>
     <select name="department_id" id="{{ $fieldId }}" required
         class="w-full rounded-lg border-2 border-emerald-400 bg-white px-3 py-2.5 text-slate-900 font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
         <option value="">{{ app()->getLocale() === 'ar' ? '— اختر القسم —' : '— Select department —' }}</option>
