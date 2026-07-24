@@ -450,41 +450,7 @@ class PlaceholderController extends Controller
             ->sum('amount');
 
         // --- إحصائيات الأداء حسب الأقسام ---
-        $deptPerformance = \App\Models\Department::where('category', 'medical')->get()->map(function($dept) use ($start, $end) {
-            $stats = Payment::whereNotNull('approved_by')
-                ->whereBetween('received_date', [$start, $end])
-                ->whereHas('invoice.visit', function($q) use ($dept) {
-                    $q->where('department_id', $dept->id);
-                })
-                ->select(
-                    DB::raw('SUM(amount) as total'),
-                    DB::raw('COUNT(DISTINCT invoice_id) as invoices_count')
-                )
-                ->first();
-
-            $total = (float) ($stats->total ?? 0);
-
-            // Color Logic: High (>10k), Med (2k-10k), Low (<2k)
-            $color = '#fee2e2'; // Faint Red (Low)
-            $level = 'low';
-            if ($total >= 10000) {
-                $color = '#22c55e'; // Green (High)
-                $level = 'high';
-            } elseif ($total >= 2000) {
-                $color = '#fbbf24'; // Yellow (Medium)
-                $level = 'medium';
-            }
-
-            return (object) [
-                'id' => $dept->id,
-                'name_ar' => $dept->name_ar ?? $dept->name,
-                'name_en' => $dept->name,
-                'total' => $total,
-                'patient_count' => (int) ($stats->invoices_count ?? 0),
-                'color' => $color,
-                'level' => $level
-            ];
-        })->sortByDesc('total')->values();
+        $deptPerformance = \App\Support\RevenueStats::departmentPerformance($start, $end);
 
             // --- الأكثر تعاملاً (خلال الفترة المختارة) ---
         $topCharities = \App\Models\CharityEntity::all()

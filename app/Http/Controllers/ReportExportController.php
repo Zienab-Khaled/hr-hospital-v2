@@ -9,7 +9,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -43,21 +42,7 @@ class ReportExportController extends Controller
             ->groupBy('patients.payment_type')
             ->pluck('total', 'payment_type');
 
-        $deptPerformance = \App\Models\Department::all()->map(function($dept) use ($start, $end) {
-            $stats = Payment::whereNotNull('approved_by')
-                ->whereBetween('received_date', [$start, $end])
-                ->whereHas('invoice.visit', function($q) use ($dept) {
-                    $q->where('department_id', $dept->id);
-                })
-                ->select(DB::raw('SUM(amount) as total'), DB::raw('COUNT(DISTINCT invoice_id) as invoices_count'))
-                ->first();
-
-            return (object) [
-                'name' => $dept->name_ar ?? $dept->name,
-                'total' => (float) ($stats->total ?? 0),
-                'count' => (int) ($stats->invoices_count ?? 0)
-            ];
-        })->sortByDesc('total')->values();
+        $deptPerformance = \App\Support\RevenueStats::departmentPerformance($start, $end);
 
         $logoKey = Setting::get('logo');
         $logoPath = $logoKey && \Illuminate\Support\Facades\File::exists(storage_path('app/public/' . $logoKey))
