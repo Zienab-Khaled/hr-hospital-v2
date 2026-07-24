@@ -248,11 +248,14 @@ class DashboardApiController extends Controller
         $visit = \App\Models\Visit::create([
             'patient_id' => $valid['patient_id'],
             'department_id' => $valid['department_id'],
+            'admission_entry_source' => $valid['case_type'] === 'emergency'
+                ? \App\Models\Visit::ADMISSION_EMERGENCY
+                : \App\Models\Visit::ADMISSION_OUTPATIENT_CLINICS,
             'shift_id' => $shift ? $shift->id : null,
             'visit_date' => now(),
             'case_type' => $valid['case_type'],
             'status' => 'pending',
-            'created_by' => auth()->id(),
+            'registered_by' => auth()->id(),
         ]);
 
         return response()->json([

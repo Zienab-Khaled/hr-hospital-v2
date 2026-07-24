@@ -131,10 +131,14 @@ class VisitController extends Controller
         $currentShift = Shift::currentAt();
 
         $dept = Department::findOrFail($departmentId);
+        $admissionSource = Visit::normalizeAdmissionEntrySource(
+            $request->input('admission_entry_source'),
+            $dept
+        );
         $visit = Visit::create([
             'patient_id' => $patient->id,
             'department_id' => $departmentId,
-            'admission_entry_source' => $request->input('admission_entry_source'),
+            'admission_entry_source' => $admissionSource,
             'eligibility_print_department_id' => $departmentId,
             'visit_date' => today(),
             'shift_id' => $currentShift?->id,
@@ -308,6 +312,16 @@ class VisitController extends Controller
                     'case_type' => $deptName,
                 ]);
                 $patient->update(['department_id' => $department->id]);
+            }
+
+            // مسار الدخول لازم يظهر في مكتب الدخول — لا نتركه فارغًا
+            if (! $visit->fresh()->admission_entry_source) {
+                $visit->update([
+                    'admission_entry_source' => Visit::normalizeAdmissionEntrySource(
+                        $request->input('admission_entry_source'),
+                        $department
+                    ),
+                ]);
             }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
@@ -489,6 +503,13 @@ class VisitController extends Controller
                 if ($printDept) {
                     $visitUpdate['case_type'] = $printDept->name_ar ?? $printDept->name;
                 }
+            }
+            // لا تمسح مسار الدخول؛ وإن كان فاضي ثبّته عشان يظهر في مكتب الدخول
+            if (! $visit->admission_entry_source) {
+                $visitUpdate['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
+                    $request->input('admission_entry_source'),
+                    $printDepartmentId ? Department::find($printDepartmentId) : $visit->department
+                );
             }
         }
         $visit->update($visitUpdate);
@@ -1012,6 +1033,13 @@ class VisitController extends Controller
                 $updateData['case_type'] = $dept->name_ar ?? $dept->name ?? ($updateData['case_type'] ?? $visit->case_type);
                 $updateData['eligibility_print_department_id'] = (int) $updateData['department_id'];
             }
+        }
+
+        if ($request->boolean('redirect_to_create') || ! empty($updateData['department_id'])) {
+            $updateData['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
+                $updateData['admission_entry_source'] ?? $request->input('admission_entry_source') ?? $visit->admission_entry_source,
+                isset($updateData['department_id']) ? Department::find($updateData['department_id']) : $visit->department
+            );
         }
 
         $visit->update($updateData);

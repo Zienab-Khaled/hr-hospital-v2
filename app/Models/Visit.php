@@ -107,6 +107,30 @@ class Visit extends Model implements HasMedia
         return self::ADMISSION_OUTPATIENT_CLINICS;
     }
 
+    /** قيمة مسار الدخول الصالحة فقط — افتراضي: عيادات خارجية */
+    public static function normalizeAdmissionEntrySource(?string $source, ?Department $department = null): string
+    {
+        if (in_array($source, [self::ADMISSION_OUTPATIENT_CLINICS, self::ADMISSION_EMERGENCY], true)) {
+            return $source;
+        }
+
+        return self::inferAdmissionEntryFromDepartment($department);
+    }
+
+    /** إذا كان مسار الدخول فارغًا نثبّته حتى يظهر في مكتب الدخول */
+    public function fillMissingAdmissionEntrySource(?string $preferred = null): void
+    {
+        if ($this->admission_entry_source) {
+            return;
+        }
+
+        $this->admission_entry_source = self::normalizeAdmissionEntrySource(
+            $preferred,
+            $this->relationLoaded('department') ? $this->department : $this->department()->first()
+        );
+        $this->save();
+    }
+
     public function getAdmissionEntrySourceLabelAttribute(): string
     {
         return match ($this->admission_entry_source) {

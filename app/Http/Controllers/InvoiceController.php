@@ -312,6 +312,7 @@ class InvoiceController extends Controller
                 $visit = Visit::create([
                     'patient_id' => $patient->id,
                     'visit_date' => $validated['invoice_date'],
+                    'admission_entry_source' => Visit::ADMISSION_OUTPATIENT_CLINICS,
                     'notes' => 'Invoice created',
                     'referral_number' => $validated['referral_number'] ?? null,
                     'registered_by' => auth()->user()?->getKey(),

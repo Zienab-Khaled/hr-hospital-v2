@@ -21,7 +21,7 @@
         </label>
         <label class="inline-flex items-center gap-2 cursor-pointer rounded-lg bg-white px-3 py-2 border-2 border-rose-200 shadow-sm hover:border-rose-400 transition-colors">
             <input type="radio" name="admission_entry_source" value="{{ \App\Models\Visit::ADMISSION_EMERGENCY }}"
-                {{ $selected === \App\Models\Visit::ADMISSION_EMERGENCY ? 'checked' : '' }}
+                {{ $selected === \App\Models\Visit::ADMISSION_EMERGENCY ? 'checked' : '' }} required
                 class="text-rose-600 focus:ring-rose-500">
             <span class="text-sm font-bold text-slate-800">{{ app()->getLocale() === 'ar' ? 'الطوارئ' : 'Emergency' }}</span>
         </label>
