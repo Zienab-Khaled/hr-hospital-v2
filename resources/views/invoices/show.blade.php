@@ -51,6 +51,16 @@
                         class="bg-blue-600  px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
                         {{ app()->getLocale() === 'ar' ? 'تعديل' : 'Edit' }}
                     </a>
+                @elseif (
+                    !$isEntryFeeOnly
+                    && auth()->user()?->hasAnyRole(['accountant', 'cashier'])
+                    && auth()->user()->can('invoices.edit')
+                    && ! \App\Support\RoleNav::isWithinInvoiceEditGrace($invoice)
+                )
+                    <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-500 border border-slate-200"
+                        title="{{ app()->getLocale() === 'ar' ? 'انتهت ساعة التعديل — للمدير فقط' : 'Edit window expired — managers only' }}">
+                        {{ app()->getLocale() === 'ar' ? 'التعديل للمدير فقط' : 'Manager edit only' }}
+                    </span>
                 @endif
             </div>
         </div>
@@ -61,7 +71,7 @@
                 <h3 class="font-bold text-slate-800 mb-3">
                     {{ app()->getLocale() === 'ar' ? 'فاتورة كشفية دخول' : 'Entry fee invoice' }}</h3>
                 <div class="flex flex-wrap gap-2">
-                    @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
+                    @if ($effectiveRemaining > 0 && auth()->user()->can('payments.create'))
                         <button type="button" onclick="openPaymentModal()"
                             class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
                             💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}
@@ -117,7 +127,7 @@
                     @endif
 
                     {{-- Record Payment button for Cash/Partially Paid (المحصل/الاستقبال: payments.create) --}}
-                    @if ($effectiveRemaining > 0 && (auth()->user()->can('payments.create') || auth()->user()->can('invoices.edit')))
+                    @if ($effectiveRemaining > 0 && auth()->user()->can('payments.create'))
                         <button type="button" onclick="openPaymentModal()"
                             class="inline-flex items-center gap-2 bg-green-600  px-4 py-2 rounded-lg font-semibold hover:bg-green-700 shadow-md">
                             💰 {{ app()->getLocale() === 'ar' ? 'تسجيل دفعة (كاش / شبكة)' : 'Record Payment (Cash/POS)' }}

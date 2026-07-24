@@ -117,13 +117,32 @@
 
     @if(!empty($showFullCycle) && $showFullCycle)
         {{-- دورة الإيراد كاملة عمودياً (مساعد المدير / الإدارة) --}}
+        <nav class="sticky top-4 z-20 mb-8 max-w-5xl mx-auto">
+            <div class="premium-card rounded-2xl p-3 flex flex-wrap items-center justify-center gap-2 border border-slate-200/80 shadow-lg">
+                <a href="#collector-ops" class="px-4 py-2 rounded-xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                    1. {{ app()->getLocale() === 'ar' ? 'عمليات المحصل' : 'Collector' }}
+                    <span class="ms-1 opacity-80">({{ $collectorInvoices->count() }})</span>
+                </a>
+                <span class="text-slate-300 font-black hidden sm:inline">↓</span>
+                <a href="#accountant-ops" class="px-4 py-2 rounded-xl text-sm font-black bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                    2. {{ app()->getLocale() === 'ar' ? 'عمليات المحاسب' : 'Accountant' }}
+                    <span class="ms-1 opacity-80">({{ $accountantInvoices->count() }})</span>
+                </a>
+                <span class="text-slate-300 font-black hidden sm:inline">↓</span>
+                <a href="#cashier-ops" class="px-4 py-2 rounded-xl text-sm font-black bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                    3. {{ app()->getLocale() === 'ar' ? 'عمليات أمين الصندوق' : 'Cashier' }}
+                    <span class="ms-1 opacity-80">({{ $matchedInvoices->count() + $readyForDepositInvoices->count() + $managerConfirmedInvoices->count() + $depositedInvoices->count() }})</span>
+                </a>
+            </div>
+        </nav>
+
         <div class="space-y-14 max-w-5xl mx-auto">
 
             {{-- 1) عمليات المحصل --}}
-            <section id="collector-ops" class="cycle-section space-y-6">
+            <section id="collector-ops" class="cycle-section space-y-6 rounded-3xl border-2 border-indigo-100 bg-indigo-50/30 p-6">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <span class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">💻</span>
+                        <span class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner font-black text-sm">1</span>
                         {{ app()->getLocale() === 'ar' ? 'عمليات المحصل' : 'Collector Operations' }}
                         <span class="px-3 py-1 rounded-full text-xs font-black text-white bg-indigo-600 shadow-md">
                             {{ $collectorInvoices->count() }}
@@ -145,10 +164,10 @@
             </section>
 
             {{-- 2) عمليات المحاسب --}}
-            <section id="accountant-ops" class="cycle-section space-y-6">
+            <section id="accountant-ops" class="cycle-section space-y-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50/30 p-6">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <span class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner">🧾</span>
+                        <span class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner font-black text-sm">2</span>
                         {{ app()->getLocale() === 'ar' ? 'عمليات المحاسب' : 'Accountant Operations' }}
                         <span class="px-3 py-1 rounded-full text-xs font-black text-white bg-emerald-600 shadow-md">
                             {{ $accountantInvoices->count() }}
@@ -170,10 +189,10 @@
             </section>
 
             {{-- 3) عمليات أمين الصندوق --}}
-            <section id="cashier-ops" class="cycle-section space-y-6">
+            <section id="cashier-ops" class="cycle-section space-y-6 rounded-3xl border-2 border-amber-100 bg-amber-50/30 p-6">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <span class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner">🏦</span>
+                        <span class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner font-black text-sm">3</span>
                         {{ app()->getLocale() === 'ar' ? 'عمليات أمين الصندوق' : 'Cashier / Treasury Operations' }}
                         <span class="px-3 py-1 rounded-full text-xs font-black text-white bg-amber-600 shadow-md">
                             {{ $matchedInvoices->count() + $readyForDepositInvoices->count() + $managerConfirmedInvoices->count() + $depositedInvoices->count() }}

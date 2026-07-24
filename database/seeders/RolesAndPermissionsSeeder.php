@@ -116,10 +116,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'procedures.contact_report',
             ]);
 
-            // محاسب: عرض الفواتير + غرفة التحكم (بدون تعديل)
+            // محاسب: عرض + تعديل خلال ساعة فقط (RoleNav) + غرفة التحكم
             $accountant = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => $guard]);
             $accountant->syncPermissions([
-                'invoices.view', 'reports.view', 'payments.view',
+                'invoices.view', 'invoices.edit', 'reports.view', 'payments.view',
             ]);
 
             // طبيب: عرض/تعديل مرضى، عرض فواتير
@@ -144,10 +144,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'procedures.non_commitment',
             ]);
 
-            // أمين صندوق: الفواتير + الخزينة
+            // أمين صندوق: الفواتير + تعديل خلال ساعة فقط (RoleNav) + الخزينة
             $cashier = Role::firstOrCreate(['name' => 'cashier', 'guard_name' => $guard]);
             $cashier->syncPermissions([
-                'invoices.view', 'reports.view',
+                'invoices.view', 'invoices.edit', 'reports.view',
             ]);
 
             // مساعد المدير: إشراف على دورة الإيراد — بدون إدارة النظام الكاملة أو التقارير
