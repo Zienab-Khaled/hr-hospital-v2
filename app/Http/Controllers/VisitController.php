@@ -299,6 +299,14 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
+            // ربط الزيارة بنفس القسم الطبي المختار للكشفية (مهم للتقارير)
+            $visit->update([
+                'department_id' => $department->id,
+                'eligibility_print_department_id' => $department->id,
+                'case_type' => $deptName,
+            ]);
+            $patient->update(['department_id' => $department->id]);
+
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
             if ($isTreatmentEligibility) {
                 InvoiceAmountHelper::applyTreatmentEligibilityZeroInvoice($invoice->refresh());
@@ -472,8 +480,18 @@ class VisitController extends Controller
             $visitUpdate['eligibility_notes'] = $eligibilityNotes !== '' ? $eligibilityNotes : null;
             $visitUpdate['eligibility_print_department_id'] = $printDepartmentId;
             $visitUpdate['eligibility_without_department'] = $withoutDepartment;
+            if ($printDepartmentId) {
+                $printDept = Department::find($printDepartmentId);
+                $visitUpdate['department_id'] = $printDepartmentId;
+                if ($printDept) {
+                    $visitUpdate['case_type'] = $printDept->name_ar ?? $printDept->name;
+                }
+            }
         }
         $visit->update($visitUpdate);
+        if ($printDepartmentId) {
+            $visit->patient?->update(['department_id' => $printDepartmentId]);
+        }
         $visit->refresh();
 
         if ($eligibilityNotes === '' && $visit->eligibility_notes) {
@@ -545,6 +563,10 @@ class VisitController extends Controller
                     }
                     $invoice->items()->create([
                         'service_id' => $s['service_id'] ?? null,
+                        'department_id' => $s['department_id']
+                            ?? ($s['service_id'] ? Service::find($s['service_id'])?->department_id : null)
+                            ?? $visit->department_id
+                            ?? $printDepartmentId,
                         'quantity' => (int) round((float) ($s['qty'] ?? $s['quantity'] ?? 1)),
                         'unit_price' => $lineUnit,
                         'total_price' => $lineTotal,

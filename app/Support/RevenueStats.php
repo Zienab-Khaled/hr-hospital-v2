@@ -5,15 +5,14 @@ namespace App\Support;
 use App\Models\Department;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * إحصائيات الإيرادات — نسبة التحصيل للأقسام الطبية.
+ * إحصائيات الإيرادات حسب القسم الطبي الفعلي.
  *
- * الأولوية: قسم الزيارة المختار صراحةً (أورام / مختبر / …)
- * ثم التحويل / الأحقية / بنود الفاتورة، ومسار الدخول (عيادات/طوارئ) آخر حل فقط.
+ * مهم: مسار الدخول (عيادات/طوارئ) ≠ القسم الطبي.
+ * لا ننسب أي إيراد إلى «العيادات الخارجية» فقط لأن مسار الدخول عيادات.
  */
 final class RevenueStats
 {
@@ -35,8 +34,6 @@ final class RevenueStats
         }
 
         $medicalIds = $medicalDepts->keys()->all();
-        $clinicsDeptId = self::findDeptIdByKeywords($medicalDepts, ['عيادات', 'clinic', 'outpatient']);
-        $emergencyDeptId = self::findDeptIdByKeywords($medicalDepts, ['طوارئ', 'طوارى', 'emergency', 'e.r']);
 
         $payments = Payment::query()
             ->whereNotNull('approved_by')
@@ -57,12 +54,7 @@ final class RevenueStats
         }
 
         foreach ($payments as $payment) {
-            $deptId = self::resolveMedicalDepartmentId(
-                $payment->invoice,
-                $medicalIds,
-                $clinicsDeptId,
-                $emergencyDeptId
-            );
+            $deptId = self::resolveMedicalDepartmentId($payment->invoice, $medicalIds);
 
             if (! $deptId || ! array_key_exists($deptId, $totals)) {
                 continue;
@@ -108,27 +100,31 @@ final class RevenueStats
     /**
      * تحديد القسم الطبي المناسب لفاتورة/دفعة.
      *
+     * الترتيب:
+     * 1) قسم الزيارة المختار (أورام / مختبر / …)
+     * 2) التحويل / قسم الأحقية
+     * 3) بنود الفاتورة / الخدمات
+     * 4) case_type إن طابق اسم قسم
+     *
+     * لا نستخدم مسار الدخول (outpatient_clinics) أبداً — هذا سبب ظهور «العيادات الخارجية» بالغلط.
+     *
      * @param  list<int>  $medicalIds
      */
-    public static function resolveMedicalDepartmentId(
-        ?Invoice $invoice,
-        array $medicalIds,
-        ?int $clinicsDeptId,
-        ?int $emergencyDeptId
-    ): ?int {
+    public static function resolveMedicalDepartmentId(?Invoice $invoice, array $medicalIds): ?int
+    {
         if (! $invoice) {
             return null;
         }
 
-        $medicalLookup = array_fill_keys($medicalIds, true);
+        $medicalLookup = array_fill_keys(array_map('intval', $medicalIds), true);
         $visit = $invoice->relationLoaded('visit') ? $invoice->visit : $invoice->visit;
 
-        // 1) قسم الزيارة المختار صراحةً (أورام / مختبر / صيدلية…) — المصدر الأساسي
+        // 1) قسم الزيارة
         if ($visit?->department_id && isset($medicalLookup[(int) $visit->department_id])) {
             return (int) $visit->department_id;
         }
 
-        // 2) تحويل أو قسم طباعة الأحقية
+        // 2) تحويل / أحقية
         foreach ([
             $visit?->transferred_department_id,
             $visit?->eligibility_print_department_id,
@@ -142,11 +138,10 @@ final class RevenueStats
         $byDept = [];
         $items = $invoice->relationLoaded('items') ? $invoice->items : $invoice->items()->with('service')->get();
         foreach ($items as $item) {
-            $candidates = array_filter([
+            foreach (array_filter([
                 $item->department_id ?? null,
                 $item->service?->department_id ?? null,
-            ]);
-            foreach ($candidates as $candidate) {
+            ]) as $candidate) {
                 $candidate = (int) $candidate;
                 if (isset($medicalLookup[$candidate])) {
                     $byDept[$candidate] = ($byDept[$candidate] ?? 0) + (float) ($item->total_price ?? 0);
@@ -159,7 +154,7 @@ final class RevenueStats
             return (int) array_key_first($byDept);
         }
 
-        // 4) case_type إن كان اسم قسم طبي معروف
+        // 4) case_type = اسم القسم
         $case = trim((string) ($visit?->case_type ?? ''));
         if ($case !== '') {
             $matched = Department::query()
@@ -173,42 +168,6 @@ final class RevenueStats
             }
         }
 
-        // 5) آخر حل فقط: مسار مكتب الدخول (عيادات / طوارئ)
-        $source = $visit?->admission_entry_source;
-        if ($source === Visit::ADMISSION_EMERGENCY && $emergencyDeptId) {
-            return $emergencyDeptId;
-        }
-        if ($source === Visit::ADMISSION_OUTPATIENT_CLINICS && $clinicsDeptId) {
-            return $clinicsDeptId;
-        }
-
         return null;
-    }
-
-    /**
-     * @param  Collection<int, Department>  $medicalDepts
-     * @param  list<string>  $keywords
-     */
-    private static function findDeptIdByKeywords(Collection $medicalDepts, array $keywords): ?int
-    {
-        $found = $medicalDepts->first(function (Department $dept) use ($keywords) {
-            $blob = mb_strtolower(trim(($dept->name_ar ?? '').' '.($dept->name ?? '').' '.($dept->code ?? '')));
-
-            return self::blobHasAny($blob, $keywords);
-        });
-
-        return $found?->id;
-    }
-
-    /** @param  list<string>  $needles */
-    private static function blobHasAny(string $blob, array $needles): bool
-    {
-        foreach ($needles as $needle) {
-            if ($needle !== '' && str_contains($blob, mb_strtolower($needle))) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
