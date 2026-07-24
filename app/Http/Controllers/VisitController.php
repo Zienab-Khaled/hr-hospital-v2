@@ -299,13 +299,16 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
-            // ربط الزيارة بنفس القسم الطبي المختار للكشفية (مهم للتقارير)
-            $visit->update([
-                'department_id' => $department->id,
-                'eligibility_print_department_id' => $department->id,
-                'case_type' => $deptName,
-            ]);
-            $patient->update(['department_id' => $department->id]);
+            // لا تستبدل القسم الطبي المختار للزيارة بقسم كشفية الدخول.
+            // مثال: زيارة "العمليات" قد تستخدم كشفية "العيادات الخارجية".
+            if (! $visit->department_id || $visit->department?->category !== 'medical') {
+                $visit->update([
+                    'department_id' => $department->id,
+                    'eligibility_print_department_id' => $department->id,
+                    'case_type' => $deptName,
+                ]);
+                $patient->update(['department_id' => $department->id]);
+            }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
             if ($isTreatmentEligibility) {
