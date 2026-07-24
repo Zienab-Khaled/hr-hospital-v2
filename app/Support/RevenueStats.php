@@ -9,10 +9,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * إحصائيات الإيرادات حسب القسم الطبي الفعلي.
+ * إحصائيات الإيرادات حسب القسم الطبي (التخصص).
  *
- * مهم: مسار الدخول (عيادات/طوارئ) ≠ القسم الطبي.
- * لا ننسب أي إيراد إلى «العيادات الخارجية» فقط لأن مسار الدخول عيادات.
+ * مسار الدخول (عيادات/طوارئ) ≠ التخصص الطبي (تنويم باطنية / مختبر / أورام…).
+ * الإيراد يُنسب للتخصص، حتى لو الكشفية صادرة من العيادات الخارجية.
  */
 final class RevenueStats
 {
@@ -35,7 +35,7 @@ final class RevenueStats
 
         $medicalIds = $medicalDepts->keys()->all();
         $genericDepartmentIds = $medicalDepts
-            ->filter(fn (Department $dept) => self::isGenericEntryDepartment($dept))
+            ->filter(fn (Department $dept) => $dept->isGenericEntryDepartment())
             ->keys()
             ->map(fn ($id) => (int) $id)
             ->all();
@@ -107,15 +107,14 @@ final class RevenueStats
     }
 
     /**
-     * تحديد القسم الطبي المناسب لفاتورة/دفعة.
+     * تحديد التخصص الطبي للفاتورة.
      *
      * الترتيب:
-     * 1) التحويل أو القسم المتخصص المختار للزيارة
-     * 2) قسم الأحقية المتخصص
-     * 3) قسم الخدمة/بند الفاتورة المتخصص
-     * 4) الأقسام العامة (عيادات خارجية/طوارئ) كحل أخير
-     *
-     * لا نستخدم مسار الدخول (outpatient_clinics) أبداً — هذا سبب ظهور «العيادات الخارجية» بالغلط.
+     * 1) قسم التحويل المتخصص
+     * 2) قسم الزيارة المختار (تنويم باطنية…) — المصدر الأساسي
+     * 3) بنود الفاتورة المتخصصة (بعد ختم الكشفية بتخصص الزيارة)
+     * 4) قسم الأحقية المتخصص / case_type
+     * 5) العيادات/الطوارئ فقط كحل أخير
      *
      * @param  list<int>  $medicalIds
      * @param  list<int>  $genericDepartmentIds
@@ -124,39 +123,38 @@ final class RevenueStats
         ?Invoice $invoice,
         array $medicalIds,
         array $genericDepartmentIds = []
-    ): ?int
-    {
+    ): ?int {
         if (! $invoice) {
             return null;
         }
 
         $medicalLookup = array_fill_keys(array_map('intval', $medicalIds), true);
         $genericLookup = array_fill_keys(array_map('intval', $genericDepartmentIds), true);
-        $visit = $invoice->relationLoaded('visit') ? $invoice->visit : $invoice->visit;
+        $visit = $invoice->visit;
 
-        // 1) التحويل له الأولوية، ثم قسم الزيارة إذا كان متخصصاً.
-        foreach ([
-            $visit?->transferred_department_id,
-            $visit?->department_id,
-        ] as $candidate) {
-            if ($candidate
-                && isset($medicalLookup[(int) $candidate])
-                && ! isset($genericLookup[(int) $candidate])) {
-                return (int) $candidate;
-            }
+        $isSpecialized = static function (?int $id) use ($medicalLookup, $genericLookup): bool {
+            return $id
+                && isset($medicalLookup[$id])
+                && ! isset($genericLookup[$id]);
+        };
+
+        // 1) التحويل المتخصص
+        $transferred = (int) ($visit?->transferred_department_id ?? 0);
+        if ($isSpecialized($transferred)) {
+            return $transferred;
         }
 
-        // 2) قسم الأحقية إذا كان متخصصاً.
-        $eligibilityDepartmentId = (int) ($visit?->eligibility_print_department_id ?? 0);
-        if ($eligibilityDepartmentId
-            && isset($medicalLookup[$eligibilityDepartmentId])
-            && ! isset($genericLookup[$eligibilityDepartmentId])) {
-            return $eligibilityDepartmentId;
+        // 2) تخصص الزيارة المختار صراحةً (تنويم باطنية / مختبر / أورام…)
+        $visitDept = (int) ($visit?->department_id ?? 0);
+        if ($isSpecialized($visitDept)) {
+            return $visitDept;
         }
 
-        // 3) بنود الفاتورة / الخدمات، مع تفضيل القسم المتخصص.
+        // 3) بنود الفاتورة — فضّل المتخصص (الكشفية تُختم بتخصص الزيارة)
         $byDept = [];
-        $items = $invoice->relationLoaded('items') ? $invoice->items : $invoice->items()->with('service')->get();
+        $items = $invoice->relationLoaded('items')
+            ? $invoice->items
+            : $invoice->items()->with('service')->get();
         foreach ($items as $item) {
             foreach (array_filter([
                 $item->department_id ?? null,
@@ -170,15 +168,20 @@ final class RevenueStats
         }
         if ($byDept !== []) {
             arsort($byDept);
-
             foreach (array_keys($byDept) as $departmentId) {
-                if (! isset($genericLookup[(int) $departmentId])) {
+                if ($isSpecialized((int) $departmentId)) {
                     return (int) $departmentId;
                 }
             }
         }
 
-        // 4) case_type = اسم القسم
+        // 4) قسم الأحقية المتخصص
+        $eligibilityDepartmentId = (int) ($visit?->eligibility_print_department_id ?? 0);
+        if ($isSpecialized($eligibilityDepartmentId)) {
+            return $eligibilityDepartmentId;
+        }
+
+        // 5) case_type = اسم التخصص
         $case = trim((string) ($visit?->case_type ?? ''));
         if ($case !== '') {
             $matched = Department::query()
@@ -187,30 +190,23 @@ final class RevenueStats
                     $q->where('name_ar', $case)->orWhere('name', $case);
                 })
                 ->value('id');
-            if ($matched) {
-                $matched = (int) $matched;
-                if (! isset($genericLookup[$matched])) {
-                    return $matched;
-                }
+            if ($matched && $isSpecialized((int) $matched)) {
+                return (int) $matched;
             }
         }
 
-        // 5) الأقسام العامة لا تُستخدم إلا عند عدم وجود أي قسم متخصص.
+        // 6) آخر حل: العيادات/الطوارئ العامة
         foreach ([
+            $visitDept,
             $eligibilityDepartmentId,
-            $visit?->department_id,
             array_key_first($byDept),
         ] as $candidate) {
-            if ($candidate && isset($medicalLookup[(int) $candidate])) {
-                return (int) $candidate;
+            $candidate = (int) ($candidate ?? 0);
+            if ($candidate && isset($medicalLookup[$candidate])) {
+                return $candidate;
             }
         }
 
         return null;
-    }
-
-    private static function isGenericEntryDepartment(Department $department): bool
-    {
-        return $department->isGenericEntryDepartment();
     }
 }

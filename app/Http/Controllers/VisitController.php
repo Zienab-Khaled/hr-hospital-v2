@@ -302,9 +302,24 @@ class VisitController extends Controller
             $deptName = $department->name_ar ?? $department->name;
             $description = (app()->getLocale() === 'ar' ? 'كشفية ' : 'Entry fee ') . $deptName;
 
+            // انسب الإيراد للتخصص الطبي للزيارة (تنويم باطنية…) حتى لو الكشفية من «العيادات الخارجية».
+            // مسار الدخول يبقى كما هو — لا نلمسه هنا.
+            $visit->loadMissing('department');
+            $specialtyDept = $visit->department;
+            $attributionDepartmentId = (
+                $visit->department_id
+                && $specialtyDept
+                && $specialtyDept->category === 'medical'
+                && ! $specialtyDept->isGenericEntryDepartment()
+            ) ? (int) $visit->department_id : (int) $department->id;
+
+            $preservedDepartmentId = $visit->department_id;
+            $preservedAdmission = $visit->admission_entry_source;
+            $preservedCaseType = $visit->case_type;
+
             $invoice->items()->create([
                 'service_id' => null,
-                'department_id' => $department->id,
+                'department_id' => $attributionDepartmentId,
                 'quantity' => 1,
                 'unit_price' => $entryAmount,
                 'total_price' => $entryAmount,
@@ -316,30 +331,31 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
-            // مهم: كشفية الدخول (غالباً «العيادات الخارجية») ≠ القسم الطبي للزيارة.
-            // لا تستبدل أبداً القسم المختار (باطنية/أورام/مختبر…) بقسم الكشفية.
-            if (! $visit->department_id) {
-                $visit->update([
-                    'department_id' => $department->id,
-                    'eligibility_print_department_id' => $department->id,
-                    'case_type' => $deptName,
-                ]);
-                $patient->update(['department_id' => $department->id]);
-            } else {
-                // ثبّت قسم الأحقية للكشفية فقط بدون لمس القسم الطبي
-                if (! $visit->eligibility_print_department_id) {
-                    $visit->update(['eligibility_print_department_id' => $department->id]);
-                }
+            // ثبّت قسم الأحقية للكشفية فقط — بدون استبدال التخصص أو مسار الدخول
+            if (! $visit->eligibility_print_department_id) {
+                $visit->update(['eligibility_print_department_id' => $department->id]);
             }
 
-            // مسار الدخول لازم يظهر في مكتب الدخول — لا نتركه فارغًا
+            // ضمان: الكشفية لا تمسح التخصص ولا مسار الدخول أبداً
+            $restore = [];
+            if ($preservedDepartmentId && (int) $visit->fresh()->department_id !== (int) $preservedDepartmentId) {
+                $restore['department_id'] = $preservedDepartmentId;
+                $restore['case_type'] = $preservedCaseType;
+            }
+            if ($preservedAdmission && $visit->fresh()->admission_entry_source !== $preservedAdmission) {
+                $restore['admission_entry_source'] = $preservedAdmission;
+            }
             if (! $visit->fresh()->admission_entry_source) {
-                $visit->update([
-                    'admission_entry_source' => Visit::normalizeAdmissionEntrySource(
-                        $request->input('admission_entry_source'),
-                        $department
-                    ),
-                ]);
+                $restore['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
+                    $request->input('admission_entry_source') ?? $preservedAdmission,
+                    $specialtyDept
+                );
+            }
+            if ($restore !== []) {
+                $visit->update($restore);
+            }
+            if ($preservedDepartmentId) {
+                $patient->update(['department_id' => $preservedDepartmentId]);
             }
 
             InvoiceAmountHelper::syncInvoiceTotalsFromItems($invoice->refresh());
@@ -1062,13 +1078,14 @@ class VisitController extends Controller
             $dept = Department::find($updateData['department_id']);
             if ($dept) {
                 $updateData['case_type'] = $dept->name_ar ?? $dept->name ?? ($updateData['case_type'] ?? $visit->case_type);
-                $updateData['eligibility_print_department_id'] = (int) $updateData['department_id'];
+                // لا تلمس eligibility_print_department_id هنا — ده قسم الكشفية/الطباعة، مش التخصص
             }
         }
 
-        if ($request->boolean('redirect_to_create') || ! empty($updateData['department_id'])) {
+        // مسار الدخول والتخصص مستقلان — احفظ الاثنين مع بعض بدون ما واحد يمسح الثاني
+        if ($request->boolean('redirect_to_create') || $request->filled('admission_entry_source')) {
             $updateData['admission_entry_source'] = Visit::normalizeAdmissionEntrySource(
-                $updateData['admission_entry_source'] ?? $request->input('admission_entry_source') ?? $visit->admission_entry_source,
+                $request->input('admission_entry_source') ?? $visit->admission_entry_source,
                 isset($updateData['department_id']) ? Department::find($updateData['department_id']) : $visit->department
             );
         }
@@ -1076,7 +1093,24 @@ class VisitController extends Controller
         $visit->update($updateData);
 
         if (! empty($updateData['department_id'])) {
-            $visit->patient?->update(['department_id' => (int) $updateData['department_id']]);
+            $newDeptId = (int) $updateData['department_id'];
+            $visit->patient?->update(['department_id' => $newDeptId]);
+
+            // انقل فواتير الكشفية/الأحقية لهذه الزيارة للتخصص الجديد عشان التقارير تتحرّك فورًا
+            $newDept = Department::find($newDeptId);
+            if ($newDept && $newDept->category === 'medical' && ! $newDept->isGenericEntryDepartment()) {
+                \App\Models\InvoiceItem::query()
+                    ->whereHas('invoice', function ($q) use ($visit) {
+                        $q->where('visit_id', $visit->id)->where('invoice_type', 'eligibility');
+                    })
+                    ->update(['department_id' => $newDeptId]);
+            }
+        }
+
+        // تأكد مسار الدخول ما يختفيش بعد التحديث
+        $visit->refresh();
+        if (! $visit->admission_entry_source) {
+            $visit->fillMissingAdmissionEntrySource($request->input('admission_entry_source'));
         }
 
         ActivityLogger::log('Visit Updated', 'Visit', $visit->id, 'Visit details updated', $oldValues, $visit->toArray());
