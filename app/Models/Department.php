@@ -41,4 +41,30 @@ class Department extends Model
     {
         return $this->hasMany(PatientTransfer::class, 'from_department_id');
     }
+
+    /**
+     * أقسام عامة لمسار الدخول (عيادات/طوارئ) — ليست تخصصًا طبيًا للزيارة.
+     */
+    public function isGenericEntryDepartment(): bool
+    {
+        $blob = mb_strtolower(trim(
+            ($this->name_ar ?? '').' '
+            .($this->name ?? '').' '
+            .($this->code ?? '')
+        ));
+
+        foreach (['العيادات الخارجية', 'outpatient', 'طوارئ', 'طوارى', 'emergency'] as $needle) {
+            if (str_contains($blob, mb_strtolower($needle))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** أقسام طبية متخصصة (بدون عيادات خارجية / طوارئ كمسار دخول) */
+    public function scopeSpecializedMedical($query)
+    {
+        return $query->where('category', 'medical')->where('is_active', true);
+    }
 }

@@ -35,7 +35,12 @@ class VisitController extends Controller
         $this->authorize('invoices.create');
 
         $currentShift = Shift::currentAt();
-        $departments = Department::where('is_active', true)->where('category', 'medical')->orderBy('name')->get();
+        // أقسام طبية متخصصة فقط — «العيادات الخارجية/الطوارئ» مسار دخول مش تخصص زيارة
+        $departments = Department::specializedMedical()
+            ->orderBy('name')
+            ->get()
+            ->reject(fn (Department $d) => $d->isGenericEntryDepartment())
+            ->values();
         $myDepartment = auth()->user()?->department_id
             ? Department::find(auth()->user()->department_id)
             : null;
@@ -84,6 +89,14 @@ class VisitController extends Controller
             ->orderBy('name')
             ->get();
 
+        // إن كانت الزيارة مربوطة بقسم عام قديم (عيادات)، أضفه للقائمة عشان يظهر حالياً ويقدر يغيّره
+        if ($visit?->department_id && ! $departments->contains('id', $visit->department_id)) {
+            $extra = Department::find($visit->department_id);
+            if ($extra) {
+                $departments = $departments->prepend($extra)->values();
+            }
+        }
+
         $defaultAdmissionSource = $myDepartment
             ? Visit::inferAdmissionEntryFromDepartment($myDepartment)
             : Visit::ADMISSION_OUTPATIENT_CLINICS;
@@ -109,14 +122,14 @@ class VisitController extends Controller
                 'required',
                 'exists:departments,id',
                 function ($attribute, $value, $fail) {
-                    $ok = Department::where('id', $value)
+                    $dept = Department::where('id', $value)
                         ->where('is_active', true)
                         ->where('category', 'medical')
-                        ->exists();
-                    if (! $ok) {
+                        ->first();
+                    if (! $dept || $dept->isGenericEntryDepartment()) {
                         $fail(app()->getLocale() === 'ar'
-                            ? 'يجب اختيار قسم طبي صالح للزيارة.'
-                            : 'A valid medical department is required for the visit.');
+                            ? 'يجب اختيار قسم طبي متخصص (مثل باطنية / مختبر / أورام). العيادات والطوارئ مسار دخول فقط.'
+                            : 'Choose a specialized medical department. Clinics/Emergency are admission routes only.');
                     }
                 },
             ],
@@ -303,15 +316,20 @@ class VisitController extends Controller
                 'completed_by' => auth()->id(),
             ]);
 
-            // لا تستبدل القسم الطبي المختار للزيارة بقسم كشفية الدخول.
-            // مثال: زيارة "العمليات" قد تستخدم كشفية "العيادات الخارجية".
-            if (! $visit->department_id || $visit->department?->category !== 'medical') {
+            // مهم: كشفية الدخول (غالباً «العيادات الخارجية») ≠ القسم الطبي للزيارة.
+            // لا تستبدل أبداً القسم المختار (باطنية/أورام/مختبر…) بقسم الكشفية.
+            if (! $visit->department_id) {
                 $visit->update([
                     'department_id' => $department->id,
                     'eligibility_print_department_id' => $department->id,
                     'case_type' => $deptName,
                 ]);
                 $patient->update(['department_id' => $department->id]);
+            } else {
+                // ثبّت قسم الأحقية للكشفية فقط بدون لمس القسم الطبي
+                if (! $visit->eligibility_print_department_id) {
+                    $visit->update(['eligibility_print_department_id' => $department->id]);
+                }
             }
 
             // مسار الدخول لازم يظهر في مكتب الدخول — لا نتركه فارغًا
@@ -497,7 +515,9 @@ class VisitController extends Controller
             $visitUpdate['eligibility_notes'] = $eligibilityNotes !== '' ? $eligibilityNotes : null;
             $visitUpdate['eligibility_print_department_id'] = $printDepartmentId;
             $visitUpdate['eligibility_without_department'] = $withoutDepartment;
-            if ($printDepartmentId) {
+            // قسم طباعة الأحقية ≠ القسم الطبي للزيارة.
+            // لا تستبدل القسم المختار (باطنية نساء…) بقسم الأحقية/الكشفية (عيادات).
+            if ($printDepartmentId && ! $visit->department_id) {
                 $printDept = Department::find($printDepartmentId);
                 $visitUpdate['department_id'] = $printDepartmentId;
                 if ($printDept) {
@@ -513,7 +533,10 @@ class VisitController extends Controller
             }
         }
         $visit->update($visitUpdate);
-        if ($printDepartmentId) {
+        // حدّث قسم المريض فقط من القسم الطبي الثابت للزيارة — مش من قسم الأحقية
+        if ($visit->department_id) {
+            $visit->patient?->update(['department_id' => (int) $visit->department_id]);
+        } elseif ($printDepartmentId) {
             $visit->patient?->update(['department_id' => $printDepartmentId]);
         }
         $visit->refresh();
@@ -1015,14 +1038,14 @@ class VisitController extends Controller
                 'required',
                 'exists:departments,id',
                 function ($attribute, $value, $fail) {
-                    $ok = Department::where('id', $value)
+                    $dept = Department::where('id', $value)
                         ->where('is_active', true)
                         ->where('category', 'medical')
-                        ->exists();
-                    if (! $ok) {
+                        ->first();
+                    if (! $dept || $dept->isGenericEntryDepartment()) {
                         $fail(app()->getLocale() === 'ar'
-                            ? 'يجب اختيار قسم طبي صالح للزيارة.'
-                            : 'A valid medical department is required for the visit.');
+                            ? 'يجب اختيار قسم طبي متخصص. العيادات والطوارئ مسار دخول فقط.'
+                            : 'Choose a specialized medical department. Clinics/Emergency are admission routes only.');
                     }
                 },
             ];

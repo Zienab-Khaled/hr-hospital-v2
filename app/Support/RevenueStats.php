@@ -211,18 +211,6 @@ final class RevenueStats
 
     private static function isGenericEntryDepartment(Department $department): bool
     {
-        $blob = mb_strtolower(trim(
-            ($department->name_ar ?? '').' '
-            .($department->name ?? '').' '
-            .($department->code ?? '')
-        ));
-
-        foreach (['العيادات الخارجية', 'outpatient', 'طوارئ', 'طوارى', 'emergency'] as $needle) {
-            if (str_contains($blob, mb_strtolower($needle))) {
-                return true;
-            }
-        }
-
-        return false;
+        return $department->isGenericEntryDepartment();
     }
 }

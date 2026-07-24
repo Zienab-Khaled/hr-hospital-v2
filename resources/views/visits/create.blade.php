@@ -252,7 +252,7 @@
                         @include('visits.partials.medical-department-select', [
                             'medicalDepartments' => $departments,
                             'fieldId' => 'visit_department_id_main',
-                            'selectedDepartmentId' => old('department_id', $patient->department_id),
+                            'selectedDepartmentId' => old('department_id'),
                         ])
                         <button type="submit" class="mt-3 bg-blue-600 px-5 text-slate-50 py-3 rounded-lg font-bold text-base hover:bg-blue-700 shadow">
                             @if (isset($activeVisits) && $activeVisits->isNotEmpty())
@@ -379,7 +379,7 @@
                     <div id="eligibility_workspace" class="border-2 border-slate-300 rounded-lg p-5 mb-6 bg-white shadow-sm">
                         @if ($visitForPrint && isset($entryFeeDepartments) && $entryFeeDepartments->isNotEmpty())
                             <div id="entry_fee_block" class="mb-5 pb-5 border-b border-slate-200">
-                                <h4 class="text-sm font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'كشفية دخول القسم' : 'Department entry fee' }}</h4>
+                                <h4 class="text-sm font-bold text-slate-800 mb-3">{{ app()->getLocale() === 'ar' ? 'كشفية الدخول (قسم الكشفية — مش تخصص الزيارة)' : 'Entry fee (fee desk — not visit specialty)' }}</h4>
                                 <form action="{{ route('visits.entry-fee-invoice', $visitForPrint) }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'ar' ? 'إنشاء فاتورة دخول (كشفية) وطباعة الأحقية؟' : 'Create entry fee invoice and print eligibility?' }}');">
                                     @csrf
                                     <div class="flex flex-wrap items-end gap-3">
